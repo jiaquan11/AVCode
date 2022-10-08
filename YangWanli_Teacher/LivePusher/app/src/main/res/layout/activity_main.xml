@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="摄像头预览"
+        android:onClick="cameraPreview"/>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="视频编码录制"
+        android:onClick="videoRecord"/>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="图片生成视频"
+        android:onClick="imgVideo"/>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="播放YUV数据"
+        android:onClick="yuvPlayer"/>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="直播推流"
+        android:onClick="livepush"/>
+</LinearLayout>

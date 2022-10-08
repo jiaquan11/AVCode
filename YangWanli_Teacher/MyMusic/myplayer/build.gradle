@@ -1,0 +1,80 @@
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion "30.0.2"
+
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion 29
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles "consumer-rules.pro"
+
+        /*
+        abiFilters "armeabi", "x86" 过滤平台编译的二进制，如果不过滤，生成其它编译平台，但是如果项目
+        中没有相对应的so,则会报错崩溃
+        * */
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++11"
+            }
+            ndk {
+                abiFilters "armeabi-v7a"
+            }
+
+//            ndk {
+//                //设置支持的SO库架构
+//                abiFilters 'armeabi-v7a'//, 'arm64-v8a'//, 'x86_64',
+//            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.10.2"
+        }
+    }
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['src/main/nativeLibs']
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    packagingOptions {
+        pickFirst "**/libavcodec.so"
+        pickFirst "**/libavdevice.so"
+        pickFirst "**/libavfilter.so"
+        pickFirst "**/libavformat.so"
+        pickFirst "**/libavutil.so"
+        pickFirst "**/libpostproc.so"
+        pickFirst "**/libswresample.so"
+        pickFirst "**/libswscale.so"
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'com.google.android.material:material:1.2.1'
+    testImplementation 'junit:junit:4.+'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+}
