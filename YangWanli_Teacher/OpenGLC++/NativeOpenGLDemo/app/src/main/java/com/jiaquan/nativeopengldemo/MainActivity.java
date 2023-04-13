@@ -26,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         wlSurfaceView = findViewById(R.id.wlSurfaceview);
         nativeOpengl = new NativeOpengl();
         wlSurfaceView.setNativeOpengl(nativeOpengl);

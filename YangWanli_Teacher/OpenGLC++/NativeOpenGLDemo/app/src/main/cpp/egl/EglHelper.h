@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/11/8.
-//
-
-#ifndef NATIVEOPENGLDEMO_EGLHELPER_H
-#define NATIVEOPENGLDEMO_EGLHELPER_H
+#ifndef _EGLHELPER_H_
+#define _EGLHELPER_H_
 
 #include "EGL/egl.h"
 #include "../log/androidLog.h"
@@ -27,5 +23,4 @@ public:
     EGLConfig mEglConfig;
     EGLContext mEglContext;
 };
-
-#endif //NATIVEOPENGLDEMO_EGLHELPER_H
+#endif //_EGLHELPER_H_

@@ -1,11 +1,8 @@
-//
-// Created by jiaqu on 2020/11/15.
-//
-
-#ifndef NATIVEOPENGLDEMO_BASEOPENGL_H
-#define NATIVEOPENGLDEMO_BASEOPENGL_H
+#ifndef _BASEOPENGL_H_
+#define _BASEOPENGL_H_
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "GLES2/gl2.h"
 #include "../log/androidLog.h"
@@ -49,4 +46,4 @@ public:
     GLuint fShader = 0;
 };
 
-#endif //NATIVEOPENGLDEMO_BASEOPENGL_H
+#endif //_BASEOPENGL_H_

@@ -1,7 +1,3 @@
-//
-// Created by jiaqu on 2020/11/8.
-//
-
 #include "EglHelper.h"
 
 EglHelper::EglHelper() {
