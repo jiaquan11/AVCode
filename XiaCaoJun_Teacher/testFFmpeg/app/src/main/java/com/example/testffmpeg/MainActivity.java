@@ -1,10 +1,6 @@
 package com.example.testffmpeg;
 
-import android.Manifest;
-import android.app.Activity;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.Window;
 import android.view.WindowManager;
@@ -13,8 +9,6 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-
-    // Used to load the 'native-lib' library on application startup.
     static {
         System.loadLibrary("native-lib");
     }
@@ -25,12 +19,9 @@ public class MainActivity extends AppCompatActivity {
         //去掉标题栏
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         //全屏，隐藏状态
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         //屏幕为横屏
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-
-
 
         setContentView(R.layout.activity_main);
 
@@ -43,10 +34,7 @@ public class MainActivity extends AppCompatActivity {
         tv.setText(stringFromJNI());
     }
 
-    /**
-     * A native method that is implemented by the 'native-lib' native library,
-     * which is packaged with this application.
-     */
+    //native method
     public native String stringFromJNI();
 
     public native boolean Open(String url, Object handle);

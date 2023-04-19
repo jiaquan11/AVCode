@@ -17,7 +17,7 @@ android {
             cmake {
                 cppFlags "-std=c++11"
             }
-            ndk{
+            ndk{//二进制编译输出库过滤，如果只设置了armeabi-v7a，则只会编译armeabi-v7a的库输出
                 abiFilters "armeabi-v7a"
             }
         }
