@@ -13,8 +13,9 @@ public class XPlay extends GLSurfaceView implements Runnable, SurfaceHolder.Call
     //线程函数
     @Override
     public void run() {
-        Open("/sdcard/testziliao/biterate9.mp4", getHolder().getSurface());
-//        Open("/storage/emulated/0/Pictures/biterate9.mp4", getHolder().getSurface());
+//        Open("/sdcard/testziliao/biterate9.mp4", getHolder().getSurface());
+        Open("/storage/emulated/0/Pictures/biterate9.mp4", getHolder().getSurface());
+//        Open("/mnt/shared/Pictures/biterate9.mp4", getHolder().getSurface());
     }
 
     @Override
