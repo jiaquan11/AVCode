@@ -17,18 +17,17 @@ public class XPlay extends GLSurfaceView implements Runnable, SurfaceHolder.Call
     }
 
     @Override
-    public void surfaceCreated(SurfaceHolder holder){
+    public void surfaceCreated(SurfaceHolder holder) {
         new Thread(this).start();
     }
 
     @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width,
-                               int height){
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 
     }
 
     @Override
-    public void surfaceDestroyed(SurfaceHolder holder){
+    public void surfaceDestroyed(SurfaceHolder holder) {
 
     }
 
