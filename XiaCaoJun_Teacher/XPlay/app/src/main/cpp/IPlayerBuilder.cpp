@@ -1,6 +1,3 @@
-//
-// Created by jiaqu on 2020/4/19.
-//
 #include "IPlayerBuilder.h"
 #include "IVideoView.h"
 #include "IResample.h"

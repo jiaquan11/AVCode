@@ -1,16 +1,13 @@
-//
-// Created by jiaqu on 2020/4/6.
-//
-#ifndef XPLAY_XPARAMETER_H
-#define XPLAY_XPARAMETER_H
+#ifndef _XPARAMETER_H_
+#define _XPARAMETER_H_
 
 struct AVCodecParameters;
 
 class XParameter {
 public:
-    AVCodecParameters* para = 0;
+    AVCodecParameters *para = 0;
     int channels = 2;
     int sample_rate = 44100;
 };
 
-#endif //XPLAY_XPARAMETER_H
+#endif

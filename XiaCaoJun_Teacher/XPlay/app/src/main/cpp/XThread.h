@@ -1,8 +1,8 @@
-//
-// Created by jiaqu on 2020/4/6.
-//
-#ifndef XPLAY_XTHREAD_H
-#define XPLAY_XTHREAD_H
+#ifndef _XTHREAD_H_
+#define _XTHREAD_H_
+
+#include "XLog.h"
+#include <thread>
 
 //sleep毫秒
 void XSleep(int mis);
@@ -22,7 +22,7 @@ public:
 
 protected:
     //入口主函数
-    virtual void Main(){}
+    virtual void Main() {}
 
     bool isExit = false;
 
@@ -34,4 +34,5 @@ protected:
 private:
     void ThreadMain();
 };
-#endif //XPLAY_XTHREAD_H
+
+#endif

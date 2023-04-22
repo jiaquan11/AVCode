@@ -1,22 +1,21 @@
-//
-// Created by jiaqu on 2020/4/6.
-//
-#ifndef XPLAY_FFDECODE_H
-#define XPLAY_FFDECODE_H
+#ifndef _FFDECODE_H_
+#define _FFDECODE_H_
 
 #include "XParameter.h"
 #include "IDecode.h"
 
 struct AVCodecContext;
 struct AVFrame;
-class FFDecode : public IDecode{
+
+class FFDecode : public IDecode {
 public:
-    static void InitHard(void* vm);
+    static void InitHard(void *vm);
 
     //打开解码器
     virtual bool Open(XParameter para, bool isHard = false);
 
     virtual void Close();
+
     virtual void Clear();
 
     //future模型 发送数据到线程解码
@@ -26,10 +25,11 @@ public:
     virtual XData RecvFrame();
 
 protected:
-    AVCodecContext* codec = 0;
-    AVFrame* frame = 0;
+    AVCodecContext *codec = 0;
+    AVFrame *frame = 0;
     std::mutex mux;
 
-    unsigned char* datas[3] = { 0 };
+    unsigned char *datas[3] = {0};
 };
-#endif //XPLAY_FFDECODE_H
+
+#endif

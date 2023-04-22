@@ -27,8 +27,7 @@ public class XPlay extends GLSurfaceView implements SurfaceHolder.Callback, GLSu
     }
 
     @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width,
-                               int height) {
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 
     }
 

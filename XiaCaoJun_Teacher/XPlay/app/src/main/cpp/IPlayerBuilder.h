@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/4/19.
-//
-
-#ifndef XPLAY_IPLAYERBUILDER_H
-#define XPLAY_IPLAYERBUILDER_H
+#ifndef _IPLAYERBUILDER_H_
+#define _IPLAYERBUILDER_H_
 
 #include "IPlayer.h"
 
@@ -25,4 +21,4 @@ protected:
     virtual IAudioPlay *CreateAudioPlay() = 0;
 };
 
-#endif //XPLAY_IPLAYERBUILDER_H
+#endif

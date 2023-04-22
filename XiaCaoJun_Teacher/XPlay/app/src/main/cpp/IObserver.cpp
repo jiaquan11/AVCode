@@ -1,6 +1,3 @@
-//
-// Created by jiaqu on 2020/4/6.
-//
 #include "IObserver.h"
 
 //主体函数 添加观察者

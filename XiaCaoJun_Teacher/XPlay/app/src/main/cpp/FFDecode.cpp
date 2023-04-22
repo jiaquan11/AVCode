@@ -1,6 +1,3 @@
-//
-// Created by jiaqu on 2020/4/6.
-//
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavcodec/jni.h>

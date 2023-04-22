@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/4/19.
-//
-
-#ifndef XPLAY_IPLAYERPROXY_H
-#define XPLAY_IPLAYERPROXY_H
+#ifndef _IPLAYERPROXY_H_
+#define _IPLAYERPROXY_H_
 
 #include <mutex>
 #include "IPlayer.h"
@@ -41,4 +37,5 @@ protected:
     IPlayer *player = 0;
     std::mutex mux;
 };
-#endif //XPLAY_IPLAYERPROXY_H
+
+#endif

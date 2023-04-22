@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/4/6.
-//
-
-#ifndef XPLAY_IOBSERVER_H
-#define XPLAY_IOBSERVER_H
+#ifndef _IOBSERVER_H_
+#define _IOBSERVER_H_
 
 #include "XData.h"
 #include "XThread.h"
@@ -27,4 +23,4 @@ protected:
     std::mutex mux;
 };
 
-#endif //XPLAY_IOBSERVER_H
+#endif

@@ -1,12 +1,5 @@
-//
-// Created by jiaqu on 2020/4/6.
-//
-#ifndef XPLAY_XLOG_H
-#define XPLAY_XLOG_H
-
-class XLog {
-
-};
+#ifndef _XLOG_H_
+#define _XLOG_H_
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -18,4 +11,4 @@ class XLog {
 #define  XLOGE(...)  printf("XPlay", __VA_ARGS__)
 #endif
 
-#endif //XPLAY_XLOG_H
+#endif

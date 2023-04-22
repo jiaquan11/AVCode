@@ -102,7 +102,7 @@ bool IPlayer::Seek(double pos) {
     ret = demux->Seek(pos);//seek到关键帧
     if (!vdecode) {
         mux.unlock();
-        SetPause(false);
+        SetPause(false);//恢复播放
         return ret;
     }
     //解码到实际需要显示的帧
