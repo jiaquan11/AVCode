@@ -3,11 +3,12 @@
 
 #include "IPlayer.h"
 
+//播放器构建的基类
 class IPlayerBuilder {
 public:
     virtual IPlayer *BuilderPlayer(unsigned char index = 0);
 
-protected:
+protected://下面都为纯虚函数，子类继承后必须得实现
     virtual IPlayer *CreatePlayer(unsigned char index = 0) = 0;
 
     virtual IDemux *CreateDemux() = 0;

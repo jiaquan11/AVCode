@@ -1,12 +1,9 @@
-//
-// Created by jiaqu on 2020/4/19.
-//
 #include "IAudioPlay.h"
 #include "XLog.h"
 
 void IAudioPlay::Clear() {
     framesMutex.lock();
-    while (!frames.empty()){
+    while (!frames.empty()) {
         frames.front().Drop();
         frames.pop_front();
     }
@@ -17,14 +14,14 @@ XData IAudioPlay::GetData() {
     XData d;
 
     isRunning = true;
-    while (!isExit){
-        if (IsPause()){
+    while (!isExit) {
+        if (IsPause()) {
             XSleep(2);
             continue;
         }
 
         framesMutex.lock();
-        if (!frames.empty()){
+        if (!frames.empty()) {
             //有数据返回
             d = frames.front();
             frames.pop_front();
@@ -42,13 +39,13 @@ XData IAudioPlay::GetData() {
     return d;
 }
 
-void IAudioPlay::Update(XData data){
+void IAudioPlay::Update(XData data) {
     //压入缓冲队列
     if (data.size <= 0 || !data.data) return;
 
-    while (!isExit){
+    while (!isExit) {
         framesMutex.lock();
-        if (frames.size() > maxFrames){
+        if (frames.size() > maxFrames) {
             framesMutex.unlock();
             XSleep(1);
             continue;

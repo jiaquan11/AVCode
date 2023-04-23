@@ -6,7 +6,7 @@
 #include "IResample.h"
 #include "XLog.h"
 
-IPlayer *IPlayer::Get(unsigned char index) {//单例模式
+IPlayer *IPlayer::Get(unsigned char index) {//单例模式，返回单个对象
     static IPlayer p[256];
     return &p[index];
 }
@@ -59,18 +59,17 @@ void IPlayer::Close() {
     mux.lock();
     //1 先关闭主体线程，再清理观察者
     //同步线程
-    XThread:
-    Stop();
+    XThread::Stop();//先停止播放线程
     //解封装
     if (demux)
-        demux->Stop();
+        demux->Stop();//停止解封装线程
     //解码
     if (vdecode)
-        vdecode->Stop();
+        vdecode->Stop();//停止视频解码线程
     if (adecode)
-        adecode->Stop();
+        adecode->Stop();//停止音频解码线程
     if (audioPlay)
-        audioPlay->Stop();
+        audioPlay->Stop();//停止音频播放线程
 
     //2 清理缓冲队列
     if (vdecode)

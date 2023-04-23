@@ -15,6 +15,7 @@ class IResample;
 
 class IDecode;
 
+//播放器类，也是一个单例模式
 class IPlayer : public XThread {
 public:
     static IPlayer *Get(unsigned char index = 0);

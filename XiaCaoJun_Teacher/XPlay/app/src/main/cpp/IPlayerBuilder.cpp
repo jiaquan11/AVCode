@@ -5,8 +5,9 @@
 #include "IAudioPlay.h"
 #include "IDemux.h"
 
+//Build播放器的流程在基类中实现，每个模块的创建实现函数在子类中实现
 IPlayer *IPlayerBuilder::BuilderPlayer(unsigned char index) {
-    IPlayer *player = CreatePlayer(index);
+    IPlayer *player = CreatePlayer(index);//创建播放器
 
     //解封装
     IDemux *demux = CreateDemux();

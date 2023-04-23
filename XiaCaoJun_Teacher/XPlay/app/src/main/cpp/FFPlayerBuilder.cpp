@@ -9,6 +9,7 @@ void FFPlayerBuilder::InitHard(void *vm) {
     FFDecode::InitHard(vm);
 }
 
+//FFmpeg播放器构建，内部构建了每个模块对象
 IPlayer *FFPlayerBuilder::CreatePlayer(unsigned char index) {
     return IPlayer::Get(index);
 }
