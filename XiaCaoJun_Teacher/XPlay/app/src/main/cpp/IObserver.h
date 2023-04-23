@@ -19,7 +19,7 @@ public:
     void Notify(XData data);
 
 protected:
-    std::vector<IObserver *> obss;
+    std::vector<IObserver *> obss;//容器存放所有观察者
     std::mutex mux;
 };
 

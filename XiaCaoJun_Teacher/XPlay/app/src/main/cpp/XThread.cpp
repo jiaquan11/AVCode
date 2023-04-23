@@ -35,15 +35,16 @@ void XThread::SetPause(bool isP) {
     isPause = isP;
     //等待100毫秒
     for (int i = 0; i < 10; ++i) {
-        if (isPausing == isP) {
+        if (isPausing == isP) {//判断前后状态是否一致
             break;
         }
         XSleep(10);
     }
 }
 
+//返回暂停状态
 bool XThread::IsPause() {
-     isPausing = isPause;
+    isPausing = isPause;
     return isPause;
 }
 

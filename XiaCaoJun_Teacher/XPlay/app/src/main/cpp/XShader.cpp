@@ -1,6 +1,3 @@
-//
-// Created by jiaqu on 2020/4/11.
-//
 #include "XShader.h"
 #include <GLES2/gl2.h>
 #include "XLog.h"
@@ -100,22 +97,22 @@ static GLuint InitShader(const char *code, GLint type) {
     return sh;
 }
 
-void XShader::Close(){
+void XShader::Close() {
     mux.lock();
     //释放shader
-    if (program){
+    if (program) {
         glDeleteProgram(program);
     }
-    if (fsh){
+    if (fsh) {
         glDeleteShader(fsh);
     }
-    if (vsh){
+    if (vsh) {
         glDeleteShader(vsh);
     }
 
     //释放材质
-    for (int i = 0; i < sizeof(texts)/sizeof(unsigned int); ++i) {
-        if (texts[i]){
+    for (int i = 0; i < sizeof(texts) / sizeof(unsigned int); ++i) {
+        if (texts[i]) {
             glDeleteTextures(1, &texts[i]);
         }
         texts[i] = 0;
@@ -132,7 +129,7 @@ bool XShader::Init(XShaderType type) {
     //顶点和片元shader初始化
     //顶点shader初始化
     vsh = InitShader(vertexShader, GL_VERTEX_SHADER);
-    if (vsh == 0){
+    if (vsh == 0) {
         mux.unlock();
         XLOGE("InitShader GL_VERTEX_SHADER failed!");
         return false;
@@ -140,7 +137,7 @@ bool XShader::Init(XShaderType type) {
     XLOGI("InitShader GL_VERTEX_SHADER success!");
 
     //片元yuv420 shader初始化
-    switch (type){
+    switch (type) {
         case XSHADER_YUV420P:
             fsh = InitShader(fragYUV420P, GL_FRAGMENT_SHADER);
             break;
@@ -156,7 +153,7 @@ bool XShader::Init(XShaderType type) {
             return false;
     }
 
-    if (fsh == 0){
+    if (fsh == 0) {
         mux.unlock();
         XLOGE("InitShader GL_FRAGMENT_SHADER failed!");
         return false;
@@ -166,7 +163,7 @@ bool XShader::Init(XShaderType type) {
     ///////////////////////////////////////////
     //创建渲染程序
     program = glCreateProgram();
-    if (program == 0){
+    if (program == 0) {
         mux.unlock();
         XLOGE("glCreateProgram failed!");
         return false;
@@ -179,7 +176,7 @@ bool XShader::Init(XShaderType type) {
     glLinkProgram(program);
     GLint status = 0;
     glGetProgramiv(program, GL_LINK_STATUS, &status);
-    if (status != GL_TRUE){
+    if (status != GL_TRUE) {
         mux.unlock();
         XLOGE("glLinkProgram failed!");
         return false;
@@ -195,7 +192,7 @@ bool XShader::Init(XShaderType type) {
             1.0f, 1.0f, 0.0f,
             -1.0f, 1.0f, 0.0f,
     };
-    GLuint apos = (GLuint)glGetAttribLocation(program, "aPosition");
+    GLuint apos = (GLuint) glGetAttribLocation(program, "aPosition");
     glEnableVertexAttribArray(apos);
     //传递顶点
     glVertexAttribPointer(apos, 3, GL_FLOAT, GL_FALSE, 12, vers);
@@ -207,22 +204,22 @@ bool XShader::Init(XShaderType type) {
             1.0f, 1.0f,
             0.0, 1.0
     };
-    GLuint atex = (GLuint)glGetAttribLocation(program, "aTexCoord");
+    GLuint atex = (GLuint) glGetAttribLocation(program, "aTexCoord");
     glEnableVertexAttribArray(atex);
     //传递顶点
     glVertexAttribPointer(atex, 2, GL_FLOAT, GL_FALSE, 8, txts);
 
     //材质纹理初始化
     //设置纹理层
-    glUniform1i( glGetUniformLocation(program, "yTexture"),0); //对于纹理第1层
-    switch (type){
+    glUniform1i(glGetUniformLocation(program, "yTexture"), 0); //对于纹理第1层
+    switch (type) {
         case XSHADER_YUV420P:
-            glUniform1i( glGetUniformLocation(program, "uTexture"),1); //对于纹理第2层
-            glUniform1i( glGetUniformLocation(program, "vTexture"),2); //对于纹理第3层
+            glUniform1i(glGetUniformLocation(program, "uTexture"), 1); //对于纹理第2层
+            glUniform1i(glGetUniformLocation(program, "vTexture"), 2); //对于纹理第3层
             break;
         case XSHADER_NV12:
         case XSHADER_NV21:
-            glUniform1i( glGetUniformLocation(program, "uvTexture"),1); //对于纹理第2层
+            glUniform1i(glGetUniformLocation(program, "uvTexture"), 1); //对于纹理第2层
             break;
     }
 
@@ -233,7 +230,7 @@ bool XShader::Init(XShaderType type) {
 
 void XShader::Draw() {
     mux.lock();
-    if (!program){
+    if (!program) {
         mux.unlock();
         return;
     }
@@ -244,26 +241,26 @@ void XShader::Draw() {
 }
 
 //获取材质并映射到内存
-void XShader::GetTexture(unsigned int index, int width, int height, unsigned char* buf, bool isa){
+void XShader::GetTexture(unsigned int index, int width, int height, unsigned char *buf, bool isa) {
     unsigned int format = GL_LUMINANCE;
-    if (isa){
+    if (isa) {
         format = GL_LUMINANCE_ALPHA;
     }
 
     mux.lock();
-    if(width % 16 == 0){//根据图片的宽来决定纹理数据对齐
+    if (width % 16 == 0) {//根据图片的宽来决定纹理数据对齐
         glPixelStorei(GL_UNPACK_ALIGNMENT, 16);
-    }else if(width % 8 == 0){
+    } else if (width % 8 == 0) {
         glPixelStorei(GL_UNPACK_ALIGNMENT, 8);
-    }else if(width % 4 == 0){
+    } else if (width % 4 == 0) {
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-    }else if(width % 2 == 0){
+    } else if (width % 2 == 0) {
         glPixelStorei(GL_UNPACK_ALIGNMENT, 2);
-    }else{
+    } else {
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     }
 
-    if (texts[index] == 0){
+    if (texts[index] == 0) {
         //材质初始化
         //创建三个纹理
         glGenTextures(1, &texts[index]);
@@ -286,7 +283,7 @@ void XShader::GetTexture(unsigned int index, int width, int height, unsigned cha
     }
 
     //激活第1层纹理,绑定到创建的opengl纹理
-    glActiveTexture(GL_TEXTURE0+index);
+    glActiveTexture(GL_TEXTURE0 + index);
     glBindTexture(GL_TEXTURE_2D, texts[index]);
     //替换纹理内容 修改材质内容(复制内存内容)
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, buf);

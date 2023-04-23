@@ -14,6 +14,9 @@ public:
 
     virtual void Close() = 0;
 
+    //读取一帧数据，数据由调用者清理
+    virtual XData Read() = 0;
+
     //seek 位置(pos: 0.0-1.0)
     virtual bool Seek(double pos) = 0;
 
@@ -22,9 +25,6 @@ public:
 
     //获取音频参数
     virtual XParameter GetAPara() = 0;
-
-    //读取一帧数据，数据由调用者清理
-    virtual XData Read() = 0;
 
 protected:
     virtual void Main();

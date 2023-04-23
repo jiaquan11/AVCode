@@ -37,6 +37,5 @@ IPlayer *IPlayerBuilder::BuilderPlayer(unsigned char index) {
     player->videoView = view;
     player->resample = resample;
     player->audioPlay = audioPlay;
-
     return player;
 }

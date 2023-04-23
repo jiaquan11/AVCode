@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/4/19.
-//
-
-#ifndef XPLAY_IPLAYER_H
-#define XPLAY_IPLAYER_H
+#ifndef _IPLAYER_H_
+#define _IPLAYER_H_
 
 #include <mutex>
 #include "XThread.h"
@@ -23,20 +19,20 @@ class IPlayer : public XThread {
 public:
     static IPlayer *Get(unsigned char index = 0);
 
+    virtual void InitView(void *win);
+
     virtual bool Open(const char *path);
 
     virtual void Close();
 
-    virtual bool Seek(double pos);
-
     virtual bool Start();
 
-    virtual void InitView(void *win);
+    virtual bool Seek(double pos);
+
+    virtual void SetPause(bool isP);
 
     //获取当前的播放进度 0.0-1.0
     virtual double PlayPos();
-
-    virtual void SetPause(bool isP);
 
 public:
     IDemux *demux = 0;
@@ -61,4 +57,4 @@ protected:
     std::mutex mux;
 };
 
-#endif //XPLAY_IPLAYER_H
+#endif

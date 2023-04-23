@@ -2,8 +2,9 @@
 
 //主体函数 添加观察者
 void IObserver::AddObs(IObserver *obs) {
-    if (!obs)
+    if (!obs) {
         return;
+    }
 
     mux.lock();
     obss.push_back(obs);

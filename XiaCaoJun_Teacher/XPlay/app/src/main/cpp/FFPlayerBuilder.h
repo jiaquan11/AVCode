@@ -1,15 +1,12 @@
-//
-// Created by jiaqu on 2020/4/19.
-//
-
-#ifndef XPLAY_FFPLAYERBUILDER_H
-#define XPLAY_FFPLAYERBUILDER_H
+#ifndef _FFPLAYERBUILDER_H_
+#define _FFPLAYERBUILDER_H_
 
 #include "IPlayerBuilder.h"
 
+//构建FFmpeg播放器类，也是单例模式
 class FFPlayerBuilder : public IPlayerBuilder {
 public:
-    static void InitHard(void *vm);
+    static void InitHard(void *vm);//静态函数
 
     static FFPlayerBuilder *Get() {//单例模式
         static FFPlayerBuilder ff;
@@ -33,4 +30,4 @@ protected:
     virtual IAudioPlay *CreateAudioPlay();
 };
 
-#endif //XPLAY_FFPLAYERBUILDER_H
+#endif

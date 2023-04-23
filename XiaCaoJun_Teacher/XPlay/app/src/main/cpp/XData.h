@@ -8,7 +8,7 @@ enum XDataType {
 };
 
 struct XData {
-    int type = 0;
+    int type = 0;//默认是AVPACKET_TYPE类型
     int pts = 0;//packet pts
     unsigned char *data = 0;
     unsigned char *datas[8] = {0};

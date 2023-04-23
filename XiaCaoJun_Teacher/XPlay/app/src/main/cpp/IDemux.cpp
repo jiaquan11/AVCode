@@ -7,6 +7,7 @@ void IDemux::Main() {
             XSleep(2);
             continue;
         }
+
         XData d = Read();
         if (d.size > 0) {
             Notify(d);//通知观察者处理

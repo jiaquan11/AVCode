@@ -10,20 +10,20 @@ import android.view.View;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+//这个类为GLSurfaceView组件，位于MainActivity页面中
 public class XPlay extends GLSurfaceView implements SurfaceHolder.Callback, GLSurfaceView.Renderer, View.OnClickListener {
     public XPlay(Context context, AttributeSet attrs) {
         super(context, attrs);
 
         //android 8.0需要设置
-        setRenderer(this);
-        setOnClickListener(this);
+        setRenderer(this);//当前页面为渲染器
+        setOnClickListener(this);//GLSurfaceView组件可监听点击操作，用于暂停或播放
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         Log.i("XPlay", "surfaceCreated");
-        //初始化opengl egl 显示
-        InitView(holder.getSurface());
+        InitView(holder.getSurface());//设置surface到native
     }
 
     @Override
@@ -56,6 +56,7 @@ public class XPlay extends GLSurfaceView implements SurfaceHolder.Callback, GLSu
         PlayOrPause();
     }
 
+    //native method
     public native void InitView(Object surface);
 
     public native void PlayOrPause();

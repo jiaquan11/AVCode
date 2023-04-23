@@ -4,7 +4,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
-//这里分配内存只针对字节内存
+//这里分配内存只针对字节内存，拷贝数据
 bool XData::Alloc(int size, const char *d) {
     Drop();
 

@@ -1,15 +1,12 @@
-//
-// Created by jiaqu on 2020/4/6.
-//
-#ifndef XPLAY_IDECODE_H
-#define XPLAY_IDECODE_H
+#ifndef _IDECODE_H_
+#define _IDECODE_H_
 
 #include "XParameter.h"
 #include "IObserver.h"
 #include <list>
 
 //解码接口，支持硬解码
-class IDecode : public IObserver{
+class IDecode : public IObserver {
 public:
     //打开解码器
     virtual bool Open(XParameter para, bool isHard = false) = 0;
@@ -27,6 +24,7 @@ public:
     //由主体notify的数据 阻塞
     virtual void Update(XData pkt);
 
+public:
     bool isAudio = false;
 
     //最大的队列缓冲
@@ -35,10 +33,14 @@ public:
     //同步时间，再次打开文件要清理
     int synPts = 0;
     int pts = 0;
+
 protected:
     virtual void Main();
+
+protected:
     //读取缓冲
     std::list<XData> packs;
     std::mutex packsMutex;
 };
-#endif //XPLAY_IDECODE_H
+
+#endif

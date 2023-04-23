@@ -77,7 +77,7 @@ XData FFDemux::Read() {
     }
 
     XData d;
-    AVPacket *pkt = av_packet_alloc();
+    AVPacket *pkt = av_packet_alloc();//分配packet的内存
     int ret = av_read_frame(ic, pkt);
     if (ret != 0) {
         mux.unlock();
@@ -100,8 +100,7 @@ XData FFDemux::Read() {
     //转换pts  转换为实际时间戳，去掉时间基 转换为毫秒
     pkt->pts = pkt->pts * (1000 * r2d(ic->streams[pkt->stream_index]->time_base));
     pkt->dts = pkt->dts * (1000 * r2d(ic->streams[pkt->stream_index]->time_base));
-    d.pts = (int) pkt->pts;
-
+    d.pts = (int) pkt->pts;//传递packet的pts
     if (!d.isAudio) {//查看视频流packet的pts和dts值
         XLOGI("demux packet pts %lld, dts: %lld", pkt->pts, pkt->dts);
     }
@@ -130,7 +129,6 @@ bool FFDemux::Seek(double pos) {
 
     //往后跳转到关键帧
     bool ret = av_seek_frame(ic, videoStream, seekPts, AVSEEK_FLAG_FRAME | AVSEEK_FLAG_BACKWARD);
-
     mux.unlock();
     return ret;
 }

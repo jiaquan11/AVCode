@@ -22,7 +22,7 @@ public class OpenUrl extends AppCompatActivity {
                 EditText t = findViewById(R.id.fileurl);
                 //用户输入的url
                 Open(t.getText().toString());
-                //关闭当前窗口
+                //关闭当前窗口  会切换到原页面，进行播放
                 finish();
             }
         });
@@ -34,7 +34,7 @@ public class OpenUrl extends AppCompatActivity {
                 EditText t = findViewById(R.id.rtmpurl);
                 //用户输入的url
                 Open(t.getText().toString());
-                //关闭当前窗口
+                //关闭当前窗口  会切换到原页面，进行播放
                 finish();
             }
         });

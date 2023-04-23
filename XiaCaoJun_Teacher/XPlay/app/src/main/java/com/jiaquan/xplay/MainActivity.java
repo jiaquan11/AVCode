@@ -57,23 +57,23 @@ public class MainActivity extends AppCompatActivity implements Runnable, SeekBar
             public void onClick(View view) {
                 Log.e(TAG, "open button click");
                 Intent intent = new Intent();
-                intent.setClass(MainActivity.this, OpenUrl.class);
+                intent.setClass(MainActivity.this, OpenUrl.class);//跳转页面
                 startActivity(intent);
             }
         });
 
         //播放进度线程
         thread = new Thread(this);
-        thread.start();
+        thread.start();//开启线程
     }
 
     //播放进度显示
     @Override
-    public void run() {
-        for (; ; ) {
-            seek.setProgress((int) (PlayPos() * 1000));
+    public void run() {//线程函数，用于更新播放进度
+        for (; ;) {
+            seek.setProgress((int) (PlayPos() * 1000));//根据解码时间戳去更新播放进度
             try {
-                Thread.sleep(40);
+                Thread.sleep(40);//40毫秒进度条进行刷新一遍
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements Runnable, SeekBar
     }
 
     @Override
-    public void onStopTrackingTouch(SeekBar seekBar) {
+    public void onStopTrackingTouch(SeekBar seekBar) {//拖拽进度条进行seek
         Seek((double) seekBar.getProgress() / (double) seekBar.getMax());
     }
 
