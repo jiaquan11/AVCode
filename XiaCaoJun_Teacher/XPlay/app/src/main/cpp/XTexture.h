@@ -7,7 +7,7 @@ enum XTextureType {
     XTEXTURE_NV21 = 26//Y4 vu1
 };
 
-class XTexture {
+class XTexture {//同样是单例模式
 public:
     static XTexture *Create();
 

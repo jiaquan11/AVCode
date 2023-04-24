@@ -16,8 +16,7 @@ public:
     virtual void Close();
 
     //获取材质并映射到内存
-    virtual void
-    GetTexture(unsigned int index, int widht, int height, unsigned char *buf, bool isa = false);
+    virtual void GetTexture(unsigned int index, int widht, int height, unsigned char *buf, bool isa = false);
 
     virtual void Draw();
 

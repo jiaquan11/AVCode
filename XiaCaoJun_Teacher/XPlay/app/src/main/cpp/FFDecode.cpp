@@ -158,7 +158,7 @@ XData FFDecode::RecvFrame() {
 
     XLOGI("isAudio: %d, data format is %d", isAudio, frame->format);
     if (d.width == frame->linesize[0]) {//无需对齐
-        memcpy(d.datas, frame->data, sizeof(d.datas));
+        memcpy(d.datas, frame->data, sizeof(d.datas));//指针数组拷贝
     } else {//行对齐
         for (int i = 0; i < d.height; i++) {//Y
             memcpy(datas[0] + d.width * i, frame->data[0] + frame->linesize[0] * i, d.width);

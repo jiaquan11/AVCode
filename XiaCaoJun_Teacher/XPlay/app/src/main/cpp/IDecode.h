@@ -31,7 +31,7 @@ public:
     int maxList = 100;
 
     //同步时间，再次打开文件要清理
-    int synPts = 0;
+    int synPts = 0;//传递过来的音频解码时间戳
     int pts = 0;
 
 protected:

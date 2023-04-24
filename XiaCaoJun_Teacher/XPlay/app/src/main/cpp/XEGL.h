@@ -1,14 +1,11 @@
-//
-// Created by jiaqu on 2020/4/11.
-//
-#ifndef XPLAY_XEGL_H
-#define XPLAY_XEGL_H
+#ifndef _XEGL_H_
+#define _XEGL_H_
 
-class XEGL {
+class XEGL {//同样是单例模式
 public:
-    static XEGL* Get();
+    static XEGL *Get();
 
-    virtual bool Init(void* win) = 0;
+    virtual bool Init(void *win) = 0;
 
     virtual void Close() = 0;
 
@@ -17,4 +14,5 @@ public:
 protected:
     XEGL();
 };
-#endif //XPLAY_XEGL_H
+
+#endif

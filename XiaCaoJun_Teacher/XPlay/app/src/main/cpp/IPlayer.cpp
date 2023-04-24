@@ -19,7 +19,7 @@ void IPlayer::InitView(void *win) {
 }
 
 bool IPlayer::Open(const char *path) {
-    Close();
+    Close();//先关闭上一次播放器的所有资源
 
     mux.lock();
     //解封装
@@ -49,7 +49,6 @@ bool IPlayer::Open(const char *path) {
         XLOGE("resample->Open failed!");
         //return false;
     }
-
     XLOGI("IPlayer Open success!");
     mux.unlock();
     return true;
@@ -94,7 +93,6 @@ void IPlayer::Close() {
 
 bool IPlayer::Start() {
     mux.lock();
-
     //需要提前开始音频播放，音视频解码线程，否则demux线程的notify的数据会被
     //丢掉，导致画面绿屏
     if (audioPlay) {
@@ -116,15 +114,12 @@ bool IPlayer::Start() {
     }
 
     //这个线程用于音视频同步控制
-    XThread::Start();
-
+    XThread::Start();//开始线程
     mux.unlock();
     return true;
 }
 
 bool IPlayer::Seek(double pos) {
-    bool ret = false;
-
     if (!demux)
         return false;
 
@@ -139,7 +134,7 @@ bool IPlayer::Seek(double pos) {
     if (audioPlay)
         audioPlay->Clear();
 
-    ret = demux->Seek(pos);//seek到关键帧
+    bool ret = demux->Seek(pos);//seek到关键帧
     if (!vdecode) {
         mux.unlock();
         SetPause(false);//恢复播放
@@ -180,9 +175,11 @@ bool IPlayer::Seek(double pos) {
     return ret;
 }
 
+//重写基类XThread的SetPause方法
 void IPlayer::SetPause(bool isP) {
     mux.lock();
-    XThread::SetPause(isP);
+    XThread::SetPause(isP);//先调用基类的SetPause方法
+
     if (demux)
         demux->SetPause(isP);
     if (vdecode)
@@ -226,8 +223,7 @@ void IPlayer::Main() {
         int apts = audioPlay->pts;
         //XLOGI("apts = %d", apts);
         vdecode->synPts = apts;
-
         mux.unlock();
-        XSleep(2);
+        XSleep(2);//这里为什么要延迟2毫秒
     }
 }

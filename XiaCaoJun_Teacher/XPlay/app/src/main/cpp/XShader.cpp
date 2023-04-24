@@ -33,7 +33,7 @@ static const char *fragYUV420P = GET_STR(
             gl_FragColor = vec4(rgb, 1.0);
         });
 
-//片元着色器，手机
+//片元着色器，手机端硬解输出的yuv格式可能是NV12或者NV21
 static const char *fragNV12 = GET_STR(
         precision mediump float;//设置精度
         varying vec2 vTexCoord;//顶点着色器传递的坐标
@@ -117,7 +117,6 @@ void XShader::Close() {
         }
         texts[i] = 0;
     }
-
     mux.unlock();
 }
 
@@ -125,7 +124,6 @@ bool XShader::Init(XShaderType type) {
     Close();
 
     mux.lock();
-
     //顶点和片元shader初始化
     //顶点shader初始化
     vsh = InitShader(vertexShader, GL_VERTEX_SHADER);

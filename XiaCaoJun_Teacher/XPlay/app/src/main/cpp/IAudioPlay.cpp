@@ -1,7 +1,7 @@
 #include "IAudioPlay.h"
 #include "XLog.h"
 
-void IAudioPlay::Clear() {
+void IAudioPlay::Clear() {//清楚缓冲队列
     framesMutex.lock();
     while (!frames.empty()) {
         frames.front().Drop();
@@ -10,9 +10,8 @@ void IAudioPlay::Clear() {
     framesMutex.unlock();
 }
 
-XData IAudioPlay::GetData() {
+XData IAudioPlay::GetData() {//消费音频解码pcm,用于播放
     XData d;
-
     isRunning = true;
     while (!isExit) {
         if (IsPause()) {
@@ -41,7 +40,9 @@ XData IAudioPlay::GetData() {
 
 void IAudioPlay::Update(XData data) {
     //压入缓冲队列
-    if (data.size <= 0 || !data.data) return;
+    if ((data.size <= 0) || !data.data) {
+        return;
+    }
 
     while (!isExit) {
         framesMutex.lock();

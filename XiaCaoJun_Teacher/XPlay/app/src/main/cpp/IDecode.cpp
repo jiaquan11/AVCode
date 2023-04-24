@@ -13,24 +13,24 @@ void IDecode::Clear() {
 }
 
 //解码线程函数
-void IDecode::Main() {
+void IDecode::Main() {//消费
     while (!isExit) {
-        if (IsPause()) {
+        if (IsPause()) {//暂停状态，进入休眠
             XSleep(2);
             continue;
         }
 
         packsMutex.lock();
         //判断音视频同步
-        if (!isAudio && (synPts > 0)) {
-            if (synPts < pts) {//synPts为获取到的音频时间戳
+        if (!isAudio && (synPts > 0)) {//视频解码器与音频做同步
+            if (synPts < pts) {//synPts为获取到的音频解码时间戳，音频慢于视频，视频解码流程进入休眠
                 packsMutex.unlock();
                 XSleep(1);
                 continue;
             }
         }
 
-        if (packs.empty()) {
+        if (packs.empty()) {//缓冲队列为空，进入休眠，停止消费
             packsMutex.unlock();
             XSleep(1);
             continue;
@@ -38,7 +38,6 @@ void IDecode::Main() {
         //取出packet 消费者
         XData pack = packs.front();
         packs.pop_front();
-
         //发送数据到解码线程 一个数据包，可以解码多个结果
         if (this->SendPacket(pack)) {
             while (!isExit) {
@@ -58,7 +57,7 @@ void IDecode::Main() {
 
 //由主体notify的数据
 void IDecode::Update(XData pkt) {
-    if (pkt.isAudio != isAudio) {
+    if (pkt.isAudio != isAudio) {//packet的类型与AVCodecContext中的type的类型不一致，则退出
         return;
     }
 
@@ -67,11 +66,11 @@ void IDecode::Update(XData pkt) {
         //阻塞
         if (packs.size() < maxList) {
             //生产者
-            packs.push_back(pkt);
+            packs.push_back(pkt);//加入缓冲区
             packsMutex.unlock();
             break;
         }
         packsMutex.unlock();
-        XSleep(1);
+        XSleep(1);//若上面缓冲区是满的，则会到这里进行循环延迟1秒
     }
 }

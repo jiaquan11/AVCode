@@ -5,7 +5,6 @@ void IObserver::AddObs(IObserver *obs) {
     if (!obs) {
         return;
     }
-
     mux.lock();
     obss.push_back(obs);
     mux.unlock();

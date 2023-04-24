@@ -26,7 +26,6 @@ void XData::Drop() {
     } else {
         delete data;
     }
-
     data = 0;
     size = 0;
 }

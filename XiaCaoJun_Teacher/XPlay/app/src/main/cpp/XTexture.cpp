@@ -19,8 +19,7 @@ public:
 
     virtual bool Init(void *win, XTextureType type) {
         mux.lock();
-
-        XEGL::Get()->Close();
+        XEGL::Get()->Close();//先释放和清除资源
         sh.Close();
 
         this->type = type;
@@ -37,14 +36,12 @@ public:
         }
 
         sh.Init((XShaderType) type);
-
         mux.unlock();
         return true;
     }
 
     virtual void Draw(unsigned char *data[], int width, int height) {
         mux.lock();
-
 #if 0
         static bool decflag = false;
         if (!decflag){

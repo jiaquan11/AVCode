@@ -26,9 +26,7 @@ protected:
 
 protected:
     bool isExit = false;
-
     bool isRunning = false;
-
     bool isPause = false;
     bool isPausing = false;//保留上一次暂停状态
 

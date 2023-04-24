@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements Runnable, SeekBar
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {//拖拽进度条进行seek
-        Seek((double) seekBar.getProgress() / (double) seekBar.getMax());
+        Seek((double) seekBar.getProgress() / (double) seekBar.getMax());//seek参数转换为0-1之间
     }
 
     public native double PlayPos();

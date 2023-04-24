@@ -8,7 +8,7 @@ void XSleep(int mis) {
     this_thread::sleep_for(du);
 }
 
-//启动线程
+//创建并启动线程
 bool XThread::Start() {
     isExit = false;
     isPause = false;
