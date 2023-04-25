@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/11/8.
-//
-
-#ifndef NATIVEOPENGLDEMO_EGLTHREAD_H
-#define NATIVEOPENGLDEMO_EGLTHREAD_H
+#ifndef _EGLTHREAD_H_
+#define _EGLTHREAD_H_
 
 #include <EGL/eglplatform.h>
 #include "pthread.h"
@@ -59,11 +55,8 @@ public:
 
     ~EglThread();
 
-    void onSurfaceCreate(EGLNativeWindowType window);
-
-    void onSurfaceChange(int width, int height);
-
-    void onSurfaceChangeFilter();
+public:
+    void setRenderType(int renderType);
 
     void callBackOnCreate(OnCreate onCreate, void *ctx);
 
@@ -75,10 +68,15 @@ public:
 
     void callBackOnDestroy(OnDestroy onDestroy, void *ctx);
 
-    void setRenderType(int renderType);
+    void onSurfaceCreate(EGLNativeWindowType window);
+
+    void onSurfaceChange(int width, int height);
+
+    void onSurfaceChangeFilter();
 
     void notifyRender();
 
     void destroy();
 };
-#endif //NATIVEOPENGLDEMO_EGLTHREAD_H
+
+#endif

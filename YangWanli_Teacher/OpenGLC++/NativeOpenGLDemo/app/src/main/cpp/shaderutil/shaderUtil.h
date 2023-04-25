@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/11/10.
-//
-
-#ifndef NATIVEOPENGLDEMO_SHADERUTIL_H
-#define NATIVEOPENGLDEMO_SHADERUTIL_H
+#ifndef _SHADERUTIL_H_
+#define _SHADERUTIL_H_
 
 #include <GLES2/gl2.h>
 #include "../log/androidLog.h"
@@ -92,4 +88,4 @@ static int createProgram(const char *vertex, const char *fragment, GLuint *v_sha
     return program;
 }
 
-#endif //NATIVEOPENGLDEMO_SHADERUTIL_H
+#endif

@@ -23,4 +23,5 @@ public:
     EGLConfig mEglConfig;
     EGLContext mEglContext;
 };
-#endif //_EGLHELPER_H_
+
+#endif

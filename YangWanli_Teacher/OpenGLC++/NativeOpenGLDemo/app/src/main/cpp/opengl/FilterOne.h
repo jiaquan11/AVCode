@@ -1,8 +1,5 @@
-//
-// Created by jiaqu on 2020/11/15.
-//
-#ifndef NATIVEOPENGLDEMO_FILTERONE_H
-#define NATIVEOPENGLDEMO_FILTERONE_H
+#ifndef _FILTERONE_H_
+#define _FILTERONE_H_
 
 #include "BaseOpengl.h"
 
@@ -12,6 +9,7 @@ public:
 
     ~FilterOne();
 
+public:
     void onCreate();
 
     void onChange(int w, int h);
@@ -41,4 +39,4 @@ public:
     float matrix[16] = {0};//用于存放单位矩阵
 };
 
-#endif //NATIVEOPENGLDEMO_FILTERONE_H
+#endif

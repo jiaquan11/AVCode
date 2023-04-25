@@ -1,7 +1,3 @@
-//
-// Created by jiaqu on 2020/11/15.
-//
-
 #include "BaseOpengl.h"
 
 BaseOpengl::BaseOpengl() {//顶点坐标，原点在中间，范围-1-1
@@ -42,10 +38,6 @@ void BaseOpengl::onDraw() {
 
 }
 
-void BaseOpengl::destroy() {
-
-}
-
 void BaseOpengl::setPixel(void *data, int width, int height, int length) {
 
 }
@@ -55,6 +47,10 @@ void BaseOpengl::setYuvData(void *y, void *u, void *v, int width, int height) {
 }
 
 void BaseOpengl::destroySource() {
+
+}
+
+void BaseOpengl::destroy() {
 
 }
 

@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
 
         wlSurfaceView.setOnSurfaceListener(new WlSurfaceView.OnSurfaceListener() {
             @Override
-            public void init() {
+            public void init() {//底层GL环境全部初始化好后，才进行读取图像数据进行渲染
                 readPixels();
             }
         });
@@ -54,20 +54,20 @@ public class MainActivity extends AppCompatActivity {
         readPixels();
     }
 
-    private void readPixels(){
+    //读取图片像素数据
+    private void readPixels() {
         //解码一张bitmap图片，拿到像素数据
-        final Bitmap bitmap = BitmapFactory.decodeResource(getResources(),
-                getImageIds());
+        final Bitmap bitmap = BitmapFactory.decodeResource(getResources(), getImageIds());
         ByteBuffer fcbuffer = ByteBuffer.allocate(bitmap.getHeight() * bitmap.getWidth() * 4);
         bitmap.copyPixelsToBuffer(fcbuffer);
         fcbuffer.flip();
-        pixels = fcbuffer.array();
+        pixels = fcbuffer.array();//转换为字节数组
         nativeOpengl.imgData(bitmap.getWidth(), bitmap.getHeight(), pixels.length, pixels);
     }
 
-    private int getImageIds(){
+    private int getImageIds() {
         index++;
-        if (index >= imgList.size()){
+        if (index >= imgList.size()) {
             index = 0;
         }
         return imgList.get(index);

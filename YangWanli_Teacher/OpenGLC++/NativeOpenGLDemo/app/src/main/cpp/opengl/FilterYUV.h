@@ -1,15 +1,12 @@
-//
-// Created by jiaqu on 2020/11/19.
-//
-
-#ifndef NATIVEOPENGLDEMO_FILTERYUV_H
-#define NATIVEOPENGLDEMO_FILTERYUV_H
+#ifndef _FILTERYUV_H_
+#define _FILTERYUV_H_
 
 #include "BaseOpengl.h"
 
-class FilterYUV : public BaseOpengl{
+class FilterYUV : public BaseOpengl {
 public:
     FilterYUV();
+
     ~FilterYUV();
 
     void onCreate();
@@ -39,11 +36,12 @@ public:
     GLuint samplers[3] = {0};
     float matrix[16] = {0};
 
-    void* y = NULL;
-    void* u = NULL;
-    void* v = NULL;
+    void *y = NULL;
+    void *u = NULL;
+    void *v = NULL;
 
     int yuv_width = 0;
     int yuv_height = 0;
 };
-#endif //NATIVEOPENGLDEMO_FILTERYUV_H
+
+#endif

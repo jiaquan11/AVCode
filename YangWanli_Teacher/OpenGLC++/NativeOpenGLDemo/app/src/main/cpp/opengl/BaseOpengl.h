@@ -17,19 +17,20 @@ public:
 
     ~BaseOpengl();
 
+public:
     virtual void onCreate();
 
     virtual void onChange(int w, int h);
 
     virtual void onDraw();
 
-    virtual void destroy();
-
     virtual void setPixel(void *data, int width, int height, int length);
 
-    virtual void setYuvData(void* y, void* u, void *v, int width, int height);
+    virtual void setYuvData(void *y, void *u, void *v, int width, int height);
 
     virtual void destroySource();
+
+    virtual void destroy();
 
 public:
     int surface_width = 0;//屏幕宽
@@ -46,4 +47,4 @@ public:
     GLuint fShader = 0;
 };
 
-#endif //_BASEOPENGL_H_
+#endif

@@ -1,6 +1,3 @@
-//
-// Created by jiaqu on 2020/11/19.
-//
 #include "FilterYUV.h"
 
 FilterYUV::FilterYUV() {
@@ -29,13 +26,15 @@ void FilterYUV::onCreate() {
             uniform sampler2D sampler_u;
             uniform sampler2D sampler_v;
             void main() {//texture2D表示GPU将输入得图像纹理像素进行读取，读取到GPU的管线中,最后渲染出来
-                float y; float u; float v;
+                float y;
+                float u;
+                float v;
                 y = texture2D(sampler_y, ft_Position).x;
                 u = texture2D(sampler_u, ft_Position).x - 0.5;
                 v = texture2D(sampler_v, ft_Position).x - 0.5;
 
                 vec3 rgb;
-                rgb.r = y + 1.403 *v;
+                rgb.r = y + 1.403 * v;
                 rgb.g = y - 0.344 * u - 0.714 * v;
                 rgb.b = y + 1.770 * u;
                 gl_FragColor = vec4(rgb, 1);
@@ -95,28 +94,31 @@ void FilterYUV::onDraw() {
     glEnableVertexAttribArray(fPosition);
     glVertexAttribPointer(fPosition, 2, GL_FLOAT, false, 8, fragments);
 
-    if ((yuv_width > 0) && (yuv_height > 0)){
-        if (y != NULL){
+    if ((yuv_width > 0) && (yuv_height > 0)) {
+        if (y != NULL) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, samplers[0]);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width, yuv_height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width, yuv_height, 0, GL_LUMINANCE,
+                         GL_UNSIGNED_BYTE, y);
 
             glUniform1i(sampler_y, 0);
         }
-        if (u != NULL){
+        if (u != NULL) {
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, samplers[1]);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width/2, yuv_height/2, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, u);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width / 2, yuv_height / 2, 0,
+                         GL_LUMINANCE, GL_UNSIGNED_BYTE, u);
 
             glUniform1i(sampler_u, 1);
         }
-        if (v != NULL){
+        if (v != NULL) {
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, samplers[2]);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width/2, yuv_height/2, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, v);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width / 2, yuv_height / 2, 0,
+                         GL_LUMINANCE, GL_UNSIGNED_BYTE, v);
 
             glUniform1i(sampler_v, 2);
         }
@@ -146,15 +148,15 @@ void FilterYUV::destroy() {
 void FilterYUV::destroySource() {
     yuv_width = 0;
     yuv_height = 0;
-    if (y != NULL){
+    if (y != NULL) {
         free(y);
         y = NULL;
     }
-    if (u != NULL){
+    if (u != NULL) {
         free(u);
         u = NULL;
     }
-    if (v != NULL){
+    if (v != NULL) {
         free(v);
         v = NULL;
     }
@@ -165,7 +167,7 @@ void FilterYUV::setMatrix(int width, int height) {
 //    initMatrix(matrix);
     //这里是矩阵投影操作
     //屏幕720*1280 图片:517*685
-    if (yuv_width > 0 && yuv_height > 0){
+    if (yuv_width > 0 && yuv_height > 0) {
         float screen_r = 1.0 * width / height;
         float picture_r = 1.0 * yuv_width / yuv_height;
         if (screen_r > picture_r) {//图片宽度缩放
@@ -185,31 +187,31 @@ void FilterYUV::setMatrix(int width, int height) {
 }
 
 void FilterYUV::setYuvData(void *Y, void *U, void *V, int width, int height) {
-    if ((width > 0) && (height > 0)){
-        if ((yuv_width != width) || (yuv_height != height)){
+    if ((width > 0) && (height > 0)) {
+        if ((yuv_width != width) || (yuv_height != height)) {
             yuv_width = width;
             yuv_height = height;
-            if (y != NULL){
+            if (y != NULL) {
                 free(y);
                 y = NULL;
             }
-            if (u != NULL){
+            if (u != NULL) {
                 free(u);
                 u = NULL;
             }
-            if (v != NULL){
+            if (v != NULL) {
                 free(v);
                 v = NULL;
             }
-            y = malloc(yuv_width*yuv_height);
-            u = malloc(yuv_width*yuv_height/4);
-            v = malloc(yuv_width*yuv_height/4);
+            y = malloc(yuv_width * yuv_height);
+            u = malloc(yuv_width * yuv_height / 4);
+            v = malloc(yuv_width * yuv_height / 4);
 
             setMatrix(surface_width, surface_height);
         }
-        memcpy(y, Y, yuv_width*yuv_height);
-        memcpy(u, U, yuv_width*yuv_height/4);
-        memcpy(v, V, yuv_width*yuv_height/4);
+        memcpy(y, Y, yuv_width * yuv_height);
+        memcpy(u, U, yuv_width * yuv_height / 4);
+        memcpy(v, V, yuv_width * yuv_height / 4);
     }
 }
 

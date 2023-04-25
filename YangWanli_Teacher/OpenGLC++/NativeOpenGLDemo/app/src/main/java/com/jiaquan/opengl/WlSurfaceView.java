@@ -8,6 +8,20 @@ import android.view.SurfaceView;
 public class WlSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
     private NativeOpengl nativeOpengl = null;
 
+    public WlSurfaceView(Context context) {
+        this(context, null);
+    }
+
+    public WlSurfaceView(Context context, AttributeSet attrs) {
+        this(context, attrs, 0);
+    }
+
+    public WlSurfaceView(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+
+        getHolder().addCallback(this);//当前组件监听回调函数
+    }
+
     private OnSurfaceListener onSurfaceListener = null;
 
     public interface OnSurfaceListener {
@@ -22,24 +36,11 @@ public class WlSurfaceView extends SurfaceView implements SurfaceHolder.Callback
         this.nativeOpengl = nativeOpengl;
     }
 
-    public WlSurfaceView(Context context) {
-        this(context, null);
-    }
-
-    public WlSurfaceView(Context context, AttributeSet attrs) {
-        this(context, attrs, 0);
-    }
-
-    public WlSurfaceView(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-
-        getHolder().addCallback(this);
-    }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         if (nativeOpengl != null) {
-            nativeOpengl.surfaceCreate(holder.getSurface());
+            nativeOpengl.surfaceCreate(holder.getSurface());//传递surface到底层
 
 //            if (onSurfaceListener != null) {
 //                onSurfaceListener.init();

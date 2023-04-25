@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/11/15.
-//
-
-#ifndef NATIVEOPENGLDEMO_OPENGL_H
-#define NATIVEOPENGLDEMO_OPENGL_H
+#ifndef _OPENGL_H_
+#define _OPENGL_H_
 
 #include "../egl/EglThread.h"
 #include "android/native_window.h"
@@ -20,17 +16,18 @@ public:
 
     ~Opengl();
 
+public:
     void onCreateSurface(JNIEnv *env, jobject surface);
 
     void onChangeSurface(int width, int height);
 
     void onChangeSurfaceFilter();
 
-    void onDestroySurface();
-
     void setPixel(void *data, int width, int height, int length);
 
-    void setYuvData(void* y, void* u, void* v, int w, int h);
+    void setYuvData(void *y, void *u, void *v, int w, int h);
+
+    void onDestroySurface();
 
 public:
     EglThread *eglThread = NULL;
@@ -44,4 +41,4 @@ public:
 };
 
 
-#endif //NATIVEOPENGLDEMO_OPENGL_H
+#endif

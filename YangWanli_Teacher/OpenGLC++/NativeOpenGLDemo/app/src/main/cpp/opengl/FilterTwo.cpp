@@ -1,7 +1,3 @@
-//
-// Created by jiaqu on 2020/11/18.
-//
-
 #include "FilterTwo.h"
 
 FilterTwo::FilterTwo() {
@@ -28,9 +24,11 @@ void FilterTwo::onCreate() {
             varying vec2 ft_Position;
             uniform sampler2D sTexture;
             void main() {//texture2D表示GPU将输入得图像纹理像素进行读取，读取到GPU的管线中,最后渲染出来
-                lowp vec4 textureColor = texture2D(sTexture, ft_Position);
+                lowp
+                vec4 textureColor = texture2D(sTexture, ft_Position);
                 float gray =
-                        textureColor.r * 0.2125 + textureColor.g * 0.7154 + textureColor.b * 0.0721;//将RGB图像转为灰度图
+                        textureColor.r * 0.2125 + textureColor.g * 0.7154 +
+                        textureColor.b * 0.0721;//将RGB图像转为灰度图
                 gl_FragColor = vec4(gray, gray, gray, textureColor.w);
             });
 

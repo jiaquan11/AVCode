@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/11/18.
-//
-
-#ifndef NATIVEOPENGLDEMO_FILTERTWO_H
-#define NATIVEOPENGLDEMO_FILTERTWO_H
+#ifndef _FILTERTWO_H_
+#define _FILTERTWO_H_
 
 #include "BaseOpengl.h"
 
@@ -13,6 +9,7 @@ public:
 
     ~FilterTwo();
 
+public:
     void onCreate();
 
     void onChange(int w, int h);
@@ -42,4 +39,4 @@ public:
     float matrix[16] = {0};//用于存放单位矩阵
 };
 
-#endif //NATIVEOPENGLDEMO_FILTERTWO_H
+#endif

@@ -1,7 +1,3 @@
-//
-// Created by jiaqu on 2020/11/8.
-//
-
 #include "EglThread.h"
 
 EglThread::EglThread() {
@@ -18,14 +14,14 @@ void *eglThreadImpl(void *context) {
     EglThread *eglThread = static_cast<EglThread *>(context);
     if (eglThread != NULL) {
         EglHelper *eglHelper = new EglHelper();
-        eglHelper->initEgl(eglThread->nativeWindow);
+        eglHelper->initEgl(eglThread->nativeWindow);//初始化EGL环境
         eglThread->isExit = false;
 
         while (true) {
             if (eglThread->isCreate) {
                 LOGI("eglThread call surface create!");
                 eglThread->isCreate = false;
-                eglThread->onCreate(eglThread->onCreateCtx);
+                eglThread->onCreate(eglThread->onCreateCtx);//创建opengl绘制程序
             }
 
             if (eglThread->isChange) {
@@ -33,16 +29,13 @@ void *eglThreadImpl(void *context) {
                 eglThread->isChange = false;
                 //opengl
 //                glViewport(0, 0, eglThread->surfaceWidth, eglThread->surfaceHeight);//指定显示窗口大小
-                eglThread->onChange(eglThread->surfaceWidth, eglThread->surfaceHeight,
-                                    eglThread->onChangeCtx);
-
+                eglThread->onChange(eglThread->surfaceWidth, eglThread->surfaceHeight, eglThread->onChangeCtx);
                 eglThread->isStart = true;
             }
 
             if (eglThread->isChangeFilter) {
                 eglThread->isChangeFilter = false;
-                eglThread->onChangeFilter(eglThread->surfaceWidth, eglThread->surfaceHeight,
-                                          eglThread->onChangeFilterCtx);
+                eglThread->onChangeFilter(eglThread->surfaceWidth, eglThread->surfaceHeight, eglThread->onChangeFilterCtx);
             }
 
             //绘制
@@ -82,26 +75,8 @@ void *eglThreadImpl(void *context) {
     return 0;
 }
 
-void EglThread::onSurfaceCreate(EGLNativeWindowType window) {
-    if (pEglThread == -1) {
-        isCreate = true;
-        nativeWindow = window;
-
-        //创建子线程，在子线程中进行EGL的初始化及渲染
-        pthread_create(&pEglThread, NULL, eglThreadImpl, this);
-    }
-}
-
-void EglThread::onSurfaceChange(int width, int height) {
-    isChange = true;
-    surfaceWidth = width;
-    surfaceHeight = height;
-    notifyRender();
-}
-
-void EglThread::onSurfaceChangeFilter() {
-    isChangeFilter = true;
-    notifyRender();
+void EglThread::setRenderType(int renderType) {
+    this->renderType = renderType;
 }
 
 void EglThread::callBackOnCreate(EglThread::OnCreate onCreate, void *ctx) {
@@ -129,8 +104,26 @@ void EglThread::callBackOnDestroy(EglThread::OnDestroy onDestroy, void *ctx) {
     this->onDestroyCtx = ctx;
 }
 
-void EglThread::setRenderType(int renderType) {
-    this->renderType = renderType;
+void EglThread::onSurfaceCreate(EGLNativeWindowType window) {
+    if (pEglThread == -1) {
+        isCreate = true;
+        nativeWindow = window;
+
+        //创建子线程，在子线程中进行EGL的初始化及渲染
+        pthread_create(&pEglThread, NULL, eglThreadImpl, this);
+    }
+}
+
+void EglThread::onSurfaceChange(int width, int height) {
+    isChange = true;
+    surfaceWidth = width;
+    surfaceHeight = height;
+    notifyRender();//主动通知线程可以进行渲染，否则阻塞状态
+}
+
+void EglThread::onSurfaceChangeFilter() {
+    isChangeFilter = true;
+    notifyRender();
 }
 
 void EglThread::notifyRender() {
@@ -142,7 +135,7 @@ void EglThread::notifyRender() {
 void EglThread::destroy() {
     isExit = true;
     notifyRender();
-    pthread_join(pEglThread, NULL);
+    pthread_join(pEglThread, NULL);//等待子线程结束
     nativeWindow = NULL;
     pEglThread = -1;
 }

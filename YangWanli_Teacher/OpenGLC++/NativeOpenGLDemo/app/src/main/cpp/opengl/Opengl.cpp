@@ -1,7 +1,3 @@
-//
-// Created by jiaqu on 2020/11/15.
-//
-
 #include "Opengl.h"
 
 //函数指针的相关实现函数
@@ -82,9 +78,9 @@ void Opengl::onCreateSurface(JNIEnv *env, jobject surface) {
     eglThread->callBackOnChangeFilter(callback_SurfaceChangeFilter, this);
     eglThread->callBackOnDestroy(callback_SurfaceDestroy, this);
 
-//    baseOpengl = new FilterOne();//opengl绘制图片
+    baseOpengl = new FilterOne();//opengl绘制图片
 
-    baseOpengl = new FilterYUV();//opengl绘制YUV视频
+//    baseOpengl = new FilterYUV();//opengl绘制YUV视频
 
     eglThread->onSurfaceCreate(nativeWindow);//内部创建一个独立的子线程，用于EGL环境的操作
     LOGI("Opengl::onCreateSurface end");
@@ -108,6 +104,36 @@ void Opengl::onChangeSurfaceFilter() {
     }
 }
 
+void Opengl::setPixel(void *data, int width, int height, int length) {
+    LOGI("Opengl::setPixel in");
+    pic_width = width;
+    pic_height = height;
+    if (pixels != NULL) {
+        free(pixels);
+        pixels = NULL;
+    }
+    pixels = malloc(length);
+    memcpy(pixels, data, length);
+    if (baseOpengl != NULL) {
+        baseOpengl->setPixel(pixels, width, height, length);
+    }
+
+    if (eglThread != NULL) {
+        eglThread->notifyRender();
+    }
+    LOGI("Opengl::setPixel end");
+}
+
+void Opengl::setYuvData(void *y, void *u, void *v, int w, int h) {
+    if (baseOpengl != NULL) {
+        baseOpengl->setYuvData(y, u, v, w, h);
+    }
+    if (eglThread != NULL) {
+        eglThread->notifyRender();
+    }
+}
+
+//销毁所有资源
 void Opengl::onDestroySurface() {
     LOGI("Opengl::onDestroySurface in");
     if (eglThread != NULL) {
@@ -129,33 +155,4 @@ void Opengl::onDestroySurface() {
         pixels = NULL;
     }
     LOGI("Opengl::onDestroySurface end");
-}
-
-void Opengl::setPixel(void *data, int width, int height, int length) {
-    LOGI("Opengl::setPixel in");
-    pic_width = width;
-    pic_height = height;
-    if (pixels != NULL){
-        free(pixels);
-        pixels = NULL;
-    }
-    pixels = malloc(length);
-    memcpy(pixels, data, length);
-    if (baseOpengl != NULL) {
-        baseOpengl->setPixel(pixels, width, height, length);
-    }
-
-    if (eglThread != NULL) {
-        eglThread->notifyRender();
-    }
-    LOGI("Opengl::setPixel end");
-}
-
-void Opengl::setYuvData(void *y, void *u, void *v, int w, int h) {
-    if (baseOpengl != NULL){
-        baseOpengl->setYuvData(y, u, v, w, h);
-    }
-    if (eglThread != NULL){
-        eglThread->notifyRender();
-    }
 }

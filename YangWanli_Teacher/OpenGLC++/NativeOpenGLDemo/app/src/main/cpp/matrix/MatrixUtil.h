@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/11/14.
-//
-
-#ifndef NATIVEOPENGLDEMO_MATRIXUTIL_H
-#define NATIVEOPENGLDEMO_MATRIXUTIL_H
+#ifndef _MATRIXUTIL_H_
+#define _MATRIXUTIL_H_
 
 #include <math.h>
 
@@ -16,7 +12,7 @@
 //根据顶点坐标的范围-1，1，-1，1，表示全屏幕铺满
 //    orthoM(-1, 1, -1, 1, matrix);//正交投影
 
-static void initMatrix(float *matrix) {
+static void initMatrix(float *matrix) {//4*4矩阵，对角线数字为1，其余为0
     for (int i = 0; i < 16; ++i) {
         if (i % 5 == 0) {
             matrix[i] = 1;
@@ -68,4 +64,4 @@ static void orthoM(float left, float right, float bottom, float top, float *matr
     matrix[11] = 1;
 }
 
-#endif //NATIVEOPENGLDEMO_MATRIXUTIL_H
+#endif

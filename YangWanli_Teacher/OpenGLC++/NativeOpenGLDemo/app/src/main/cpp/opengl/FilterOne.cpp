@@ -1,7 +1,3 @@
-//
-// Created by jiaqu on 2020/11/15.
-//
-
 #include "FilterOne.h"
 
 FilterOne::FilterOne() {
@@ -17,7 +13,7 @@ void FilterOne::onCreate() {
             attribute vec4 v_Position;
             attribute vec2 f_Position;
             varying vec2 ft_Position;
-            uniform mat4 u_Matrix;
+            uniform mat4 u_Matrix;//4*4的矩阵
             void main() {
                 ft_Position = f_Position;
                 gl_Position = v_Position * u_Matrix;//将矩阵与顶点坐标进行相乘，用于图像旋转
