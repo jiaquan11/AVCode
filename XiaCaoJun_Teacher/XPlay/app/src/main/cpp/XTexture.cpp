@@ -67,7 +67,6 @@ public:
 
         sh.Draw();
         XEGL::Get()->Draw();
-
         mux.unlock();
     }
 };

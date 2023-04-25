@@ -220,22 +220,9 @@ bool XShader::Init(XShaderType type) {
             glUniform1i(glGetUniformLocation(program, "uvTexture"), 1); //对于纹理第2层
             break;
     }
-
     XLOGI("初始化Shader成功!");
     mux.unlock();
     return true;
-}
-
-void XShader::Draw() {
-    mux.lock();
-    if (!program) {
-        mux.unlock();
-        return;
-    }
-
-    //三维绘制
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    mux.unlock();
 }
 
 //获取材质并映射到内存
@@ -283,7 +270,19 @@ void XShader::GetTexture(unsigned int index, int width, int height, unsigned cha
     //激活第1层纹理,绑定到创建的opengl纹理
     glActiveTexture(GL_TEXTURE0 + index);
     glBindTexture(GL_TEXTURE_2D, texts[index]);
-    //替换纹理内容 修改材质内容(复制内存内容)
+    //替换纹理内容 修改材质内容(复制内存内容)   拷贝CPU内存到GPU内存
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, buf);
+    mux.unlock();
+}
+
+void XShader::Draw() {
+    mux.lock();
+    if (!program) {
+        mux.unlock();
+        return;
+    }
+
+    //三维绘制
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     mux.unlock();
 }
