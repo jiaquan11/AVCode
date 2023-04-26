@@ -16,11 +16,11 @@ public:
 
     void onDraw();
 
-    void destroy();
-
     void setPixel(void *data, int width, int height, int length);
 
     void destroySource();
+
+    void destroy();
 
 private:
     void setMatrix(int width, int height);

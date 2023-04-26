@@ -52,7 +52,7 @@ void FilterOne::onCreate() {
 
 //指定屏幕显示界面的宽高
 void FilterOne::onChange(int width, int height) {
-    LOGI("FilterOne::onChange in");
+    LOGI("FilterOne::onChange in surface_width:%d surface_height:%d", surface_width, surface_height);
     surface_width = width;
     surface_height = height;
     glViewport(0, 0, width, height);
@@ -102,29 +102,27 @@ void FilterOne::onDraw() {
     LOGI("FilterOne::onDraw end");
 }
 
-void FilterOne::destroy() {
-    glDeleteTextures(1, &textureID);
-    glDetachShader(program, vShader);
-    glDetachShader(program, fShader);
-    glDeleteShader(vShader);
-    glDeleteShader(fShader);
-    glDeleteProgram(program);
-}
-
 void FilterOne::setMatrix(int width, int height) {
     LOGI("FilterOne::setMatrix in");
 //    initMatrix(matrix);
-    //这里是矩阵投影操作
-    //屏幕720*1280 图片:517*685
+    //这里是矩阵投影操作   将图片投影到屏幕上
+    //屏幕1080*2000=0.54 图片:517*685=0.75
     float screen_r = 1.0 * width / height;
     float picture_r = 1.0 * w / h;
-    if (screen_r > picture_r) {//图片宽度缩放
+    if (screen_r > picture_r) {//图片宽度缩放，图片高铺满屏幕
         LOGI("pic scale width");
         float r = width / (1.0 * height / h * w);
         LOGI("pic scale width r: %f", r);
         orthoM(-r, r, -1, 1, matrix);
     } else {//图片宽的比率大于屏幕，则宽进行直接覆盖屏幕，而图片高度缩放
         LOGI("pic scale height");
+        /*
+         * 这里解释一下:这里是图片宽高比例大于屏幕宽高比例，则图片的宽进行平铺屏幕，图片高需要进行缩放。
+         * 为了正常显示图片，需要进行等比例缩放图片，所以根据图片的宽高等比例  图片宽/图片高=屏幕宽/图片需要占用屏幕的新高度，
+         * 通过这里计算就得到：图片需要占用屏幕的新高度，也即下面的(1.0 * width / w * h)，同时为了显示缩放，需要用
+         * 原屏幕实际高/图片需要占用屏幕的新高度，这里得到的比例值是大于1的，通过这个比例值映射到屏幕(-1,1)范围内，则会出现一个
+         * 实际的缩放的效果
+         * */
         float r = height / (1.0 * width / w * h);
         LOGI("pic scale height r: %f", r);
         orthoM(-1, 1, -r, r, matrix);
@@ -149,3 +147,11 @@ void FilterOne::destroySource() {
     }
 }
 
+void FilterOne::destroy() {
+    glDeleteTextures(1, &textureID);
+    glDetachShader(program, vShader);
+    glDetachShader(program, fShader);
+    glDeleteShader(vShader);
+    glDeleteShader(fShader);
+    glDeleteProgram(program);
+}

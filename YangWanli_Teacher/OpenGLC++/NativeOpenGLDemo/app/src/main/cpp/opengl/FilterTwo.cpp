@@ -107,15 +107,6 @@ void FilterTwo::onDraw() {
     LOGI("FilterTwo::onDraw end");
 }
 
-void FilterTwo::destroy() {
-    glDeleteTextures(1, &textureID);
-    glDetachShader(program, vShader);
-    glDetachShader(program, fShader);
-    glDeleteShader(vShader);
-    glDeleteShader(fShader);
-    glDeleteProgram(program);
-}
-
 void FilterTwo::setMatrix(int width, int height) {
     LOGI("FilterTwo::setMatrix in");
 //    initMatrix(matrix);
@@ -152,6 +143,15 @@ void FilterTwo::destroySource() {
     if (pixels != NULL) {
         pixels = NULL;
     }
+}
+
+void FilterTwo::destroy() {
+    glDeleteTextures(1, &textureID);
+    glDetachShader(program, vShader);
+    glDetachShader(program, fShader);
+    glDeleteShader(vShader);
+    glDeleteShader(fShader);
+    glDeleteProgram(program);
 }
 
 

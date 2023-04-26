@@ -87,7 +87,7 @@ void Opengl::onCreateSurface(JNIEnv *env, jobject surface) {
 }
 
 void Opengl::onChangeSurface(int width, int height) {//屏幕宽高
-    LOGI("Opengl::onChangeSurface in");
+    LOGI("Opengl::onChangeSurface in width:%d, height:%d", width, height);
     if (eglThread != NULL) {
         if (baseOpengl != NULL) {
             baseOpengl->surface_width = width;
