@@ -31,8 +31,8 @@ public class YUVPlayer extends AppCompatActivity {
         setContentView(R.layout.activity_yuvplayer);
 
         // 要申请的权限
-        String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE
-                , Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.CHANGE_NETWORK_STATE};
+        String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.CHANGE_NETWORK_STATE};
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissions(permissions, 321);
@@ -47,6 +47,7 @@ public class YUVPlayer extends AppCompatActivity {
         if (!isExit) {
             isExit = false;
 
+            //创建一个子线程进行yuv数据的读取和渲染
             new Thread(new Runnable() {
                 @Override
                 public void run() {

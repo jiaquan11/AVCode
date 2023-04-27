@@ -128,7 +128,7 @@ void FilterTwo::setMatrix(int width, int height) {
     LOGI("FilterTwo::setMatrix end");
 }
 
-void FilterTwo::setPixel(void *data, int width, int height, int length) {
+void FilterTwo::setPixel(void *data, int width, int height) {
     LOGI("FilterTwo::setPixel in");
     w = width;
     h = height;

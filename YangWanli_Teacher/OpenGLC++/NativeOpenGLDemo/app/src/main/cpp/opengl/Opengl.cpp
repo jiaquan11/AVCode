@@ -28,6 +28,9 @@ void callback_SurfaceDraw(void *ctx) {
     }
 }
 
+/*切换滤镜
+ 先把上次的滤镜资源类销毁，然后重新创建新的滤镜绘制类
+ */
 void callback_SurfaceChangeFilter(int width, int height, void *ctx) {
     Opengl *opengl = static_cast<Opengl *>(ctx);
     if (opengl != NULL) {
@@ -41,7 +44,7 @@ void callback_SurfaceChangeFilter(int width, int height, void *ctx) {
         opengl->baseOpengl = new FilterTwo();
         opengl->baseOpengl->onCreate();
         opengl->baseOpengl->onChange(width, height);//屏幕显示宽高
-        opengl->baseOpengl->setPixel(opengl->pixels, opengl->pic_width, opengl->pic_height, 0);
+        opengl->baseOpengl->setPixel(opengl->pixels, opengl->pic_width, opengl->pic_height);
 
         opengl->eglThread->notifyRender();
     }
@@ -78,9 +81,9 @@ void Opengl::onCreateSurface(JNIEnv *env, jobject surface) {
     eglThread->callBackOnChangeFilter(callback_SurfaceChangeFilter, this);
     eglThread->callBackOnDestroy(callback_SurfaceDestroy, this);
 
-    baseOpengl = new FilterOne();//opengl绘制图片
+//    baseOpengl = new FilterOne();//opengl绘制图片
 
-//    baseOpengl = new FilterYUV();//opengl绘制YUV视频
+    baseOpengl = new FilterYUV();//opengl绘制YUV视频
 
     eglThread->onSurfaceCreate(nativeWindow);//内部创建一个独立的子线程，用于EGL环境的操作
     LOGI("Opengl::onCreateSurface end");
@@ -115,7 +118,7 @@ void Opengl::setPixel(void *data, int width, int height, int length) {
     pixels = malloc(length);
     memcpy(pixels, data, length);
     if (baseOpengl != NULL) {
-        baseOpengl->setPixel(pixels, width, height, length);
+        baseOpengl->setPixel(pixels, width, height);
     }
 
     if (eglThread != NULL) {

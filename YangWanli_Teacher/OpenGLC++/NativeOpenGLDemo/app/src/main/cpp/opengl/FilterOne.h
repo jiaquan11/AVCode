@@ -3,6 +3,9 @@
 
 #include "BaseOpengl.h"
 
+/*
+ * 绘制纹理
+ * */
 class FilterOne : public BaseOpengl {
 public:
     FilterOne();
@@ -16,7 +19,7 @@ public:
 
     void onDraw();
 
-    void setPixel(void *data, int width, int height, int length);
+    void setPixel(void *data, int width, int height);
 
     void destroySource();
 

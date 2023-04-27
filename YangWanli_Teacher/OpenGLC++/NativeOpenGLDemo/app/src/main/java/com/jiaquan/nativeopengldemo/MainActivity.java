@@ -39,17 +39,19 @@ public class MainActivity extends AppCompatActivity {
         wlSurfaceView.setOnSurfaceListener(new WlSurfaceView.OnSurfaceListener() {
             @Override
             public void init() {//底层GL环境全部初始化好后，才进行读取图像数据进行渲染
-                readPixels();
+                readPixels();//默认先读取第一张图片进行渲染
             }
         });
     }
 
+    //切换滤镜
     public void changeFilter(View view) {
         if (nativeOpengl != null) {
             nativeOpengl.surfaceChangeFilter();
         }
     }
 
+    //切换纹理
     public void changeTexture(View view) {
         readPixels();
     }

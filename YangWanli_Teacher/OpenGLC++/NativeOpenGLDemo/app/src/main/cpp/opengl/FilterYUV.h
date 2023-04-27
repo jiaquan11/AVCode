@@ -9,17 +9,18 @@ public:
 
     ~FilterYUV();
 
+public:
     void onCreate();
 
     void onChange(int w, int h);
 
     void onDraw();
 
-    void destroy();
+    void setYuvData(void *Y, void *U, void *V, int width, int height);
 
     void destroySource();
 
-    void setYuvData(void *Y, void *U, void *V, int width, int height);
+    void destroy();
 
 private:
     void setMatrix(int width, int height);

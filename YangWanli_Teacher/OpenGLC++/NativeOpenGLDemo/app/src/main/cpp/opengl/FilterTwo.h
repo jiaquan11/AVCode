@@ -16,7 +16,7 @@ public:
 
     void onDraw();
 
-    void setPixel(void *data, int width, int height, int length);
+    void setPixel(void *data, int width, int height);
 
     void destroySource();
 

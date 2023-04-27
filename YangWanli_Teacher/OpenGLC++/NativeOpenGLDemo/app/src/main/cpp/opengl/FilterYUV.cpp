@@ -98,28 +98,19 @@ void FilterYUV::onDraw() {
         if (y != NULL) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, samplers[0]);
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width, yuv_height, 0, GL_LUMINANCE,
-                         GL_UNSIGNED_BYTE, y);
-
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width, yuv_height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y);
             glUniform1i(sampler_y, 0);
         }
         if (u != NULL) {
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, samplers[1]);
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width / 2, yuv_height / 2, 0,
-                         GL_LUMINANCE, GL_UNSIGNED_BYTE, u);
-
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width / 2, yuv_height / 2, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, u);
             glUniform1i(sampler_u, 1);
         }
         if (v != NULL) {
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, samplers[2]);
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width / 2, yuv_height / 2, 0,
-                         GL_LUMINANCE, GL_UNSIGNED_BYTE, v);
-
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width / 2, yuv_height / 2, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, v);
             glUniform1i(sampler_v, 2);
         }
 
@@ -129,36 +120,8 @@ void FilterYUV::onDraw() {
 //    glDrawArrays(GL_TRIANGLES, 0, 3);//绘制三角形
 //    glDrawArrays(GL_TRIANGLES, 0, 6);//绘制四边形
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);//绘制四边形
-
         glBindTexture(GL_TEXTURE_2D, 0);
-
         LOGI("FilterOne::onDraw end");
-    }
-}
-
-void FilterYUV::destroy() {
-    glDeleteTextures(3, samplers);
-    glDetachShader(program, vShader);
-    glDetachShader(program, fShader);
-    glDeleteShader(vShader);
-    glDeleteShader(fShader);
-    glDeleteProgram(program);
-}
-
-void FilterYUV::destroySource() {
-    yuv_width = 0;
-    yuv_height = 0;
-    if (y != NULL) {
-        free(y);
-        y = NULL;
-    }
-    if (u != NULL) {
-        free(u);
-        u = NULL;
-    }
-    if (v != NULL) {
-        free(v);
-        v = NULL;
     }
 }
 
@@ -182,7 +145,6 @@ void FilterYUV::setMatrix(int width, int height) {
             orthoM(-1, 1, -r, r, matrix);
         }
     }
-
     LOGI("FilterOne::setMatrix end");
 }
 
@@ -214,4 +176,31 @@ void FilterYUV::setYuvData(void *Y, void *U, void *V, int width, int height) {
         memcpy(v, V, yuv_width * yuv_height / 4);
     }
 }
+
+void FilterYUV::destroySource() {
+    yuv_width = 0;
+    yuv_height = 0;
+    if (y != NULL) {
+        free(y);
+        y = NULL;
+    }
+    if (u != NULL) {
+        free(u);
+        u = NULL;
+    }
+    if (v != NULL) {
+        free(v);
+        v = NULL;
+    }
+}
+
+void FilterYUV::destroy() {
+    glDeleteTextures(3, samplers);
+    glDetachShader(program, vShader);
+    glDetachShader(program, fShader);
+    glDeleteShader(vShader);
+    glDeleteShader(fShader);
+    glDeleteProgram(program);
+}
+
 

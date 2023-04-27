@@ -38,7 +38,7 @@ void BaseOpengl::onDraw() {
 
 }
 
-void BaseOpengl::setPixel(void *data, int width, int height, int length) {
+void BaseOpengl::setPixel(void *data, int width, int height) {
 
 }
 

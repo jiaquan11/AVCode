@@ -130,7 +130,7 @@ void FilterOne::setMatrix(int width, int height) {
     LOGI("FilterOne::setMatrix end");
 }
 
-void FilterOne::setPixel(void *data, int width, int height, int length) {
+void FilterOne::setPixel(void *data, int width, int height) {
     LOGI("FilterOne::setPixel in");
     w = width;//图片宽
     h = height;//图片高
