@@ -1,7 +1,3 @@
-//
-// Created by jiaqu on 2020/11/25.
-//
-
 #include "JavaListener.h"
 
 JavaListener::JavaListener(JavaVM *vm, JNIEnv *env, jobject obj) {
@@ -13,7 +9,6 @@ JavaListener::JavaListener(JavaVM *vm, JNIEnv *env, jobject obj) {
     if (!clz) {
         return;
     }
-
     jmethodId = env->GetMethodID(clz, "onError", "(ILjava/lang/String;)V");
 }
 

@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private SeekBar seekBarVolume = null;
 
     private WLGLSurfaceView wlglSurfaceView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

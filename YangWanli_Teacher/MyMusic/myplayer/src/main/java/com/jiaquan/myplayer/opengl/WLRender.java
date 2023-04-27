@@ -141,8 +141,8 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     }
 
     /*
-    * GLSurfaceView自己内部封装了渲染操作，当在onDrawFrame中 opengl绘制完成之后，就自动渲染画面出来了
-    * */
+     * GLSurfaceView自己内部封装了渲染操作，当在onDrawFrame中 opengl绘制完成之后，就自动渲染画面出来了
+     * */
     @Override
     public void onDrawFrame(GL10 gl) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -159,12 +159,12 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     }
 
     /*
-    * 当硬解出画面数据时，会存放在surface这个屏幕缓冲区中，他然后就会给到
-    * SurfaceTexture中，SurfaceTexture会马上回调onFrameAvailable，表示有有效实际
-    * 数据画面到达，那么接着就可以进行渲染操作，调用一下requestRender请求onDrawFrame,
-    * 在onDrawFrame中surfaceTexture.updateTexImage();表示将缓存数据刷到前台更新，同时
-    * 使用opengl的操作绘制出来，最后GLSurfaceView自己内部封装的渲染操作渲染出来
-    * */
+     * 当硬解出画面数据时，会存放在surface这个屏幕缓冲区中，他然后就会给到
+     * SurfaceTexture中，SurfaceTexture会马上回调onFrameAvailable，表示有有效实际
+     * 数据画面到达，那么接着就可以进行渲染操作，调用一下requestRender请求onDrawFrame,
+     * 在onDrawFrame中surfaceTexture.updateTexImage();表示将缓存数据刷到前台更新，同时
+     * 使用opengl的操作绘制出来，最后GLSurfaceView自己内部封装的渲染操作渲染出来
+     * */
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
         if (onRenderListener != null) {

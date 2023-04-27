@@ -11,10 +11,9 @@ void *normalCallBack(void *data) {
     pthread_exit(&thread);
 }
 
-extern "C"
-JNIEXPORT void JNICALL
+//创建子线程
+extern "C" JNIEXPORT void JNICALL
 Java_com_jiaquan_jnithread_ThreadDemo_normalThread(JNIEnv *env, jobject thiz) {
-    // TODO: implement normalThread()
     pthread_create(&thread, NULL, normalCallBack, NULL);
 }
 
@@ -60,19 +59,17 @@ void *customerCallBack(void *data) {
     pthread_exit(&customer);
 }
 
-extern "C"
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_jiaquan_jnithread_ThreadDemo_mutexThread(JNIEnv *env, jobject thiz) {
-    // TODO: implement mutexThread()
     for (int i = 0; i < 10; ++i) {
-        queue.push(i);
+        queue.push(i);//队列中插入10个数：0-9
     }
 
     pthread_mutex_init(&mutex, NULL);
     pthread_cond_init(&cond, NULL);
 
-    pthread_create(&product, NULL, productCallBack, NULL);
-    pthread_create(&customer, NULL, customerCallBack, NULL);
+    pthread_create(&product, NULL, productCallBack, NULL);//生产者子线程
+    pthread_create(&customer, NULL, customerCallBack, NULL);//消费者子线程
 }
 
 JavaVM *javaVm;
@@ -85,16 +82,15 @@ void *childCallback(void *data) {
     pthread_exit(&childThread);
 }
 
-extern "C"
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_jiaquan_jnithread_ThreadDemo_callBackFromC(JNIEnv *env, jobject thiz) {
-    // TODO: implement callBackFromC()
     javaListener = new JavaListener(javaVm, env, env->NewGlobalRef(thiz));
-//    javaListener->onError(1, 100, "C++ call java method from main thread");
+//    javaListener->onError(1, 100, "C++ call java method from main thread"); //主线程调用Java方法
 
-    pthread_create(&childThread, NULL, childCallback, javaListener);
+    pthread_create(&childThread, NULL, childCallback, javaListener);//子线程调用Java方法
 }
 
+//JVM自动调用加载函数
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *env;
     javaVm = vm;

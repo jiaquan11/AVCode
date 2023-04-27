@@ -300,7 +300,7 @@ public class WLPlayer {
                     MyLog.i("mediaCodec releaseOutputBuffer");
                 }
                 MyLog.i("onCallDecodeVPacket out");
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -308,11 +308,11 @@ public class WLPlayer {
 
     private void releaseVMediaCodec() {
         if (mediaCodec != null) {
-            try{
+            try {
                 mediaCodec.flush();
                 mediaCodec.stop();
                 mediaCodec.release();
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 

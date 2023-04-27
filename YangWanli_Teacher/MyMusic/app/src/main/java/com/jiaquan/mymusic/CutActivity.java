@@ -14,7 +14,6 @@ import com.jiaquan.myplayer.log.MyLog;
 import com.jiaquan.myplayer.player.WLPlayer;
 
 public class CutActivity extends AppCompatActivity {
-
     private WLPlayer wlPlayer = null;
 
     @Override
