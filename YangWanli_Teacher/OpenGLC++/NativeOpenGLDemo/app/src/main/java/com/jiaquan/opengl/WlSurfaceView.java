@@ -5,6 +5,7 @@ import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+//继承SurfaceView组件
 public class WlSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
     private NativeOpengl nativeOpengl = null;
 
@@ -53,6 +54,7 @@ public class WlSurfaceView extends SurfaceView implements SurfaceHolder.Callback
         if (nativeOpengl != null) {
             nativeOpengl.surfaceChange(width, height);//屏幕宽高
 
+            //底层EGL环境已经全部搭建好，通知上层进行渲染
             if (onSurfaceListener != null) {
                 onSurfaceListener.init();
             }

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10.2)
 
-project("mymusic")
+project("myplayer")
 
 include_directories(include)
 include_directories(soundtouch/include)
