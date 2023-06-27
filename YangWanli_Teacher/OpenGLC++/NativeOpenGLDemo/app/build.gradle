@@ -1,3 +1,6 @@
+/*app模块的编译脚本
+app模块主要设计为业务代码
+* */
 plugins {
     id 'com.android.application'
 }
@@ -43,7 +46,6 @@ android {
 }
 
 dependencies {
-
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.google.android.material:material:1.2.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'

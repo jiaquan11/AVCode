@@ -1,3 +1,7 @@
+/*app模块的编译脚本
+会去依赖myplayer模块
+app模块主要设计为业务代码
+* */
 plugins {
     id 'com.android.application'
 }
@@ -48,7 +52,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.google.android.material:material:1.2.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
-    implementation project(path: ':myplayer')
+    implementation project(path: ':myplayer')//依赖myplayer的aar模块
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'

@@ -1,3 +1,7 @@
+/*
+myplayer模块
+这里的脚本作为aar库的编译脚本
+ */
 plugins {
     id 'com.android.library'
 }
@@ -18,6 +22,7 @@ android {
         /*
         abiFilters "armeabi", "x86" 过滤平台编译的二进制，如果不过滤，生成其它编译平台，但是如果项目
         中没有相对应的so,则会报错崩溃
+        一般需要的abi库类型有"armeabi-v7a", "arm64-v8a", "x86", "x86_64"
         * */
         externalNativeBuild {
             cmake {
@@ -26,11 +31,6 @@ android {
             ndk {
                 abiFilters "armeabi-v7a", "arm64-v8a", "x86"
             }
-
-//            ndk {
-//                //设置支持的SO库架构
-//                abiFilters 'armeabi-v7a'//, 'arm64-v8a'//, 'x86_64',
-//            }
         }
     }
 
@@ -59,6 +59,7 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
+    //剔除重复依赖的so库
     packagingOptions {
         pickFirst "**/libavcodec.so"
         pickFirst "**/libavdevice.so"
