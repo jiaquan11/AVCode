@@ -58,7 +58,6 @@ void FilterYUV::onCreate() {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
         glBindTexture(GL_TEXTURE_2D, 0);//解绑纹理
     }
     LOGI("FilterYUV::onCreate end");
@@ -121,12 +120,12 @@ void FilterYUV::onDraw() {
 //    glDrawArrays(GL_TRIANGLES, 0, 6);//绘制四边形
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);//绘制四边形
         glBindTexture(GL_TEXTURE_2D, 0);
-        LOGI("FilterOne::onDraw end");
+        LOGI("FilterYUV::onDraw end");
     }
 }
 
 void FilterYUV::setMatrix(int width, int height) {
-    LOGI("FilterOne::setMatrix in");
+    LOGI("FilterYUV::setMatrix in");
 //    initMatrix(matrix);
     //这里是矩阵投影操作
     //屏幕720*1280 图片:517*685
@@ -145,7 +144,7 @@ void FilterYUV::setMatrix(int width, int height) {
             orthoM(-1, 1, -r, r, matrix);
         }
     }
-    LOGI("FilterOne::setMatrix end");
+    LOGI("FilterYUV::setMatrix end");
 }
 
 void FilterYUV::setYuvData(void *Y, void *U, void *V, int width, int height) {

@@ -3,6 +3,9 @@
 
 #include "BaseOpengl.h"
 
+/*
+ * 切换滤镜操作
+ * */
 class FilterTwo : public BaseOpengl {
 public:
     FilterTwo();

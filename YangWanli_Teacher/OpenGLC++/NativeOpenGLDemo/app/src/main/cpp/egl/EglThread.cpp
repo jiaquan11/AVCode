@@ -39,7 +39,7 @@ void *eglThreadImpl(void *context) {
             }
 
             //绘制
-            LOGI("draw");
+//            LOGI("draw");
             if (eglThread->isStart) {
 //                glClearColor(0.0f, 0.0f, 1.0f, 1.0f);//指定刷屏颜色
 //                glClear(GL_COLOR_BUFFER_BIT);//将刷屏颜色进行刷屏，但此时仍然处于后台缓冲中，需要swapBuffers交换到前台界面显示
@@ -62,15 +62,12 @@ void *eglThreadImpl(void *context) {
 
             if (eglThread->isExit) {
                 eglThread->onDestroy(eglThread->onDestroyCtx);
-
                 eglHelper->destroyEgl();
                 delete eglHelper;
-                eglHelper = NULL;
                 break;
             }
         }
     }
-
 //    pthread_exit(&eglThread->pEglThread);
     return 0;
 }
@@ -79,6 +76,7 @@ void EglThread::setRenderType(int renderType) {
     this->renderType = renderType;
 }
 
+//设置的函数指针
 void EglThread::callBackOnCreate(EglThread::OnCreate onCreate, void *ctx) {
     this->onCreate = onCreate;
     this->onCreateCtx = ctx;

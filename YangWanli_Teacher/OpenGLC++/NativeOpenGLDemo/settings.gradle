@@ -1,2 +1,3 @@
+//应用程序包含的所有模块设置
 include ':app'
 rootProject.name = "NativeOpenGLDemo"

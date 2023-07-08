@@ -3,6 +3,9 @@
 
 #include "BaseOpengl.h"
 
+/*
+ * 绘制YUV图像
+ * */
 class FilterYUV : public BaseOpengl {
 public:
     FilterYUV();

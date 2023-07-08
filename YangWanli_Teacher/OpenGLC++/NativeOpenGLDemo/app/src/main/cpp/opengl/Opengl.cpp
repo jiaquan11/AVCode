@@ -41,6 +41,7 @@ void callback_SurfaceChangeFilter(int width, int height, void *ctx) {
             opengl->baseOpengl = NULL;
         }
 
+        //切换滤镜操作
         opengl->baseOpengl = new FilterTwo();
         opengl->baseOpengl->onCreate();
         opengl->baseOpengl->onChange(width, height);//屏幕显示宽高
@@ -73,6 +74,7 @@ Opengl::~Opengl() {
 void Opengl::onCreateSurface(JNIEnv *env, jobject surface) {
     LOGI("Opengl::onCreateSurface in");
     nativeWindow = ANativeWindow_fromSurface(env, surface);
+
     eglThread = new EglThread();
     eglThread->setRenderType(OPENGL_RENDER_HANDLE);//设置渲染类型
     eglThread->callBackOnCreate(callback_SurfaceCreate, this);//设置函数指针
@@ -81,9 +83,9 @@ void Opengl::onCreateSurface(JNIEnv *env, jobject surface) {
     eglThread->callBackOnChangeFilter(callback_SurfaceChangeFilter, this);
     eglThread->callBackOnDestroy(callback_SurfaceDestroy, this);
 
-//    baseOpengl = new FilterOne();//opengl绘制图片
+    baseOpengl = new FilterOne();//opengl绘制图片纹理
 
-    baseOpengl = new FilterYUV();//opengl绘制YUV视频
+//    baseOpengl = new FilterYUV();//opengl绘制YUV视频
 
     eglThread->onSurfaceCreate(nativeWindow);//内部创建一个独立的子线程，用于EGL环境的操作
     LOGI("Opengl::onCreateSurface end");

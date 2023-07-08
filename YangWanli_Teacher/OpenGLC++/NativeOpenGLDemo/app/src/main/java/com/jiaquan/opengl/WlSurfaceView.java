@@ -37,7 +37,7 @@ public class WlSurfaceView extends SurfaceView implements SurfaceHolder.Callback
         this.nativeOpengl = nativeOpengl;
     }
 
-
+    //SurfaceView创建
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         if (nativeOpengl != null) {
@@ -49,6 +49,7 @@ public class WlSurfaceView extends SurfaceView implements SurfaceHolder.Callback
         }
     }
 
+    //SurfaceView尺寸变化
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         if (nativeOpengl != null) {
@@ -61,6 +62,7 @@ public class WlSurfaceView extends SurfaceView implements SurfaceHolder.Callback
         }
     }
 
+    //SurfaceView尺寸销毁
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {//界面资源回收
         if (nativeOpengl != null) {

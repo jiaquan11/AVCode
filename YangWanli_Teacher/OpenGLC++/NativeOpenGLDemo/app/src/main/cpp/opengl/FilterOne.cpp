@@ -38,14 +38,12 @@ void FilterOne::onCreate() {
 
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);//绑定纹理
-
     LOGI("FilterOne textureID is %d", textureID);
-
+    //设置纹理参数
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
     glBindTexture(GL_TEXTURE_2D, 0);//解绑纹理
     LOGI("FilterOne::onCreate end");
 }
@@ -68,7 +66,6 @@ void FilterOne::onDraw() {
 
     //渲染时纹理赋值操作
     glBindTexture(GL_TEXTURE_2D, textureID);
-
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(sampler, 0);//GL_TEXTURE0表示就是第一层纹理
 
@@ -96,12 +93,11 @@ void FilterOne::onDraw() {
 //    glDrawArrays(GL_TRIANGLES, 0, 3);//绘制三角形
 //    glDrawArrays(GL_TRIANGLES, 0, 6);//绘制四边形
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);//绘制四边形
-
     glBindTexture(GL_TEXTURE_2D, 0);
-
     LOGI("FilterOne::onDraw end");
 }
 
+//正交投影操作
 void FilterOne::setMatrix(int width, int height) {
     LOGI("FilterOne::setMatrix in");
 //    initMatrix(matrix);

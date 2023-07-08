@@ -24,11 +24,8 @@ void FilterTwo::onCreate() {
             varying vec2 ft_Position;
             uniform sampler2D sTexture;
             void main() {//texture2D表示GPU将输入得图像纹理像素进行读取，读取到GPU的管线中,最后渲染出来
-                lowp
-                vec4 textureColor = texture2D(sTexture, ft_Position);
-                float gray =
-                        textureColor.r * 0.2125 + textureColor.g * 0.7154 +
-                        textureColor.b * 0.0721;//将RGB图像转为灰度图
+                lowp vec4 textureColor = texture2D(sTexture, ft_Position);
+                float gray = textureColor.r * 0.2125 + textureColor.g * 0.7154 + textureColor.b * 0.0721;//将RGB图像转为灰度图
                 gl_FragColor = vec4(gray, gray, gray, textureColor.w);
             });
 
@@ -43,14 +40,11 @@ void FilterTwo::onCreate() {
 
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);//绑定纹理
-
     LOGI("FilterTwo textureID is %d", textureID);
-
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
     glBindTexture(GL_TEXTURE_2D, 0);//解绑纹理
     LOGI("FilterTwo::onCreate end");
 }
@@ -65,7 +59,6 @@ void FilterTwo::onChange(int width, int height) {
 
 void FilterTwo::onDraw() {
     LOGI("FilterTwo::onDraw in");
-
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);//指定刷屏颜色  1:不透明  0：透明
     glClear(GL_COLOR_BUFFER_BIT);//将刷屏颜色进行刷屏，但此时仍然处于后台缓冲中，需要swapBuffers交换到前台界面显示
 
@@ -73,10 +66,8 @@ void FilterTwo::onDraw() {
 
     //渲染时纹理赋值操作
     glBindTexture(GL_TEXTURE_2D, textureID);
-
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(sampler, 0);//GL_TEXTURE0表示就是第一层纹理
-
     glUniformMatrix4fv(u_matrix, 1, GL_FALSE, matrix);//给矩阵变量赋值
 
     if (pixels != NULL) {//为后台缓存显存中设置图片数据
@@ -101,9 +92,7 @@ void FilterTwo::onDraw() {
 //    glDrawArrays(GL_TRIANGLES, 0, 3);//绘制三角形
 //    glDrawArrays(GL_TRIANGLES, 0, 6);//绘制四边形
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);//绘制四边形
-
     glBindTexture(GL_TEXTURE_2D, 0);
-
     LOGI("FilterTwo::onDraw end");
 }
 

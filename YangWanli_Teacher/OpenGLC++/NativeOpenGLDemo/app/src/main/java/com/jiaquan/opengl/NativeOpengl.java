@@ -7,6 +7,7 @@ public class NativeOpengl {
         System.loadLibrary("native-lib");
     }
 
+    //native方法
     public native void surfaceCreate(Surface surface);
 
     public native void surfaceChange(int width, int height);
