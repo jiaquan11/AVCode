@@ -190,13 +190,11 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
 
         for (int i = 0; i < 3; i++) {
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId_yuv[i]);
-
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_REPEAT);
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_REPEAT);
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
         }
-
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
     }
 

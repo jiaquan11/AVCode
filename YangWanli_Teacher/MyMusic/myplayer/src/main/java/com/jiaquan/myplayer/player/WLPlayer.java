@@ -538,7 +538,6 @@ public class WLPlayer {
 
                     index = encoder.dequeueOutputBuffer(bufferInfo, 0);
                     outByteBuffer = null;
-
 //                    MyLog.i("编码....");
                 } catch (IOException e) {
                     e.printStackTrace();

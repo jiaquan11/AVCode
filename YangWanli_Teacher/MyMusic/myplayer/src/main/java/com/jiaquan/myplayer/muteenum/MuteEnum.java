@@ -1,5 +1,8 @@
 package com.jiaquan.myplayer.muteenum;
 
+/*
+* 声道控制枚举类
+* */
 public enum MuteEnum {
     MUTE_RIGHT("RIGHT", 0),
     MUTE_LEFT("LEFT", 1),
