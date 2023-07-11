@@ -1,3 +1,4 @@
+//app模块的编译脚本
 plugins {
     id 'com.android.application'
 }
@@ -27,6 +28,8 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    //指定cmake编译脚本的路径
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
@@ -40,7 +43,6 @@ android {
 }
 
 dependencies {
-
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.google.android.material:material:1.2.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'

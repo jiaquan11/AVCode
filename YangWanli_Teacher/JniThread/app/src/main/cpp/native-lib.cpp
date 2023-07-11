@@ -8,10 +8,10 @@ pthread_t thread;
 
 void *normalCallBack(void *data) {
     LOGI("create normal thread from C++");
-    pthread_exit(&thread);
+    pthread_exit(&thread);//退出子线程
 }
 
-//创建子线程
+//创建一般子线程
 extern "C" JNIEXPORT void JNICALL
 Java_com_jiaquan_jnithread_ThreadDemo_normalThread(JNIEnv *env, jobject thiz) {
     pthread_create(&thread, NULL, normalCallBack, NULL);
@@ -25,10 +25,10 @@ pthread_t product;
 pthread_t customer;
 pthread_mutex_t mutex;
 pthread_cond_t cond;
-
 std::queue<int> queue;
 bool isExit = false;
 
+//生产者线程 函数
 void *productCallBack(void *data) {
     while (true) {
         pthread_mutex_lock(&mutex);
@@ -42,6 +42,7 @@ void *productCallBack(void *data) {
     pthread_exit(&product);
 }
 
+//消费者线程函数
 void *customerCallBack(void *data) {
     while (true) {
         pthread_mutex_lock(&mutex);
@@ -59,6 +60,7 @@ void *customerCallBack(void *data) {
     pthread_exit(&customer);
 }
 
+//创建生产者和消费者两个子线程
 extern "C" JNIEXPORT void JNICALL
 Java_com_jiaquan_jnithread_ThreadDemo_mutexThread(JNIEnv *env, jobject thiz) {
     for (int i = 0; i < 10; ++i) {
@@ -90,7 +92,7 @@ Java_com_jiaquan_jnithread_ThreadDemo_callBackFromC(JNIEnv *env, jobject thiz) {
     pthread_create(&childThread, NULL, childCallback, javaListener);//子线程调用Java方法
 }
 
-//JVM自动调用加载函数
+//JVM自动调用加载函数，在Java层调用System.loadLibrary()函数会自动调用JNI_OnLoad方法
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *env;
     javaVm = vm;

@@ -6,7 +6,6 @@
 class JavaListener {
 public:
     JavaListener(JavaVM *vm, JNIEnv *env, jobject obj);
-
     ~JavaListener();
 
 public:
@@ -23,8 +22,6 @@ public:
     JavaVM *jvm;
     jobject jobj;
     JNIEnv *jniEnv;
-
     jmethodID jmethodId;
 };
-
 #endif

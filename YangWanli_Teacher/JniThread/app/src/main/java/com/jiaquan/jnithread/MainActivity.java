@@ -7,7 +7,7 @@ import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-    private ThreadDemo threadDemo;
+    private ThreadDemo threadDemo = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

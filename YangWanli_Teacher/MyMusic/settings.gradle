@@ -1,3 +1,4 @@
+//应用程序包含的所有模块
 include ':myplayer'
 include ':app'
 rootProject.name = "MyMusic"

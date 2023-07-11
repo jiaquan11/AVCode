@@ -1,6 +1,7 @@
 package com.jiaquan.jnithread;
 
 public class ThreadDemo {
+    //加载so
     static {
         System.loadLibrary("native-lib");
     }
@@ -8,9 +9,7 @@ public class ThreadDemo {
     public interface OnErrorListener {
         void onError(int code, String msg);
     }
-
-    private OnErrorListener onErrorListener;
-
+    private OnErrorListener onErrorListener = null;
     public void setOnErrorListener(OnErrorListener onErrorListener) {
         this.onErrorListener = onErrorListener;
     }
@@ -22,6 +21,7 @@ public class ThreadDemo {
         }
     }
 
+    //native方法
     public native void normalThread();
 
     public native void mutexThread();

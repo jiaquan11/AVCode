@@ -3,12 +3,12 @@ cmake_minimum_required(VERSION 3.10.2)
 project("jnithread")
 
 add_library(native-lib
-        SHARED
-        native-lib.cpp
-        JavaListener.cpp)
+            SHARED
+            native-lib.cpp
+            JavaListener.cpp)
 
 find_library(log-lib
-        log)
+             log)
 
 target_link_libraries(native-lib
-        ${log-lib})
+                      ${log-lib})
