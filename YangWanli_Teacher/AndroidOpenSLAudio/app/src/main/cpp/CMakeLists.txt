@@ -9,10 +9,6 @@ add_library(native-lib
 find_library(log-lib
               log )
 
-# Specifies libraries CMake should link to your target library. You
-# can link multiple libraries, such as libraries you define in this
-# build script, prebuilt third-party libraries, or system libraries.
-
 target_link_libraries(native-lib
                       OpenSLES
                       ${log-lib} )

@@ -41,6 +41,7 @@ android {
         }
     }
 
+    //指定C++代码编译脚本CMakeLists.txt的路径
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
@@ -48,6 +49,7 @@ android {
         }
     }
 
+    //指定存放的第三方库的路径
     sourceSets {
         main {
             jniLibs.srcDirs = ['src/main/nativeLibs']
