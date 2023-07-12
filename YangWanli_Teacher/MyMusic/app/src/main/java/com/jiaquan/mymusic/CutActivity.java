@@ -6,7 +6,7 @@ import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.jiaquan.myplayer.TimeInfoBean;
+import com.jiaquan.myplayer.util.TimeInfoBean;
 import com.jiaquan.myplayer.listener.OnPcmInfoListener;
 import com.jiaquan.myplayer.listener.OnPreparedListener;
 import com.jiaquan.myplayer.listener.OnTimeInfoListener;
@@ -22,7 +22,6 @@ public class CutActivity extends AppCompatActivity {
         setContentView(R.layout.activity_cutaudio);
 
         wlPlayer = new WLPlayer();
-
         wlPlayer.setOnPreparedListener(new OnPreparedListener() {
             @Override
             public void onPrepared() {

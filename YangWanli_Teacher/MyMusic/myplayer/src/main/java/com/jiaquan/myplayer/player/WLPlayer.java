@@ -6,7 +6,7 @@ import android.media.MediaFormat;
 import android.text.TextUtils;
 import android.view.Surface;
 
-import com.jiaquan.myplayer.TimeInfoBean;
+import com.jiaquan.myplayer.util.TimeInfoBean;
 import com.jiaquan.myplayer.listener.OnCompleteListener;
 import com.jiaquan.myplayer.listener.OnErrorListener;
 import com.jiaquan.myplayer.listener.OnLoadListener;
@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class WLPlayer {
+    //加载需要的动态库
     static {
         System.loadLibrary("native-lib");
         System.loadLibrary("avcodec");
@@ -40,7 +41,7 @@ public class WLPlayer {
         System.loadLibrary("swscale");
     }
 
-    private static String source = null;
+    private static String sourcePath = null;
     private static boolean playNext = false;
     private static int duration = -1;
     private static int volumePercent = 100;
@@ -49,10 +50,10 @@ public class WLPlayer {
     private static float pitch = 1.0f;
     private static boolean isInitMediaCodec = false;
 
-    private MediaFormat mediaFormat;
-    private MediaCodec mediaCodec;
-    private Surface surface;
-    private MediaCodec.BufferInfo info;
+    private MediaFormat mediaFormat = null;
+    private MediaCodec mediaCodec = null;
+    private Surface surface = null;
+    private MediaCodec.BufferInfo info = null;
 
     private WLGLSurfaceView wlglSurfaceView = null;
 
@@ -70,37 +71,31 @@ public class WLPlayer {
     }
 
     private OnPreparedListener onPreparedListener = null;
-
     public void setOnPreparedListener(OnPreparedListener onPreparedListener) {
         this.onPreparedListener = onPreparedListener;
     }
 
     private OnLoadListener onLoadListener = null;
-
     public void setOnLoadListener(OnLoadListener onLoadListener) {
         this.onLoadListener = onLoadListener;
     }
 
     private OnPauseResumeListener onPauseResumeListener = null;
-
     public void setOnPauseResumeListener(OnPauseResumeListener onPauseResumeListener) {
         this.onPauseResumeListener = onPauseResumeListener;
     }
 
     private OnTimeInfoListener onTimeInfoListener = null;
-
     public void setOnTimeInfoListener(OnTimeInfoListener onTimeInfoListener) {
         this.onTimeInfoListener = onTimeInfoListener;
     }
 
     private OnErrorListener onErrorListener = null;
-
     public void setOnErrorListener(OnErrorListener onErrorListener) {
         this.onErrorListener = onErrorListener;
     }
 
     private OnCompleteListener onCompleteListener = null;
-
     public void setOnCompleteListener(OnCompleteListener onCompleteListener) {
         this.onCompleteListener = onCompleteListener;
     }
@@ -112,13 +107,11 @@ public class WLPlayer {
     }
 
     private OnRecordTimeListener onRecordTimeListener = null;
-
     public void setOnRecordTimeListener(OnRecordTimeListener onRecordTimeListener) {
         this.onRecordTimeListener = onRecordTimeListener;
     }
 
     private OnPcmInfoListener onPcmInfoListener = null;
-
     public void setOnPcmInfoListener(OnPcmInfoListener onPcmInfoListener) {
         this.onPcmInfoListener = onPcmInfoListener;
     }
@@ -126,7 +119,7 @@ public class WLPlayer {
     private static TimeInfoBean timeInfoBean = null;
 
     public void setSource(String source) {
-        this.source = source;
+        sourcePath = source;
     }
 
     public WLPlayer() {
@@ -134,7 +127,7 @@ public class WLPlayer {
     }
 
     public void prepared() {
-        if (TextUtils.isEmpty(source)) {
+        if (TextUtils.isEmpty(sourcePath)) {
             MyLog.i("source must not be empty");
             return;
         }
@@ -144,13 +137,13 @@ public class WLPlayer {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                _prepared(source);
+                _prepared(sourcePath);
             }
         }).start();
     }
 
     public void start() {
-        if (TextUtils.isEmpty(source)) {
+        if (TextUtils.isEmpty(sourcePath)) {
             MyLog.i("source must not be empty");
             return;
         }
@@ -231,6 +224,7 @@ public class WLPlayer {
         }
     }
 
+    //底层回调方法：传递YUV数据用于上层渲染
     public void onCallRenderYUV(int width, int height, byte[] y, byte[] u, byte[] v) {
         MyLog.i("获取到YUV数据渲染");
         if (wlglSurfaceView != null) {
@@ -239,12 +233,12 @@ public class WLPlayer {
         }
     }
 
+    //底层回调方法：
     public boolean onCallIsSupportMediaCodec(String ffcodecname) {
         return WLVideoSupportUtil.isSupportCodec(ffcodecname);
     }
 
     //video
-
     /**
      * 初始化视频解码器
      *
@@ -273,7 +267,6 @@ public class WLPlayer {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
             MyLog.i("onCallinitMediaCodec end");
         } else {
             if (onErrorListener != null) {
@@ -350,14 +343,13 @@ public class WLPlayer {
             @Override
             public void run() {
                 _stop();
-
                 releaseVMediaCodec();
             }
         }).start();
     }
 
     public void playNext(String url) {
-        source = url;
+        sourcePath = url;
         playNext = true;
         stop();
     }
@@ -398,7 +390,6 @@ public class WLPlayer {
     public void startRecord(File outfile) {
         if (!isInitMediaCodec) {
             audioSamplerate = _samplerate();
-
             if (audioSamplerate > 0) {
                 isInitMediaCodec = true;
                 initMediaCodec(audioSamplerate, outfile);
@@ -435,34 +426,6 @@ public class WLPlayer {
         }
     }
 
-    private native void _prepared(String source);
-
-    private native void _start();
-
-    private native void _pause();
-
-    private native void _resume();
-
-    private native void _stop();
-
-    private native void _seek(int secds);
-
-    private native int _duration();
-
-    private native void _volume(int percent);
-
-    private native void _mute(int mute);
-
-    private native void _pitch(float pitch);
-
-    private native void _speed(float speed);
-
-    private native int _samplerate();
-
-    private native void _startstopRecord(boolean start);
-
-    private native boolean _cutAudioPlay(int start_time, int end_time, boolean showPcm);
-
     //mediacodec
     private MediaFormat encoderFormat = null;
     private MediaCodec encoder = null;
@@ -473,7 +436,6 @@ public class WLPlayer {
     private int aacSampleRateType = 4;
     private double recordTime = 0;
     private int audioSamplerate = 0;
-
     private void initMediaCodec(int samplerate, File outfile) {
         try {
             aacSampleRateType = getADTSSampleRate(samplerate);
@@ -640,4 +602,33 @@ public class WLPlayer {
             }
         }
     }
+
+    //native方法
+    private native void _prepared(String source);
+
+    private native void _start();
+
+    private native void _pause();
+
+    private native void _resume();
+
+    private native void _stop();
+
+    private native void _seek(int secds);
+
+    private native int _duration();
+
+    private native void _volume(int percent);
+
+    private native void _mute(int mute);
+
+    private native void _pitch(float pitch);
+
+    private native void _speed(float speed);
+
+    private native int _samplerate();
+
+    private native void _startstopRecord(boolean start);
+
+    private native boolean _cutAudioPlay(int start_time, int end_time, boolean showPcm);
 }

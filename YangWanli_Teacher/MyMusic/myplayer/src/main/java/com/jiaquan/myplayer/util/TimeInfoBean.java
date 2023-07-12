@@ -1,9 +1,11 @@
-package com.jiaquan.myplayer;
+package com.jiaquan.myplayer.util;
 
+/*
+* 存储时间戳信息类
+* */
 public class TimeInfoBean {
-    private int currentTime;
-    private int totalTime;
-
+    private int currentTime = 0;
+    private int totalTime = 0;
 
     public int getCurrentTime() {
         return currentTime;

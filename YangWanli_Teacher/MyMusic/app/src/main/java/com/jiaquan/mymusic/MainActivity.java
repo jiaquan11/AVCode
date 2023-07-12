@@ -12,7 +12,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.jiaquan.myplayer.TimeInfoBean;
+import com.jiaquan.myplayer.util.TimeInfoBean;
 import com.jiaquan.myplayer.listener.OnCompleteListener;
 import com.jiaquan.myplayer.listener.OnErrorListener;
 import com.jiaquan.myplayer.listener.OnLoadListener;
@@ -30,16 +30,15 @@ import com.jiaquan.myplayer.util.TimeUtil;
 import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
-    private WLPlayer wlPlayer = null;
     private TextView tv_time = null;
     private TextView tv_volume = null;
     private SeekBar seekBarSeek = null;
     private int position = 0;
     private boolean isSeekBar = false;
-
     private SeekBar seekBarVolume = null;
 
-    private WLGLSurfaceView wlglSurfaceView;
+    private WLPlayer wlPlayer = null;
+    private WLGLSurfaceView wlglSurfaceView = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,15 +47,14 @@ public class MainActivity extends AppCompatActivity {
 
         wlglSurfaceView = findViewById(R.id.wlglsurfaceview);
 
-        tv_time = findViewById(R.id.tv_time);
-        seekBarSeek = findViewById(R.id.seekbar_seek);
-        seekBarVolume = findViewById(R.id.seekbar_volume);
-        tv_volume = findViewById(R.id.tv_volume);
+        tv_time = findViewById(R.id.tv_time);//当前播放时间戳及总时间
+        seekBarSeek = findViewById(R.id.seekbar_seek);//seek进度条
+        tv_volume = findViewById(R.id.tv_volume);//音量值
+        seekBarVolume = findViewById(R.id.seekbar_volume);//调节音量的进度条;
 
         // 要申请的权限
         String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE
                 , Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.CHANGE_NETWORK_STATE};
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissions(permissions, 321);
         }
@@ -65,20 +63,36 @@ public class MainActivity extends AppCompatActivity {
         wlPlayer.setWlglSurfaceView(wlglSurfaceView);
 
         wlPlayer.setVolume(80);//设置初始音量
-        wlPlayer.setMute(MuteEnum.MUTE_LEFT);
-        tv_volume.setText("音量: " + wlPlayer.getVolumePercent() + "%");
-        wlPlayer.setPitch(1.0f);
-        wlPlayer.setSpeed(1.0f);
-        seekBarVolume.setProgress(wlPlayer.getVolumePercent());
+        wlPlayer.setMute(MuteEnum.MUTE_LEFT);//设置声道控制
+        tv_volume.setText("音量: " + wlPlayer.getVolumePercent() + "%");//设置音量显示的文本
+        wlPlayer.setPitch(1.0f);//设置音调值
+        wlPlayer.setSpeed(1.0f);//设置音频播放速度值
+        seekBarVolume.setProgress(wlPlayer.getVolumePercent());//设置音量调节控件的进度
 
+        Handler handler = new Handler() {
+            @Override
+            public void handleMessage(@NonNull Message msg) {//重写类方法 处理Handler的消息
+                super.handleMessage(msg);
+                if (msg.what == 1) {
+                    if (!isSeekBar) {
+                        TimeInfoBean timeInfoBean = (TimeInfoBean) msg.obj;
+                        tv_time.setText(TimeUtil.secdsToDateFormat(timeInfoBean.getTotalTime(), timeInfoBean.getTotalTime()) + "/" + TimeUtil.secdsToDateFormat(timeInfoBean.getCurrentTime(), timeInfoBean.getTotalTime()));
+                        seekBarSeek.setProgress(timeInfoBean.getCurrentTime() * 100 / timeInfoBean.getTotalTime());
+                    }
+                }
+            }
+        };
+
+        //资源准备回调，准备好后会进行回调，然后就可以开始播放
         wlPlayer.setOnPreparedListener(new OnPreparedListener() {
             @Override
             public void onPrepared() {
                 MyLog.i("onPrepared");
-                wlPlayer.start();
+                wlPlayer.start();//开始播放
             }
         });
 
+        //加载回调
         wlPlayer.setOnLoadListener(new OnLoadListener() {
             @Override
             public void onLoad(boolean load) {
@@ -90,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //暂停和播放的回调
         wlPlayer.setOnPauseResumeListener(new OnPauseResumeListener() {
             @Override
             public void onPause(boolean pause) {
@@ -101,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //回调时间戳信息，用于播放进度的显示
         wlPlayer.setOnTimeInfoListener(new OnTimeInfoListener() {
             @Override
             public void onTimeInfo(TimeInfoBean timeInfoBean) {
@@ -108,10 +124,11 @@ public class MainActivity extends AppCompatActivity {
                 Message message = Message.obtain();
                 message.what = 1;
                 message.obj = timeInfoBean;
-                handler.sendMessage(message);
+                handler.sendMessage(message);//发送消息，放在Handle线程中进行更新处理时间显示
             }
         });
 
+        //回调错误信息
         wlPlayer.setOnErrorListener(new OnErrorListener() {
             @Override
             public void onError(int code, String msg) {
@@ -119,6 +136,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //回调播放完成状态
         wlPlayer.setOnCompleteListener(new OnCompleteListener() {
             @Override
             public void onComplete() {
@@ -126,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //回调音量分贝值
         wlPlayer.setOnVolumeDBListener(new OnVolumeDBListener() {
             @Override
             public void onDBValue(int db) {
@@ -133,6 +152,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //回调录制时间戳
         wlPlayer.setOnRecordTimeListener(new OnRecordTimeListener() {
             @Override
             public void onRecordTime(int recordTime) {
@@ -140,21 +160,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //设置seek进度条监听
         seekBarSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (wlPlayer.getDuration() > 0 && isSeekBar) {
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {//进度条变化得到进度条的值
+                if ((wlPlayer.getDuration() > 0) && isSeekBar) {
                     position = wlPlayer.getDuration() * progress / 100;
                 }
             }
 
             @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
+            public void onStartTrackingTouch(SeekBar seekBar) {//开始拖拽
                 isSeekBar = true;
             }
 
             @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
+            public void onStopTrackingTouch(SeekBar seekBar) {//结束拖拽,进行seek
                 wlPlayer.seek(position);
                 isSeekBar = false;
             }
@@ -190,7 +211,6 @@ public class MainActivity extends AppCompatActivity {
 //        wlPlayer.setSource("/sdcard/testziliao/first-love-wangxinling.ape");
 //        wlPlayer.setSource("http://ngcdn004.cnr.cn/live/dszs/index.m3u8");
 //        wlPlayer.setSource("/sdcard/testziliao/yongqi-liangjingru.m4a");
-
         wlPlayer.prepared();
     }
 
@@ -201,23 +221,6 @@ public class MainActivity extends AppCompatActivity {
     public void resume(View view) {
         wlPlayer.resume();
     }
-
-    Handler handler = new Handler() {
-        @Override
-        public void handleMessage(@NonNull Message msg) {//重写类方法
-            super.handleMessage(msg);
-
-            if (msg.what == 1) {
-                if (!isSeekBar) {
-                    TimeInfoBean timeInfoBean = (TimeInfoBean) msg.obj;
-                    tv_time.setText(TimeUtil.secdsToDateFormat(timeInfoBean.getTotalTime(), timeInfoBean.getTotalTime())
-                            + "/" + TimeUtil.secdsToDateFormat(timeInfoBean.getCurrentTime(), timeInfoBean.getTotalTime()));
-
-                    seekBarSeek.setProgress(timeInfoBean.getCurrentTime() * 100 / timeInfoBean.getTotalTime());
-                }
-            }
-        }
-    };
 
     public void stop(View view) {
         wlPlayer.stop();

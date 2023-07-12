@@ -23,7 +23,6 @@ public class WLShaderUtil {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return sb.toString();
     }
 

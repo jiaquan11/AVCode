@@ -2,6 +2,9 @@ package com.jiaquan.myplayer.log;
 
 import android.util.Log;
 
+/*
+* 日志类封装
+* */
 public class MyLog {
     public static void i(String msg) {
         Log.i("MYPLAYER", msg);

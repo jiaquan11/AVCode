@@ -1,14 +1,11 @@
 package com.jiaquan.myplayer.util;
 
+/*
+* 格式化显示时间的工具类
+* 将以秒为单位的时间转换为时分秒格式化显示
+* */
 public class TimeUtil {
-    /**
-     * format times
-     *
-     * @param secds
-     * @param totalsecds
-     * @return
-     */
-    public static String secdsToDateFormat(int secds, int totalsecds) {
+    public static String secdsToDateFormat(int secds, int totalsecds) {//传入时间的单位为秒
         long hours = secds / (60 * 60);//时
         long minutes = (secds % (60 * 60)) / (60);//分
         long seconds = secds % (60);//秒
@@ -21,6 +18,7 @@ public class TimeUtil {
                 sh = hours + "";
             }
         }
+
         String sm = "00";
         if (minutes > 0) {
             if (minutes < 10) {
@@ -38,10 +36,11 @@ public class TimeUtil {
                 ss = seconds + "";
             }
         }
-        if (totalsecds >= 3600) {//需要展示小时
+
+        //传入的secds是动态变化的，totalsecds是固定的
+        if (totalsecds >= 3600) {//如果总时长超过小时，则需要展示小时
             return sh + ":" + sm + ":" + ss;
         }
         return sm + ":" + ss;
-
     }
 }

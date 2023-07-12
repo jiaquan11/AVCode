@@ -71,7 +71,7 @@ set_target_properties(swscale
         ${CMAKE_SOURCE_DIR}/../nativeLibs/${ANDROID_ABI}/libswscale.so)
 
 find_library(log-lib
-        log)
+             log)
 
 target_link_libraries(native-lib
         ${log-lib}

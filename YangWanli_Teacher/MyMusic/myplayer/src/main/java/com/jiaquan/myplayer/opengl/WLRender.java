@@ -18,7 +18,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
-    private Context context;
+    private Context context = null;
 
     public static final int RENDER_YUV = 1;
     public static final int RENDER_MEDIACODEC = 2;
@@ -73,34 +73,26 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     private ByteBuffer v;
 
     //mediacodec
-    private int program_mediacodec;
-    private int avPosition_mediacodec;
-    private int afPosition_mediacodec;
-    private int samplerOES_mediacodec;
-    private int textureId_mediacodec;
-    private SurfaceTexture surfaceTexture;
-    private Surface surface;
-
-    public void setRenderType(int renderType) {
-        this.renderType = renderType;
-    }
+    private int program_mediacodec = -1;
+    private int avPosition_mediacodec = -1;
+    private int afPosition_mediacodec = -1;
+    private int samplerOES_mediacodec = -1;
+    private int textureId_mediacodec = -1;
+    private SurfaceTexture surfaceTexture = null;
+    private Surface surface = null;
 
     public interface OnSurfaceCreateListener {
         void onSurfaceCreate(Surface surface);
     }
-
-    private OnSurfaceCreateListener onSurfaceCreateListener;
-
+    private OnSurfaceCreateListener onSurfaceCreateListener = null;
     public void setOnSurfaceCreateListener(OnSurfaceCreateListener onSurfaceCreateListener) {
         this.onSurfaceCreateListener = onSurfaceCreateListener;
     }
 
-    private OnRenderListener onRenderListener;
-
+    private OnRenderListener onRenderListener = null;
     public interface OnRenderListener {
         void onRender();
     }
-
     public void setOnRenderListener(OnRenderListener onRenderListener) {
         this.onRenderListener = onRenderListener;
     }
@@ -122,7 +114,6 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
                 .put(textureData);
 
         textureBuffer.position(0);
-
         MyLog.i("construct WLRender end");
     }
 
@@ -174,6 +165,18 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         }
     }
 
+    public void setRenderType(int renderType) {
+        this.renderType = renderType;
+    }
+
+    public void setYUVRenderData(int width, int height, byte[] y, byte[] u, byte[] v) {
+        this.width_yuv = width;
+        this.height_yuv = height;
+        this.y = ByteBuffer.wrap(y);
+        this.u = ByteBuffer.wrap(u);
+        this.v = ByteBuffer.wrap(v);
+    }
+
     private void initRenderYUV() {
         String vertexSource = WLShaderUtil.readRawTxt(context, R.raw.vertex_shader);
         String fragmentSource = WLShaderUtil.readRawTxt(context, R.raw.fragment_yuv);
@@ -196,14 +199,6 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
         }
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-    }
-
-    public void setYUVRenderData(int width, int height, byte[] y, byte[] u, byte[] v) {
-        this.width_yuv = width;
-        this.height_yuv = height;
-        this.y = ByteBuffer.wrap(y);
-        this.u = ByteBuffer.wrap(u);
-        this.v = ByteBuffer.wrap(v);
     }
 
     private void renderYUV() {
@@ -238,9 +233,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
             y = null;
             u = null;
             v = null;
-
 //            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-//
 //            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         }
     }
@@ -258,14 +251,11 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         int[] textrueids = new int[1];
         GLES20.glGenTextures(1, textrueids, 0);
         textureId_mediacodec = textrueids[0];
-
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId_mediacodec);
-
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_REPEAT);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_REPEAT);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
 
         surfaceTexture = new SurfaceTexture(textureId_mediacodec);
@@ -275,7 +265,6 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         if (onSurfaceCreateListener != null) {
             onSurfaceCreateListener.onSurfaceCreate(surface);
         }
-
         MyLog.i("initRenderMediaCodec out");
     }
 
