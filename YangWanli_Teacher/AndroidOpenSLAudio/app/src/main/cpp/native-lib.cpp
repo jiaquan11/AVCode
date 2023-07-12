@@ -24,26 +24,28 @@ FILE *pcmFile = NULL;
 void *buffer = NULL;
 uint8_t *out_buffer = NULL;
 
-void getPcmData(void **pcm) {
-    if  (!feof(pcmFile)) {
-        int ret = fread(out_buffer, 44100 * 2 * 2, 1, pcmFile);
-        if (ret == 0) {
+int getPcmData(void **pcm) {
+    int size = 0;
+    while (!feof(pcmFile)) {
+        size = fread(out_buffer, 1, 44100 * 2 * 2, pcmFile);
+        if (out_buffer == NULL) {
             LOGE("Read end");
-            fseek(pcmFile, 0, SEEK_SET);
+            break;
         } else {
-//            LOGI("reading");
+            LOGI("reading");
         }
         *pcm = out_buffer;
-    }else {
-        fseek(pcmFile, 0, SEEK_SET);
+        break;
     }
+    return size;
 }
 
 //给到OpenSLES注册的回调函数，会由OpenSLES主动调用，直接将pcm数据放入OpenSLES中的缓冲队列中进行播放
 void pcmBufferCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
-    getPcmData(&buffer);
+    int size = getPcmData(&buffer);
+    LOGI("size is: %d", size);
     if (buffer != NULL) {
-        SLresult result = (*pcmBufferQueue)->Enqueue(pcmBufferQueue, buffer, 44100 * 2 * 2);
+        SLresult result = (*pcmBufferQueue)->Enqueue(pcmBufferQueue, buffer, size);
     }
 }
 
