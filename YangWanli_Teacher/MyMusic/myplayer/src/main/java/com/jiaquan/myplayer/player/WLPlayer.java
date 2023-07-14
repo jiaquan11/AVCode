@@ -56,6 +56,9 @@ public class WLPlayer {
     private MediaCodec mediaCodec = null;
     private Surface surface = null;
     private MediaCodec.BufferInfo info = null;
+    public long mTotalTime = 0;//记录硬解耗时
+    public int mFrameCount = 0;//记录硬解播放的总帧数
+    private long mStartMs = 0;
 
     private WLGLSurfaceView wlglSurfaceView = null;
 
@@ -276,6 +279,8 @@ public class WLPlayer {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            mStartMs = System.currentTimeMillis();
             MyLog.i("onCallinitMediaCodec end");
         } else {
             if (onErrorListener != null) {
@@ -298,6 +303,10 @@ public class WLPlayer {
                 }
                 int outputBufferIndex = mediaCodec.dequeueOutputBuffer(info, 10);//循环从硬解解码器的输出队列中获取解码数据进行渲染
                 while (outputBufferIndex >= 0) {
+                    long decodeTime = System.currentTimeMillis() - mStartMs;
+                    mStartMs = System.currentTimeMillis();
+                    mFrameCount++;
+                    mTotalTime += decodeTime;
                     mediaCodec.releaseOutputBuffer(outputBufferIndex, true);
                     outputBufferIndex = mediaCodec.dequeueOutputBuffer(info, 10);
                     MyLog.i("mediaCodec releaseOutputBuffer");
@@ -322,6 +331,7 @@ public class WLPlayer {
             mediaCodec = null;
             mediaFormat = null;
             info = null;
+            MyLog.i("All the Frames: " + mFrameCount + " Average decode time per frame: " + (mTotalTime / mFrameCount) + "ms");
         }
     }
 

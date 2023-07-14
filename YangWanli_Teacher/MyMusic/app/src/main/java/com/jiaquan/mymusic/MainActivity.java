@@ -207,8 +207,8 @@ public class MainActivity extends AppCompatActivity {
 //        wlPlayer.setSource("/sdcard/testziliao/fcrs.1080p.mp4");
 //        wlPlayer.setSource("/sdcard/testziliao/biterate9.mp4");
 //        wlPlayer.setSource("/sdcard/testziliao/biterate9noB.mp4");
-        wlPlayer.setSource("/sdcard/testziliao/chuqiaozhuan1.mp4");
-//        wlPlayer.setSource("/sdcard/testziliao/hanleiVideo.mp4");
+//        wlPlayer.setSource("/sdcard/testziliao/chuqiaozhuan1.mp4");
+        wlPlayer.setSource("/sdcard/testziliao/hanleiVideo.mp4");
 
 //        wlPlayer.setSource("/sdcard/testziliao/first-love-wangxinling.ape");
 //        wlPlayer.setSource("http://ngcdn004.cnr.cn/live/dszs/index.m3u8");
