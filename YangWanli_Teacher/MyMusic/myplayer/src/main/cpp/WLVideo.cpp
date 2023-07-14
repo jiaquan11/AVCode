@@ -1,6 +1,3 @@
-//
-// Created by jiaqu on 2020/12/26.
-//
 #include "WLVideo.h"
 
 WLVideo::WLVideo(WLPlayStatus *playStatus, CallJava *callJava) {

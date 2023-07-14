@@ -141,7 +141,7 @@ void WLFFmpeg::start() {
         LOGI("当前设备支持硬解码当前视频!!!");
         if (strcasecmp(codecName, "h264") == 0) {
             bsFilter = av_bsf_get_by_name("h264_mp4toannexb");
-        } else if (strcasecmp(codecName, "h265") == 0) {
+        } else if (strcasecmp(codecName, "h265") == 0) {//265视频硬解需要后续添加，目前还不完善
             bsFilter = av_bsf_get_by_name("hevc_mp4toannexb");
         }
         if (bsFilter == NULL) {

@@ -18,6 +18,8 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
+    private final String TAG = WLRender.class.getSimpleName();
+
     private Context context = null;
 
     public static final int RENDER_YUV = 1;
@@ -51,7 +53,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
 //            0f, 1f
     };
 
-    private int renderType = RENDER_YUV;
+    private int renderType = RENDER_YUV;//默认为YUV渲染
 
     private FloatBuffer vertexBuffer;
     private FloatBuffer textureBuffer;
@@ -105,14 +107,12 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(vertexData);
-
         vertexBuffer.position(0);
 
         textureBuffer = ByteBuffer.allocateDirect(textureData.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(textureData);
-
         textureBuffer.position(0);
         MyLog.i("construct WLRender end");
     }
@@ -262,7 +262,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         surface = new Surface(surfaceTexture);
         surfaceTexture.setOnFrameAvailableListener(this);
 
-        if (onSurfaceCreateListener != null) {
+        if (onSurfaceCreateListener != null) {//只有硬解才会需要回调surface
             onSurfaceCreateListener.onSurfaceCreate(surface);
         }
         MyLog.i("initRenderMediaCodec out");
@@ -270,6 +270,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
 
     private void renderMediaCodec() {
         MyLog.i("renderMediaCodec in");
+        //先更新surfaceTexture缓存数据，然后下面进行opengl绘制，最后由GLSurfaceView内部的EGL环境(swapBuffe方法)进行交换输出显示出来
         surfaceTexture.updateTexImage();
 
         GLES20.glUseProgram(program_mediacodec);
@@ -284,7 +285,6 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId_mediacodec);
 
         GLES20.glUniform1i(samplerOES_mediacodec, 0);
-
 //        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
         MyLog.i("renderMediaCodec out");
     }

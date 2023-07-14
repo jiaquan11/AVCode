@@ -63,7 +63,7 @@ public class WLPlayer {
             @Override
             public void onSurfaceCreate(Surface s) {
                 if (surface == null) {
-                    surface = s;
+                    surface = s;//监听获取到的surface,用于配置给硬件解码器
                     MyLog.i("onSurfaceCreate");
                 }
             }
@@ -233,21 +233,13 @@ public class WLPlayer {
         }
     }
 
-    //底层回调方法：
+    //底层回调方法：判断是否支持硬解指定的解码器
     public boolean onCallIsSupportMediaCodec(String ffcodecname) {
         return WLVideoSupportUtil.isSupportCodec(ffcodecname);
     }
 
     //video
-    /**
-     * 初始化视频解码器
-     *
-     * @param codecName
-     * @param width
-     * @param height
-     * @param csd_0
-     * @param csd_1
-     */
+    //底层回调方法：初始化视频硬件解码器
     public void onCallinitMediaCodec(String codecName, int width, int height, byte[] csd_0, byte[] csd_1) {
         if (surface != null) {
             try {
@@ -256,14 +248,14 @@ public class WLPlayer {
                 String mime = WLVideoSupportUtil.findVideoCodecName(codecName);
                 mediaFormat = MediaFormat.createVideoFormat(mime, width, height);
                 mediaFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
-                mediaFormat.setByteBuffer("csd-0", ByteBuffer.wrap(csd_0));
-                mediaFormat.setByteBuffer("csd-1", ByteBuffer.wrap(csd_1));
+                mediaFormat.setByteBuffer("csd-0", ByteBuffer.wrap(csd_0));//SPS
+                mediaFormat.setByteBuffer("csd-1", ByteBuffer.wrap(csd_1));//PPS
                 MyLog.i(mediaFormat.toString());
                 mediaCodec = MediaCodec.createDecoderByType(mime);
 
                 info = new MediaCodec.BufferInfo();
-                mediaCodec.configure(mediaFormat, surface, null, 0);
-                mediaCodec.start();
+                mediaCodec.configure(mediaFormat, surface, null, 0);//硬件解码器配置
+                mediaCodec.start();//开始解码
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -275,6 +267,7 @@ public class WLPlayer {
         }
     }
 
+    //底层回调方法：硬解解码底层回调的码流数据包，并直接渲染到绑定的surface上面
     public void onCallDecodeVPacket(int datasize, byte[] data) {
         MyLog.i("onCallDecodeVPacket in");
         if ((surface != null) && (datasize > 0) && (data != null) && (mediaCodec != null)) {
@@ -284,9 +277,9 @@ public class WLPlayer {
                     ByteBuffer byteBuffer = mediaCodec.getInputBuffers()[inputBufferIndex];
                     byteBuffer.clear();
                     byteBuffer.put(data);
-                    mediaCodec.queueInputBuffer(inputBufferIndex, 0, datasize, 0, 0);
+                    mediaCodec.queueInputBuffer(inputBufferIndex, 0, datasize, 0, 0);//丢给mediaCodec解码输入队列
                 }
-                int outputBufferIndex = mediaCodec.dequeueOutputBuffer(info, 10);
+                int outputBufferIndex = mediaCodec.dequeueOutputBuffer(info, 10);//循环从硬解解码器的输出队列中获取解码数据进行渲染
                 while (outputBufferIndex >= 0) {
                     mediaCodec.releaseOutputBuffer(outputBufferIndex, true);
                     outputBufferIndex = mediaCodec.dequeueOutputBuffer(info, 10);

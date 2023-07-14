@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        wlglSurfaceView = findViewById(R.id.wlglsurfaceview);
+        wlglSurfaceView = findViewById(R.id.wlglsurfaceview);//主页面获取GLSurfaceView控件
 
         tv_time = findViewById(R.id.tv_time);//当前播放时间戳及总时间
         seekBarSeek = findViewById(R.id.seekbar_seek);//seek进度条
@@ -53,8 +53,7 @@ public class MainActivity extends AppCompatActivity {
         seekBarVolume = findViewById(R.id.seekbar_volume);//调节音量的进度条;
 
         // 要申请的权限
-        String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE
-                , Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.CHANGE_NETWORK_STATE};
+        String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.CHANGE_NETWORK_STATE};
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissions(permissions, 321);
         }
@@ -62,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
         wlPlayer = new WLPlayer();
         wlPlayer.setWlglSurfaceView(wlglSurfaceView);
 
+        //初始化设置
         wlPlayer.setVolume(80);//设置初始音量
         wlPlayer.setMute(MuteEnum.MUTE_LEFT);//设置声道控制
         tv_volume.setText("音量: " + wlPlayer.getVolumePercent() + "%");//设置音量显示的文本
@@ -200,6 +200,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    //页面控件的按钮响应函数
     public void begin(View view) {
 //        wlPlayer.setSource("http://mpge.5nd.com/2015/2015-11-26/69708/1.mp3");
 //        wlPlayer.setSource("/sdcard/testziliao/mydream.m4a");
@@ -207,6 +208,7 @@ public class MainActivity extends AppCompatActivity {
 //        wlPlayer.setSource("/sdcard/testziliao/biterate9.mp4");
 //        wlPlayer.setSource("/sdcard/testziliao/biterate9noB.mp4");
         wlPlayer.setSource("/sdcard/testziliao/chuqiaozhuan1.mp4");
+//        wlPlayer.setSource("/sdcard/testziliao/hanleiVideo.mp4");
 
 //        wlPlayer.setSource("/sdcard/testziliao/first-love-wangxinling.ape");
 //        wlPlayer.setSource("http://ngcdn004.cnr.cn/live/dszs/index.m3u8");
