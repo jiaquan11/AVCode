@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/11/26.
-//
-
-#ifndef MYMUSIC_WLQUEUE_H
-#define MYMUSIC_WLQUEUE_H
+#ifndef _WLQUEUE_H_
+#define _WLQUEUE_H_
 
 #include "log/androidLog.h"
 #include "queue"
@@ -38,4 +34,4 @@ public:
     WLPlayStatus *playStatus = NULL;
 };
 
-#endif //MYMUSIC_WLQUEUE_H
+#endif

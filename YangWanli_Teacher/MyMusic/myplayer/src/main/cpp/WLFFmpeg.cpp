@@ -137,11 +137,12 @@ void WLFFmpeg::start() {
     pWLVideo->audio = pWLAudio;
 
     const char *codecName = ((const AVCodec *) pWLVideo->avCodecContext->codec)->name;
-    if (supportMediaCodec = callJava->onCallIsSupportVideo(CHILD_THREAD, codecName)) {
+    LOGI("WLFFmpeg start codecName: %s", codecName);
+    if (supportMediaCodec = callJava->onCallIsSupportVideo(CHILD_THREAD, codecName)) {//支持硬解，优先使用硬解
         LOGI("当前设备支持硬解码当前视频!!!");
         if (strcasecmp(codecName, "h264") == 0) {
             bsFilter = av_bsf_get_by_name("h264_mp4toannexb");
-        } else if (strcasecmp(codecName, "h265") == 0) {//265视频硬解需要后续添加，目前还不完善
+        } else if (strcasecmp(codecName, "hevc") == 0) {
             bsFilter = av_bsf_get_by_name("hevc_mp4toannexb");
         }
         if (bsFilter == NULL) {

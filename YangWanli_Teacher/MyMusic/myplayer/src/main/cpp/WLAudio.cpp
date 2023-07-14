@@ -1,7 +1,3 @@
-//
-// Created by jiaqu on 2020/11/25.
-//
-
 #include "WLAudio.h"
 
 WLAudio::WLAudio(WLPlayStatus *playStatus, int sample_rate, CallJava *callJava) {
@@ -68,12 +64,10 @@ void *pcmCallBack(void *data) {
                 char* bf = (char*)malloc(wlAudio->defaultPcmSize);
                 memcpy(bf, pcmBean->buffer + i * wlAudio->defaultPcmSize, wlAudio->defaultPcmSize);
                 if (wlAudio->isRecordPcm) {
-                    wlAudio->callJava->onCallPcmToAAC(CHILD_THREAD, bf,
-                                                      wlAudio->defaultPcmSize);
+                    wlAudio->callJava->onCallPcmToAAC(CHILD_THREAD, bf, wlAudio->defaultPcmSize);
                 }
                 if (wlAudio->showPcm) {
-                    wlAudio->callJava->onCallPcmInfo(CHILD_THREAD, bf,
-                                                     wlAudio->defaultPcmSize);
+                    wlAudio->callJava->onCallPcmInfo(CHILD_THREAD, bf, wlAudio->defaultPcmSize);
                 }
                 free(bf);
                 bf = NULL;
@@ -83,12 +77,10 @@ void *pcmCallBack(void *data) {
                 char* bf = (char*)malloc(pack_sub);
                 memcpy(bf, pcmBean->buffer + pack_num * wlAudio->defaultPcmSize, pack_sub);
                 if (wlAudio->isRecordPcm) {
-                    wlAudio->callJava->onCallPcmToAAC(CHILD_THREAD, bf,
-                                                      pack_sub);
+                    wlAudio->callJava->onCallPcmToAAC(CHILD_THREAD, bf, pack_sub);
                 }
                 if (wlAudio->showPcm) {
-                    wlAudio->callJava->onCallPcmInfo(CHILD_THREAD, bf,
-                                                     pack_sub);
+                    wlAudio->callJava->onCallPcmInfo(CHILD_THREAD, bf, pack_sub);
                 }
                 free(bf);
                 bf = NULL;
@@ -100,7 +92,6 @@ void *pcmCallBack(void *data) {
     }
 
 //    pthread_exit(&wlAudio->pcmCallBackThread);
-
     return 0;
 }
 
@@ -246,10 +237,8 @@ int WLAudio::resampleAudio(void **pcmbuf) {
 int WLAudio::getSoundTouchData() {
     while (playStatus != NULL && !playStatus->isExit) {
         out_buffer = NULL;
-
         if (finished) {
             finished = false;
-
             data_size = resampleAudio(reinterpret_cast<void **>(&out_buffer));//返回当前解码pcm的字节数
             if (data_size > 0) {
                 for (int i = 0; i < data_size / 2 + 1; ++i) {
@@ -277,11 +266,9 @@ int WLAudio::getSoundTouchData() {
                     continue;
                 }
             }
-
             return num;
         }
     }
-
     return 0;
 }
 
@@ -291,9 +278,7 @@ void pcmBufferCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
     if (wlAudio != NULL) {
         int bufferSize = wlAudio->getSoundTouchData();//返回的是当前音频包解码后的PCM的采样点数
         if (bufferSize > 0) {
-            wlAudio->clock +=
-                    bufferSize / ((double) (wlAudio->sample_Rate * 2 * 2));//累加一下播放一段pcm所耗费的时间
-
+            wlAudio->clock += bufferSize / ((double) (wlAudio->sample_Rate * 2 * 2));//累加一下播放一段pcm所耗费的时间
             if (wlAudio->clock - wlAudio->last_time >= 0.1) {
                 wlAudio->last_time = wlAudio->clock;
                 wlAudio->callJava->onCallTimeInfo(CHILD_THREAD, wlAudio->clock, wlAudio->duration);
@@ -305,15 +290,8 @@ void pcmBufferCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
 //            }
 
             wlAudio->bufferQueue->putBuffer(wlAudio->sampleBuffer, bufferSize * 4);
-
-            wlAudio->callJava->onCallVolumeDB(CHILD_THREAD,
-                                              wlAudio->getPCMDB(
-                                                      reinterpret_cast<char *>(wlAudio->sampleBuffer),
-                                                      bufferSize * 4));
-
-            (*wlAudio->pcmBufferQueue)->Enqueue(wlAudio->pcmBufferQueue, wlAudio->sampleBuffer,
-                                                bufferSize * 2 * 2);
-
+            wlAudio->callJava->onCallVolumeDB(CHILD_THREAD, wlAudio->getPCMDB(reinterpret_cast<char *>(wlAudio->sampleBuffer), bufferSize * 4));
+            (*wlAudio->pcmBufferQueue)->Enqueue(wlAudio->pcmBufferQueue, wlAudio->sampleBuffer, bufferSize * 2 * 2);
             if (wlAudio->isCut) {
 //                if (wlAudio->showPcm){
 //                    //
@@ -341,23 +319,19 @@ void WLAudio::initOpenSLES() {
     const SLInterfaceID mids[1] = {SL_IID_ENVIRONMENTALREVERB};//设置使能混响音效
     const SLboolean mreq[1] = {SL_BOOLEAN_TRUE};
 
-    result = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 1, mids,
-                                              mreq);//通过引擎创建混音器
+    result = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 1, mids, mreq);//通过引擎创建混音器
     (void) result;
     result = (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);//实现混音器实例
     (void) result;
     result = (*outputMixObject)->GetInterface(outputMixObject, SL_IID_ENVIRONMENTALREVERB,//指定混响音效类型
                                               &outputMixEnvironmentalReverb);//通过混音器设备得到混响音效的实例
     if (SL_RESULT_SUCCESS == result) {
-        result = (*outputMixEnvironmentalReverb)->SetEnvironmentalReverbProperties(
-                outputMixEnvironmentalReverb,
-                &reverbSettings);//设置某种指定的混响音效，比如走廊混响
+        result = (*outputMixEnvironmentalReverb)->SetEnvironmentalReverbProperties(outputMixEnvironmentalReverb, &reverbSettings);//设置某种指定的混响音效，比如走廊混响
         (void) result;
     }
 
     //3.创建播放器(录音器)
-    SLDataLocator_AndroidSimpleBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,
-                                                            2};//指定了两个buffer队列
+    SLDataLocator_AndroidSimpleBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 2};//指定了两个buffer队列
     SLDataFormat_PCM pcm = {//指定设备进行播放的pcm格式参数，按照指定的参数设置进行播放
             SL_DATAFORMAT_PCM,
             2,
@@ -372,24 +346,19 @@ void WLAudio::initOpenSLES() {
     SLDataSource slDataSource = {&android_queue, &pcm};
     SLDataSink audioSink = {&outputMix, NULL};
 
-    const SLInterfaceID ids[4] = {SL_IID_BUFFERQUEUE, SL_IID_MUTESOLO,
-                                  SL_IID_VOLUME, SL_IID_PLAYBACKRATE};//指定使能缓存队列和音量操作的接口
+    const SLInterfaceID ids[4] = {SL_IID_BUFFERQUEUE, SL_IID_MUTESOLO, SL_IID_VOLUME, SL_IID_PLAYBACKRATE};//指定使能缓存队列和音量操作的接口
     const SLboolean req[4] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
 
     //根据引擎创建音频播放器实例
-    result = (*engineEngine)->CreateAudioPlayer(engineEngine, &pcmPlayerObject, &slDataSource,
-                                                &audioSink, 4,
-                                                ids, req);
+    result = (*engineEngine)->CreateAudioPlayer(engineEngine, &pcmPlayerObject, &slDataSource, &audioSink, 4, ids, req);
 
     // 初始化播放器
     (*pcmPlayerObject)->Realize(pcmPlayerObject, SL_BOOLEAN_FALSE);
     //得到接口后调用  获取Player接口
-    (*pcmPlayerObject)->GetInterface(pcmPlayerObject, SL_IID_PLAY,
-                                     &pcmPlayerPlay);//根据音频播放器实例获取到音频播放接口
+    (*pcmPlayerObject)->GetInterface(pcmPlayerObject, SL_IID_PLAY, &pcmPlayerPlay);//根据音频播放器实例获取到音频播放接口
 
     //4.设置缓存队列和回调函数
-    (*pcmPlayerObject)->GetInterface(pcmPlayerObject, SL_IID_BUFFERQUEUE,
-                                     &pcmBufferQueue);//根据音频播放器实例获取到音频缓存队列的接口
+    (*pcmPlayerObject)->GetInterface(pcmPlayerObject, SL_IID_BUFFERQUEUE, &pcmBufferQueue);//根据音频播放器实例获取到音频缓存队列的接口
     (*pcmBufferQueue)->RegisterCallback(pcmBufferQueue, pcmBufferCallBack, this);
 
     //获取音量接口
@@ -406,7 +375,6 @@ void WLAudio::initOpenSLES() {
 
     //6.启动回调函数
     pcmBufferCallBack(pcmBufferQueue, this);
-
     LOGI("initOpenSLES is end");
 }
 
@@ -554,43 +522,32 @@ void WLAudio::release() {
 
 void WLAudio::setVolume(int percent) {
     volumePercent = percent;
-
     if (pcmPlayerVolume != NULL) {
         //下面是为了让音量调节平滑一点
         if (percent > 30) {
-            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) *
-                                                                (-20));//percent:100 原声 percent:0 静音
+            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) * (-20));//percent:100 原声 percent:0 静音
         } else if (percent > 25) {
-            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) *
-                                                                (-22));//percent:100 原声 percent:0 静音
+            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) * (-22));//percent:100 原声 percent:0 静音
         } else if (percent > 20) {
-            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) *
-                                                                (-25));//percent:100 原声 percent:0 静音
+            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) * (-25));//percent:100 原声 percent:0 静音
         } else if (percent > 15) {
-            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) *
-                                                                (-28));//percent:100 原声 percent:0 静音
+            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) * (-28));//percent:100 原声 percent:0 静音
         } else if (percent > 10) {
-            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) *
-                                                                (-30));//percent:100 原声 percent:0 静音
+            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) * (-30));//percent:100 原声 percent:0 静音
         } else if (percent > 5) {
-            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) *
-                                                                (-34));//percent:100 原声 percent:0 静音
+            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) * (-34));//percent:100 原声 percent:0 静音
         } else if (percent > 3) {
-            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) *
-                                                                (-37));//percent:100 原声 percent:0 静音
+            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) * (-37));//percent:100 原声 percent:0 静音
         } else if (percent > 0) {
-            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) *
-                                                                (-40));//percent:100 原声 percent:0 静音
+            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) * (-40));//percent:100 原声 percent:0 静音
         } else {
-            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) *
-                                                                (-100));//percent:100 原声 percent:0 静音
+            (*pcmPlayerVolume)->SetVolumeLevel(pcmPlayerVolume, (100 - percent) * (-100));//percent:100 原声 percent:0 静音
         }
     }
 }
 
 void WLAudio::setMute(int mute) {
     this->mute = mute;
-
     if (pcmPlayerMute != NULL) {
         if (mute == 0) {//rigt 右声道
             (*pcmPlayerMute)->SetChannelMute(pcmPlayerMute, 1, false);//0右声道  1左声道  第三个参数表示是否关闭
@@ -625,7 +582,6 @@ int WLAudio::getPCMDB(char *pcmdata, size_t pcmsize) {
     int db = 0;
     short int pervalue = 0;
     double sum = 0;
-
     for (int i = 0; i < pcmsize; i += 2) {
         memcpy(&pervalue, (pcmdata + i), 2);
         sum += abs(pervalue);
@@ -635,7 +591,6 @@ int WLAudio::getPCMDB(char *pcmdata, size_t pcmsize) {
     if (sum > 0) {
         db = (int) 20.0 * log10(sum);
     }
-
     return db;
 }
 

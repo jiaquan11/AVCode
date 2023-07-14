@@ -7,8 +7,9 @@ import java.util.Map;
 
 public class WLVideoSupportUtil {
     private static Map<String, String> codecMap = new HashMap<>();
-    static {
-        codecMap.put("h264", "video/avc");//映射表中只放置了video/avc解码器格式
+    static {//支持H264和H265硬件解码
+        codecMap.put("h264", "video/avc");
+        codecMap.put("hevc", "video/hevc");
     }
 
     //返回Android端MediaCodec内部定义的编码器类型

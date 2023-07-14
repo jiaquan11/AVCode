@@ -1,8 +1,5 @@
-//
-// Created by jiaqu on 2020/12/26.
-//
-#ifndef MYMUSIC_WLVIDEO_H
-#define MYMUSIC_WLVIDEO_H
+#ifndef _WLVIDEO_H_
+#define _WLVIDEO_H_
 
 #include "WLQueue.h"
 #include "CallJava.h"
@@ -29,7 +26,7 @@ public:
 
     void release();
 
-    double getFrameDiffTime(AVFrame *avFrame, AVPacket* avPacket);
+    double getFrameDiffTime(AVFrame *avFrame, AVPacket *avPacket);
 
     double getDelayTime(double diff);
 
@@ -55,4 +52,4 @@ public:
     AVBSFContext *abs_ctx = NULL;
 };
 
-#endif //MYMUSIC_WLVIDEO_H
+#endif

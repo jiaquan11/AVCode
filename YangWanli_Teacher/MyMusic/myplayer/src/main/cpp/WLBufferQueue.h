@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/12/14.
-//
-
-#ifndef MYMUSIC_WLBUFFERQUEUE_H
-#define MYMUSIC_WLBUFFERQUEUE_H
+#ifndef _WLBUFFERQUEUE_H_
+#define _WLBUFFERQUEUE_H_
 
 #include "log/androidLog.h"
 #include <deque>
@@ -35,5 +31,4 @@ public:
     pthread_cond_t condBuffer;
     WLPlayStatus *wlPlayStatus = NULL;
 };
-
-#endif //MYMUSIC_WLBUFFERQUEUE_H
+#endif

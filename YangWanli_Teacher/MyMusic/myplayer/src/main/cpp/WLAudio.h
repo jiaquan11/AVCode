@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/11/25.
-//
-
-#ifndef MYMUSIC_WLAUDIO_H
-#define MYMUSIC_WLAUDIO_H
+#ifndef _WLAUDIO_H_
+#define _WLAUDIO_H_
 
 #include "WLQueue.h"
 #include "WLPlayStatus.h"
@@ -131,5 +127,4 @@ public:
 
     pthread_mutex_t codecMutex;
 };
-
-#endif //MYMUSIC_WLAUDIO_H
+#endif

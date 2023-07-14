@@ -1,7 +1,3 @@
-//
-// Created by jiaqu on 2020/11/26.
-//
-
 #include "WLQueue.h"
 
 WLQueue::WLQueue(WLPlayStatus *playStatus) {

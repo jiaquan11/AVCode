@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/11/26.
-//
-
-#ifndef MYMUSIC_WLPLAYSTATUS_H
-#define MYMUSIC_WLPLAYSTATUS_H
+#ifndef _WLPLAYSTATUS_H_
+#define _WLPLAYSTATUS_H_
 
 class WLPlayStatus {
 public:
@@ -17,6 +13,4 @@ public:
     bool seek = false;
     bool pause = false;
 };
-
-
-#endif //MYMUSIC_WLPLAYSTATUS_H
+#endif

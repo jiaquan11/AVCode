@@ -1,6 +1,3 @@
-//
-// Created by jiaqu on 2020/12/14.
-//
 #include "WLPcmBean.h"
 
 WLPcmBean::WLPcmBean(SAMPLETYPE *buffer, int size) {

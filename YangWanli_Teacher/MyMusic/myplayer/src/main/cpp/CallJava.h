@@ -1,12 +1,10 @@
-//
-// Created by jiaqu on 2020/11/25.
-//
-
-#ifndef MYMUSIC_CALLJAVA_H
-#define MYMUSIC_CALLJAVA_H
+#ifndef _CALLJAVA_H_
+#define _CALLJAVA_H_
 
 #include "jni.h"
 #include "log/androidLog.h"
+#include <stdlib.h>
+#include <string.h>
 
 #define MAIN_THREAD 0
 #define CHILD_THREAD 1
@@ -17,6 +15,7 @@ public:
 
     ~CallJava();
 
+public:
     void onCallPrepared(int type);
 
     void onCallLoad(int type, bool load);
@@ -35,13 +34,16 @@ public:
 
     void onCallPcmRate(int type, int samplerate, int bit, int channels);
 
-    void onCallRenderYUV(int type, int width, int height, uint8_t *fy, uint8_t *fu, uint8_t *fv);
+    void onCallRenderYUV(int type, int width, int linesize, int height, uint8_t *fy, uint8_t *fu, uint8_t *fv);
 
     bool onCallIsSupportVideo(int type, const char* ffcodecname);
 
     void onCallinitMediaCodec(int type, const char* mime, int width, int height, int csd0_size, int csd1_size, uint8_t* csd_0, uint8_t* csd_1);
 
     void onCallDecodeVPacket(int type, int datasize, uint8_t* data);
+
+private:
+    void cutAndCopyYuv(uint8_t* tempP[], uint8_t *srcfy, uint8_t *srcfu, uint8_t *srcfv, int linesize, int width, int height);
 
 public:
     JavaVM *javaVm = NULL;
@@ -61,5 +63,8 @@ public:
     jmethodID jmid_supportvideo;
     jmethodID jmid_initmediacodec;
     jmethodID jmid_decodeVPacket;
+
+    uint8_t* pData[3] = {NULL};
+    bool bHasAllocate = false;
 };
-#endif //MYMUSIC_CALLJAVA_H
+#endif

@@ -6,7 +6,6 @@ import android.media.MediaFormat;
 import android.text.TextUtils;
 import android.view.Surface;
 
-import com.jiaquan.myplayer.util.TimeInfoBean;
 import com.jiaquan.myplayer.listener.OnCompleteListener;
 import com.jiaquan.myplayer.listener.OnErrorListener;
 import com.jiaquan.myplayer.listener.OnLoadListener;
@@ -20,6 +19,7 @@ import com.jiaquan.myplayer.log.MyLog;
 import com.jiaquan.myplayer.muteenum.MuteEnum;
 import com.jiaquan.myplayer.opengl.WLGLSurfaceView;
 import com.jiaquan.myplayer.opengl.WLRender;
+import com.jiaquan.myplayer.util.TimeInfoBean;
 import com.jiaquan.myplayer.util.WLVideoSupportUtil;
 
 import java.io.File;
@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class WLPlayer {
+    private final String TAG = WLPlayer.class.getSimpleName();
+
     //加载需要的动态库
     static {
         System.loadLibrary("native-lib");
@@ -71,31 +73,37 @@ public class WLPlayer {
     }
 
     private OnPreparedListener onPreparedListener = null;
+
     public void setOnPreparedListener(OnPreparedListener onPreparedListener) {
         this.onPreparedListener = onPreparedListener;
     }
 
     private OnLoadListener onLoadListener = null;
+
     public void setOnLoadListener(OnLoadListener onLoadListener) {
         this.onLoadListener = onLoadListener;
     }
 
     private OnPauseResumeListener onPauseResumeListener = null;
+
     public void setOnPauseResumeListener(OnPauseResumeListener onPauseResumeListener) {
         this.onPauseResumeListener = onPauseResumeListener;
     }
 
     private OnTimeInfoListener onTimeInfoListener = null;
+
     public void setOnTimeInfoListener(OnTimeInfoListener onTimeInfoListener) {
         this.onTimeInfoListener = onTimeInfoListener;
     }
 
     private OnErrorListener onErrorListener = null;
+
     public void setOnErrorListener(OnErrorListener onErrorListener) {
         this.onErrorListener = onErrorListener;
     }
 
     private OnCompleteListener onCompleteListener = null;
+
     public void setOnCompleteListener(OnCompleteListener onCompleteListener) {
         this.onCompleteListener = onCompleteListener;
     }
@@ -107,11 +115,13 @@ public class WLPlayer {
     }
 
     private OnRecordTimeListener onRecordTimeListener = null;
+
     public void setOnRecordTimeListener(OnRecordTimeListener onRecordTimeListener) {
         this.onRecordTimeListener = onRecordTimeListener;
     }
 
     private OnPcmInfoListener onPcmInfoListener = null;
+
     public void setOnPcmInfoListener(OnPcmInfoListener onPcmInfoListener) {
         this.onPcmInfoListener = onPcmInfoListener;
     }
@@ -226,7 +236,7 @@ public class WLPlayer {
 
     //底层回调方法：传递YUV数据用于上层渲染
     public void onCallRenderYUV(int width, int height, byte[] y, byte[] u, byte[] v) {
-        MyLog.i("获取到YUV数据渲染");
+        MyLog.i("onCallRenderYUV width: " + width + " height: " + height);
         if (wlglSurfaceView != null) {
             wlglSurfaceView.getWlRender().setRenderType(WLRender.RENDER_YUV);
             wlglSurfaceView.setYUVData(width, height, y, u, v);
@@ -235,7 +245,10 @@ public class WLPlayer {
 
     //底层回调方法：判断是否支持硬解指定的解码器
     public boolean onCallIsSupportMediaCodec(String ffcodecname) {
-        return WLVideoSupportUtil.isSupportCodec(ffcodecname);
+        MyLog.i("onCallIsSupportMediaCodec input ffcodecname: " + ffcodecname);
+        boolean isSupport = WLVideoSupportUtil.isSupportCodec(ffcodecname);
+        MyLog.i("onCallIsSupportMediaCodec isSupport: " + isSupport);
+        return isSupport;
     }
 
     //video
@@ -246,10 +259,14 @@ public class WLPlayer {
                 wlglSurfaceView.getWlRender().setRenderType(WLRender.RENDER_MEDIACODEC);
 
                 String mime = WLVideoSupportUtil.findVideoCodecName(codecName);
+                MyLog.i("onCallinitMediaCodec mime is " + mime + " width is " + width + " height is " + height);
                 mediaFormat = MediaFormat.createVideoFormat(mime, width, height);
                 mediaFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
-                mediaFormat.setByteBuffer("csd-0", ByteBuffer.wrap(csd_0));//SPS
-                mediaFormat.setByteBuffer("csd-1", ByteBuffer.wrap(csd_1));//PPS
+                mediaFormat.setByteBuffer("csd-0", ByteBuffer.wrap(csd_0));
+                mediaFormat.setByteBuffer("csd-1", ByteBuffer.wrap(csd_1));
+                if (mime.equals("video/hevc")){
+                    mediaFormat.setByteBuffer("csd-2", ByteBuffer.wrap(csd_1));
+                }
                 MyLog.i(mediaFormat.toString());
                 mediaCodec = MediaCodec.createDecoderByType(mime);
 
@@ -429,6 +446,7 @@ public class WLPlayer {
     private int aacSampleRateType = 4;
     private double recordTime = 0;
     private int audioSamplerate = 0;
+
     private void initMediaCodec(int samplerate, File outfile) {
         try {
             aacSampleRateType = getADTSSampleRate(samplerate);

@@ -50,7 +50,6 @@ extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_myplayer_player_WLPlayer__1pr
 void *startCallBack(void *data) {
     WLFFmpeg *wlfFmpeg = (WLFFmpeg *) (data);
     wlfFmpeg->start();
-
 //    pthread_exit(&thread_start);
     return 0;
 }

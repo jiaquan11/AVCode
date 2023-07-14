@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/11/25.
-//
-
-#ifndef MYMUSIC_WLFFMPEG_H
-#define MYMUSIC_WLFFMPEG_H
+#ifndef _WLFFMPEG_H_
+#define _WLFFMPEG_H_
 
 #include "CallJava.h"
 #include "pthread.h"
@@ -72,5 +68,4 @@ public:
 
     const AVBitStreamFilter * bsFilter = NULL;
 };
-
-#endif //MYMUSIC_WLFFMPEG_H
+#endif

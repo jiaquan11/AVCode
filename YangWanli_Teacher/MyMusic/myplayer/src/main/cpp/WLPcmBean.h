@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2020/12/14.
-//
-
-#ifndef MYMUSIC_WLPCMBEAN_H
-#define MYMUSIC_WLPCMBEAN_H
+#ifndef _WLPCMBEAN_H_
+#define _WLPCMBEAN_H_
 
 #include <string.h>
 #include <stdio.h>
@@ -23,4 +19,4 @@ public:
     int buffsize;
 };
 
-#endif //MYMUSIC_WLPCMBEAN_H
+#endif

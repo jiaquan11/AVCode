@@ -1,7 +1,3 @@
-//
-// Created by jiaqu on 2020/12/14.
-//
-
 #include "WLBufferQueue.h"
 
 WLBufferQueue::WLBufferQueue(WLPlayStatus *playStatus) {
