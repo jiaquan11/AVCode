@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
         tv_time = findViewById(R.id.tv_time);//当前播放时间戳及总时间
         seekBarSeek = findViewById(R.id.seekbar_seek);//seek进度条
         tv_volume = findViewById(R.id.tv_volume);//音量值
-        seekBarVolume = findViewById(R.id.seekbar_volume);//调节音量的进度条;
+        seekBarVolume = findViewById(R.id.seekbar_volume);//调节音量的进度条
 
         // 要申请的权限
         String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.CHANGE_NETWORK_STATE};

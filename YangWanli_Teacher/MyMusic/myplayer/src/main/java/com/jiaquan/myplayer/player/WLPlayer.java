@@ -76,55 +76,46 @@ public class WLPlayer {
     }
 
     private OnPreparedListener onPreparedListener = null;
-
     public void setOnPreparedListener(OnPreparedListener onPreparedListener) {
         this.onPreparedListener = onPreparedListener;
     }
 
     private OnLoadListener onLoadListener = null;
-
     public void setOnLoadListener(OnLoadListener onLoadListener) {
         this.onLoadListener = onLoadListener;
     }
 
     private OnPauseResumeListener onPauseResumeListener = null;
-
     public void setOnPauseResumeListener(OnPauseResumeListener onPauseResumeListener) {
         this.onPauseResumeListener = onPauseResumeListener;
     }
 
     private OnTimeInfoListener onTimeInfoListener = null;
-
     public void setOnTimeInfoListener(OnTimeInfoListener onTimeInfoListener) {
         this.onTimeInfoListener = onTimeInfoListener;
     }
 
     private OnErrorListener onErrorListener = null;
-
     public void setOnErrorListener(OnErrorListener onErrorListener) {
         this.onErrorListener = onErrorListener;
     }
 
     private OnCompleteListener onCompleteListener = null;
-
     public void setOnCompleteListener(OnCompleteListener onCompleteListener) {
         this.onCompleteListener = onCompleteListener;
     }
 
     private OnVolumeDBListener onVolumeDBListener = null;
-
     public void setOnVolumeDBListener(OnVolumeDBListener onVolumeDBListener) {
         this.onVolumeDBListener = onVolumeDBListener;
     }
 
     private OnRecordTimeListener onRecordTimeListener = null;
-
     public void setOnRecordTimeListener(OnRecordTimeListener onRecordTimeListener) {
         this.onRecordTimeListener = onRecordTimeListener;
     }
 
     private OnPcmInfoListener onPcmInfoListener = null;
-
     public void setOnPcmInfoListener(OnPcmInfoListener onPcmInfoListener) {
         this.onPcmInfoListener = onPcmInfoListener;
     }
@@ -135,6 +126,7 @@ public class WLPlayer {
         sourcePath = source;
     }
 
+    //构造函数
     public WLPlayer() {
 
     }

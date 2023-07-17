@@ -9,8 +9,7 @@ import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-
-    // Used to load the 'native-lib' library on application startup.
+    //加载so
     static {
         System.loadLibrary("native-lib");
     }
@@ -30,15 +29,18 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public native void startRecord(String path);
-
-    public native void stopRecord();
-
+    //开始音频录制,采集的是音频pcm数据
     public void start(View view) {
         startRecord(Environment.getExternalStorageDirectory().getAbsolutePath() + "/testziliao/opensles_record.pcm");
     }
 
+    //结束音频录制
     public void stop(View view) {
         stopRecord();
     }
+
+    //native方法
+    public native void startRecord(String path);
+
+    public native void stopRecord();
 }

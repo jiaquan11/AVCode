@@ -23,12 +23,11 @@ SLAndroidSimpleBufferQueueItf pcmBufferQueue = NULL;
 FILE *pcmFile = NULL;
 void *buffer = NULL;
 uint8_t *out_buffer = NULL;
-
 int getPcmData(void **pcm) {
     int size = 0;
     while (!feof(pcmFile)) {
         size = fread(out_buffer, 1, 44100 * 2 * 2, pcmFile);
-        if (out_buffer == NULL) {
+        if (size == 0) {
             LOGE("Read end");
             break;
         } else {
@@ -51,7 +50,7 @@ void pcmBufferCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
 
 extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_androidopenslaudio_MainActivity_playPcm(JNIEnv *env, jobject thiz, jstring urlStr) {
     const char *url = env->GetStringUTFChars(urlStr, 0);
-    pcmFile = fopen(url, "r");
+    pcmFile = fopen(url, "r");//打开pcm文件
     if (pcmFile == NULL) {
         return;
     }
@@ -65,8 +64,8 @@ extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_androidopenslaudio_MainActivi
     (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineEngine);
 
     //2.设置混音器
-    const SLInterfaceID mids[1] = {SL_IID_ENVIRONMENTALREVERB};//设置使能混响音效
-    const SLboolean mreq[1] = {SL_BOOLEAN_TRUE};
+    const SLInterfaceID mids[1] = {SL_IID_ENVIRONMENTALREVERB};//混响音效类型
+    const SLboolean mreq[1] = {SL_BOOLEAN_TRUE};//设置使能混响音效
     result = (*engineEngine)->CreateOutputMix(engineEngine, &outputMixObject, 1, mids, mreq);//通过引擎创建混音器
     (void) result;
     result = (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);//实现混音器实例
@@ -91,7 +90,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_androidopenslaudio_MainActivi
     SLDataSource slDataSource = {&android_queue, &pcm};
     SLDataLocator_OutputMix outputMix = {SL_DATALOCATOR_OUTPUTMIX, outputMixObject};
     SLDataSink audioSink = {&outputMix, NULL};
-    const SLInterfaceID ids[3] = {SL_IID_BUFFERQUEUE, SL_IID_EFFECTSEND, SL_IID_VOLUME};//指定使能缓存队列和音量操作的接口
+    const SLInterfaceID ids[3] = {SL_IID_BUFFERQUEUE, SL_IID_EFFECTSEND, SL_IID_VOLUME};//指定使能缓存队列，音效和音量操作的三种操作接口
     const SLboolean req[3] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
 
     //根据引擎创建音频播放器实例
@@ -103,7 +102,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_androidopenslaudio_MainActivi
 
     //4.设置缓存队列和回调函数
     (*pcmPlayerObject)->GetInterface(pcmPlayerObject, SL_IID_BUFFERQUEUE, &pcmBufferQueue);//根据音频播放器实例获取到音频缓存队列的接口
-    (*pcmBufferQueue)->RegisterCallback(pcmBufferQueue, pcmBufferCallBack, NULL);
+    (*pcmBufferQueue)->RegisterCallback(pcmBufferQueue, pcmBufferCallBack, NULL);//注册回调函数
 
     //获取音量接口
     (*pcmPlayerObject)->GetInterface(pcmPlayerObject, SL_IID_VOLUME, &pcmPlayerVolume);

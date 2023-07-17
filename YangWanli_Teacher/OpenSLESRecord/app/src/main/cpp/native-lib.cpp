@@ -23,7 +23,7 @@ bool finish = false;
 void bqRecorderCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
 //    LOGI("recordBuffer->getNowBuffer(): %p", recordBuffer->getNowBuffer());
     if (pcmFile != NULL){
-        fwrite(recordBuffer->getNowBuffer(), 1, 4096, pcmFile);
+        fwrite(recordBuffer->getNowBuffer(), 1, 4096, pcmFile);//写入当前buffer中采集到的数据
     }
 
     if (finish) {
@@ -46,7 +46,6 @@ void bqRecorderCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
             fclose(pcmFile);
             pcmFile = NULL;
         }
-
         LOGI("opengles 录制完成2222");
     } else {
 //        LOGI("recordBuffer->getRecordBuffer(): %p", recordBuffer->getRecordBuffer());
@@ -55,17 +54,14 @@ void bqRecorderCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
     }
 }
 
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_jiaquan_openslesrecord_MainActivity_startRecord(JNIEnv *env, jobject thiz, jstring jPath) {
-    // TODO: implement startRecord()
+//开始音频采集
+extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_openslesrecord_MainActivity_startRecord(JNIEnv *env, jobject thiz, jstring jPath) {
     if (finish) {
         return;
     }
-    const char *path = env->GetStringUTFChars(jPath, 0);
-
     finish = false;
 
+    const char *path = env->GetStringUTFChars(jPath, 0);
     pcmFile = fopen(path, "wb");
 
     recordBuffer = new RecordBuffer(4096);
@@ -80,9 +76,7 @@ Java_com_jiaquan_openslesrecord_MainActivity_startRecord(JNIEnv *env, jobject th
                                       NULL};
     SLDataSource audioSrc = {&loc_dev, NULL};
 
-    SLDataLocator_AndroidSimpleBufferQueue loc_bq = {
-            SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,
-            2};
+    SLDataLocator_AndroidSimpleBufferQueue loc_bq = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 2};
     SLDataFormat_PCM format_pcm = {
             SL_DATAFORMAT_PCM, 2, SL_SAMPLINGRATE_44_1,
             SL_PCMSAMPLEFORMAT_FIXED_16, SL_PCMSAMPLEFORMAT_FIXED_16,
@@ -94,22 +88,19 @@ Java_com_jiaquan_openslesrecord_MainActivity_startRecord(JNIEnv *env, jobject th
     const SLInterfaceID id[1] = {SL_IID_ANDROIDSIMPLEBUFFERQUEUE};
     const SLboolean req[1] = {SL_BOOLEAN_TRUE};
     (*engineItf)->CreateAudioRecorder(engineItf, &recordObj, &audioSrc, &audioSnk, 1, id, req);//引擎集合里面的engineItf对象调用自身接口创建录制器，同时得到一个录制器句柄
-
     (*recordObj)->Realize(recordObj, SL_BOOLEAN_FALSE);//实例化这个录制器的句柄
-    (*recordObj)->GetInterface(recordObj, SL_IID_RECORD, &recordItf);//获取录制器集合里面某个修改录制状态的对象
-    (*recordObj)->GetInterface(recordObj, SL_IID_ANDROIDSIMPLEBUFFERQUEUE, &recordBufferQueue);//获取录制器集合里面某个缓冲队列的对象
 
+    (*recordObj)->GetInterface(recordObj, SL_IID_RECORD, &recordItf);//获取录制器集合里面某个修改录制状态的对象
+
+    (*recordObj)->GetInterface(recordObj, SL_IID_ANDROIDSIMPLEBUFFERQUEUE, &recordBufferQueue);//获取录制器集合里面某个缓冲队列的对象
     (*recordBufferQueue)->Enqueue(recordBufferQueue, recordBuffer->getRecordBuffer(), 4096);//将缓冲buffer入队
     (*recordBufferQueue)->RegisterCallback(recordBufferQueue, bqRecorderCallback, NULL);//注册回调
 
     (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_RECORDING);
-
     env->ReleaseStringUTFChars(jPath, path);
 }
 
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_jiaquan_openslesrecord_MainActivity_stopRecord(JNIEnv *env, jobject thiz) {
-    // TODO: implement stopRecord()
+//停止音频采集
+extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_openslesrecord_MainActivity_stopRecord(JNIEnv *env, jobject thiz) {
     finish = true;
 }

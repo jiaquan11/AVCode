@@ -120,9 +120,9 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         MyLog.i("WLRender onSurfaceCreated in");
-        initRenderYUV();
+        initRenderYUV();//初始化渲染YUV
 
-        initRenderMediaCodec();
+        initRenderMediaCodec();//初始化硬解渲染画面
         MyLog.i("WLRender onSurfaceCreated end");
     }
 

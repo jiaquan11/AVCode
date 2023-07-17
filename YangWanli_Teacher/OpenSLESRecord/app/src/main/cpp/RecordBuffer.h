@@ -1,9 +1,5 @@
-//
-// Created by jiaqu on 2021/2/13.
-//
-
-#ifndef OPENSLESRECORD_RECORDBUFFER_H
-#define OPENSLESRECORD_RECORDBUFFER_H
+#ifndef _RECORDBUFFER_H_
+#define _RECORDBUFFER_H_
 
 class RecordBuffer {
 public:
@@ -11,6 +7,7 @@ public:
 
     ~RecordBuffer();
 
+public:
     short *getRecordBuffer();
 
     short *getNowBuffer();
@@ -19,5 +16,4 @@ public:
     short **buffer;
     int index = -1;
 };
-
-#endif //OPENSLESRECORD_RECORDBUFFER_H
+#endif
