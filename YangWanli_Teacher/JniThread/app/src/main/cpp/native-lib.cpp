@@ -54,7 +54,6 @@ void *customerCallBack(void *data) {
             pthread_cond_wait(&cond, &mutex);//等待过程中会自动解锁，然后其它线程可以调度使用
         }
         pthread_mutex_unlock(&mutex);
-
         usleep(1000 * 500);
     }
     pthread_exit(&customer);
@@ -70,26 +69,31 @@ Java_com_jiaquan_jnithread_ThreadDemo_mutexThread(JNIEnv *env, jobject thiz) {
     pthread_mutex_init(&mutex, NULL);
     pthread_cond_init(&cond, NULL);
 
-    pthread_create(&product, NULL, productCallBack, NULL);//生产者子线程
-    pthread_create(&customer, NULL, customerCallBack, NULL);//消费者子线程
+    pthread_create(&product, NULL, productCallBack, NULL);//创建生产者子线程
+    pthread_create(&customer, NULL, customerCallBack, NULL);//创建消费者子线程
 }
 
+/*
+ * C++调用Java方法
+ * */
 JavaVM *javaVm;
 JavaListener *javaListener;
 pthread_t childThread;
 
+//子线程中回调Java方法
 void *childCallback(void *data) {
     JavaListener *listener = (JavaListener *) (data);
     listener->onError(0, 101, "C++ call java method from child thread");
+    delete listener;
     pthread_exit(&childThread);
 }
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_jiaquan_jnithread_ThreadDemo_callBackFromC(JNIEnv *env, jobject thiz) {
-    javaListener = new JavaListener(javaVm, env, env->NewGlobalRef(thiz));
-//    javaListener->onError(1, 100, "C++ call java method from main thread"); //主线程调用Java方法
+    javaListener = new JavaListener(javaVm, env, env->NewGlobalRef(thiz));//NewGlobalRef 全局引用
+//    javaListener->onError(1, 100, "C++ call java method from main thread"); //主线程中回调Java方法
 
-    pthread_create(&childThread, NULL, childCallback, javaListener);//子线程调用Java方法
+    pthread_create(&childThread, NULL, childCallback, javaListener);//子线程中回调Java方法
 }
 
 //JVM自动调用加载函数，在Java层调用System.loadLibrary()函数会自动调用JNI_OnLoad方法

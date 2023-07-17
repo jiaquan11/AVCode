@@ -6,6 +6,7 @@ public class ThreadDemo {
         System.loadLibrary("native-lib");
     }
 
+    //定义一个回调错误值的接口
     public interface OnErrorListener {
         void onError(int code, String msg);
     }

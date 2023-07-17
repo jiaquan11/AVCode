@@ -23,7 +23,6 @@ void JavaListener::onError(int threadType, int code, const char *msg) {
         jstring jmsg = env->NewStringUTF(msg);
         env->CallVoidMethod(jobj, jmethodId, code, jmsg);
         env->DeleteLocalRef(jmsg);
-
         jvm->DetachCurrentThread();
     } else if (threadType == 1) {//主线程
         jstring jmsg = jniEnv->NewStringUTF(msg);
