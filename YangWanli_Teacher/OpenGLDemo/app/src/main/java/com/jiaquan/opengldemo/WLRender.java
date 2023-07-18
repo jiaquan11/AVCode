@@ -99,7 +99,7 @@ public class WLRender implements GLSurfaceView.Renderer {
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
 
-            bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.mingren);
+            bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.mingren);//解码一张图片
             if (bitmap == null){
                 return;
             }

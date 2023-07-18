@@ -60,10 +60,7 @@ public class EglHelper {
         }
 
         //6.创建EglContext
-        int[] attrib_list = {
-                EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
-                EGL10.EGL_NONE};
-
+        int[] attrib_list = {EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE};
         Log.i("EglHelper", "eglContext: " + eglContext);
         if (eglContext != null) {
             mEglContext = mEgl.eglCreateContext(mEglDisplay, configs[0], eglContext, attrib_list);
@@ -95,8 +92,7 @@ public class EglHelper {
 
     public void destroyEgl() {
         if (mEgl != null) {
-            mEgl.eglMakeCurrent(mEglDisplay, EGL10.EGL_NO_SURFACE,
-                    EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
+            mEgl.eglMakeCurrent(mEglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
 
             mEgl.eglDestroySurface(mEglDisplay, mEglSurface);
             mEglSurface = null;

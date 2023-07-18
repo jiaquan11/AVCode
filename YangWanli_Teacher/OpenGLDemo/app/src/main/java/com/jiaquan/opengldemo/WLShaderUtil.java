@@ -8,7 +8,12 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+/*
+* Shader资源操作类
+* */
 public class WLShaderUtil {
+    private final static String TAG = WLShaderUtil.class.getSimpleName();
+
     public static String readRawTxt(Context context, int rawId) {
         InputStream inputStream = context.getResources().openRawResource(rawId);
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
@@ -16,14 +21,13 @@ public class WLShaderUtil {
         String line;
 
         try {
-            while ((line = reader.readLine()) != null) {
+            while ((line = reader.readLine()) != null) {//读取一行字符
                 sb.append(line).append("\n");
             }
             reader.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return sb.toString();
     }
 
@@ -35,7 +39,7 @@ public class WLShaderUtil {
             int[] compile = new int[1];
             GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compile, 0);
             if (compile[0] != GLES20.GL_TRUE) {
-                Log.e("OpenGLDemo", "shader compile error!");
+                Log.e(TAG, "shader compile error!");
                 GLES20.glDeleteShader(shader);
                 shader = 0;
             }
@@ -61,7 +65,7 @@ public class WLShaderUtil {
             int[] linkStatus = new int[1];
             GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linkStatus, 0);
             if (linkStatus[0] != GLES20.GL_TRUE) {
-                Log.e("OpenGLDemo", "program link error!");
+                Log.e(TAG, "program link error!");
                 GLES20.glDeleteProgram(program);
                 program = 0;
             }

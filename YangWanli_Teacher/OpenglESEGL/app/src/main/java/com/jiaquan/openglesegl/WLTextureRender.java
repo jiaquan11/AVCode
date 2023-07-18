@@ -126,8 +126,7 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
             //2.绑定VBO
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboId);
             //3.分配VBO需要的缓存大小
-            GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, vertexData.length * 4 + fragmentData.length * 4, null,
-                    GLES20.GL_STATIC_DRAW);
+            GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, vertexData.length * 4 + fragmentData.length * 4, null, GLES20.GL_STATIC_DRAW);
 
             //4.为VBO设置顶点数据的值
             GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, 0, vertexData.length * 4, vertexBuffer);
@@ -295,7 +294,6 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
 
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-
         return textureIds[0];
     }
 }

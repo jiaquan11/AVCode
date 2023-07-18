@@ -12,7 +12,7 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 public class WLMutiRender implements WLEGLSurfaceView.WLGLRender {
-    private Context context;
+    private Context context = null;
 
     private final float[] vertexData = {//顶点坐标
 //            -1f, 0f,
@@ -47,19 +47,19 @@ public class WLMutiRender implements WLEGLSurfaceView.WLGLRender {
     };
 
 
-    private FloatBuffer vertexBuffer;
-    private FloatBuffer fragmentBuffer;
-    private int program;
-    private int vPosition;
-    private int fPosition;
-    private int sTexture;
+    private FloatBuffer vertexBuffer = null;
+    private FloatBuffer fragmentBuffer = null;
+    private int program = -1;
+    private int vPosition = -1;
+    private int fPosition = -1;
+    private int sTexture = -1;
 
-    private int vboId;
+    private int vboId = -1;
 
-    int index;
+    int index = -1;
 
-    private int textureId;
-    private int imgTextureId;
+    private int textureId = -1;
+    private int imgTextureId = -1;
 
     public void setTextureId(int textureId, int index) {
         this.textureId = textureId;
@@ -115,8 +115,7 @@ public class WLMutiRender implements WLEGLSurfaceView.WLGLRender {
             //2.绑定VBO
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboId);
             //3.分配VBO需要的缓存大小
-            GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, vertexData.length * 4 + fragmentData.length * 4, null,
-                    GLES20.GL_STATIC_DRAW);
+            GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, vertexData.length * 4 + fragmentData.length * 4, null, GLES20.GL_STATIC_DRAW);
 
             //4.为VBO设置顶点数据的值
             GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, 0, vertexData.length * 4, vertexBuffer);
@@ -199,7 +198,6 @@ public class WLMutiRender implements WLEGLSurfaceView.WLGLRender {
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
 
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-
         return textureIds[0];
     }
 }
