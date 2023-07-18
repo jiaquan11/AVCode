@@ -21,6 +21,12 @@ void *decodeFFmpeg(void *data) {
     WLFFmpeg *wlfFmpeg = (WLFFmpeg *) (data);
     wlfFmpeg->decodeFFmpegThread();
 
+    /*
+     * 使用return语句退出线程比使用pthread_exit()函数更简单和直观。
+     * 一般情况下，如果只需要退出当前线程，
+     * 而不需要精确的控制，使用return语句是更常见和推荐的做法。
+     * 只有在需要在任意位置立即终止线程执行的特殊情况下，才需要使用pthread_exit()函数。
+     * */
 //    pthread_exit(&wlfFmpeg->decodeThread);
     return 0;
 }
@@ -74,8 +80,7 @@ void WLFFmpeg::decodeFFmpegThread() {
     for (int i = 0; i < pFormatCtx->nb_streams; ++i) {
         if (pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             if (pWLAudio == NULL) {
-                pWLAudio = new WLAudio(playStatus, pFormatCtx->streams[i]->codecpar->sample_rate,
-                                       callJava);
+                pWLAudio = new WLAudio(playStatus, pFormatCtx->streams[i]->codecpar->sample_rate, callJava);
                 pWLAudio->streamIndex = i;
                 pWLAudio->codecPar = pFormatCtx->streams[i]->codecpar;
                 pWLAudio->duration = pFormatCtx->duration / AV_TIME_BASE;
@@ -117,7 +122,6 @@ void WLFFmpeg::decodeFFmpegThread() {
             isExit = true;
         }
     }
-
     pthread_mutex_unlock(&init_mutex);
 }
 
@@ -350,7 +354,6 @@ void WLFFmpeg::release() {
     if (callJava != NULL) {
         callJava = NULL;
     }
-
     pthread_mutex_unlock(&init_mutex);
     LOGI("WLFFmpeg release end");
 }
@@ -399,7 +402,6 @@ bool WLFFmpeg::cutAudioPlay(int start_time, int end_time, bool showPcm) {
         pWLAudio->showPcm = showPcm;
 
         seek(start_time);
-
         return true;
     }
     return false;
@@ -447,7 +449,6 @@ int WLFFmpeg::getCodecContext(AVCodecParameters *codecPar, AVCodecContext **avCo
         pthread_mutex_unlock(&init_mutex);
         return -1;
     }
-
     LOGI("decoder open success!");
     return 0;
 }

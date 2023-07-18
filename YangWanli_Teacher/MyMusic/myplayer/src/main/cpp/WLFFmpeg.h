@@ -17,6 +17,7 @@ public:
 
     ~WLFFmpeg();
 
+public:
     void prepared();
 
     void start();
@@ -51,21 +52,20 @@ public:
     CallJava *callJava = NULL;
     char url[256] = {0};
 
+    pthread_mutex_t init_mutex;
     pthread_t decodeThread;
+
     AVFormatContext *pFormatCtx = NULL;
+    const AVBitStreamFilter * bsFilter = NULL;
     WLAudio *pWLAudio = NULL;
     WLVideo* pWLVideo = NULL;
 
     WLPlayStatus *playStatus = NULL;
 
-    pthread_mutex_t init_mutex;
     bool isExit = false;
-
     int duration = 0;
     pthread_mutex_t seek_mutex;
 
     bool supportMediaCodec = false;
-
-    const AVBitStreamFilter * bsFilter = NULL;
 };
 #endif

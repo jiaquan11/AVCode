@@ -120,9 +120,12 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         MyLog.i("WLRender onSurfaceCreated in");
-        initRenderYUV();//初始化渲染YUV
+        //不管哪种渲染方式，都先做好初始化
+        //初始化渲染YUV
+        initRenderYUV();
 
-        initRenderMediaCodec();//初始化硬解渲染画面
+        //初始化硬解渲染画面
+        initRenderMediaCodec();
         MyLog.i("WLRender onSurfaceCreated end");
     }
 
@@ -245,7 +248,6 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         program_mediacodec = WLShaderUtil.createProgram(vertexSource, fragmentSource);
         avPosition_mediacodec = GLES20.glGetAttribLocation(program_mediacodec, "av_Position");
         afPosition_mediacodec = GLES20.glGetAttribLocation(program_mediacodec, "af_Position");
-
         samplerOES_mediacodec = GLES20.glGetUniformLocation(program_mediacodec, "sTexture");
 
         int[] textrueids = new int[1];

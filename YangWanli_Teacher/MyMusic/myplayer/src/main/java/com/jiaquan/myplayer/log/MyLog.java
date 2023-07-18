@@ -4,6 +4,7 @@ import android.util.Log;
 
 /*
 * 日志类封装
+* 统一了指定的TAG
 * */
 public class MyLog {
     public static void i(String msg) {

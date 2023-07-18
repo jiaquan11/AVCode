@@ -27,7 +27,7 @@ public class WLGLSurfaceView extends GLSurfaceView {
         //设置渲染模式->手动渲染,表示可以在收到数据时，主动请求控件调用onDrawFrame方法进行渲染，若是RENDERMODE_CONTINUOUSLY方式，会持续绘制，耗费性能
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 
-        //用于硬解
+        //用于硬解，设置监听，当硬解完一帧收到数据就请求GLSurfaceView渲染
         wlRender.setOnRenderListener(new WLRender.OnRenderListener() {
             @Override
             public void onRender() {

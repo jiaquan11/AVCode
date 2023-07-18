@@ -45,7 +45,7 @@ public:
 private:
     void cutAndCopyYuv(uint8_t* tempP[], uint8_t *srcfy, uint8_t *srcfu, uint8_t *srcfv, int linesize, int width, int height);
 
-public:
+private:
     JavaVM *javaVm = NULL;
     JNIEnv *jniEnv = NULL;
     jobject jobj = NULL;
@@ -53,15 +53,15 @@ public:
     jmethodID jmid_prepared;
     jmethodID jmid_load;
     jmethodID jmid_timeinfo;
-    jmethodID jmid_error;
     jmethodID jmid_complete;
+    jmethodID jmid_error;
     jmethodID jmid_volumeDB;
-    jmethodID jmid_pcmtoaac;
     jmethodID jmid_pcminfo;
     jmethodID jmid_pcmrate;
-    jmethodID jmid_renderyuv;
+    jmethodID jmid_pcmtoaac;
     jmethodID jmid_supportvideo;
     jmethodID jmid_initmediacodec;
+    jmethodID jmid_renderyuv;
     jmethodID jmid_decodeVPacket;
 
     uint8_t* pData[3] = {NULL};

@@ -22,13 +22,16 @@ public class CutActivity extends AppCompatActivity {
         setContentView(R.layout.activity_cutaudio);
 
         wlPlayer = new WLPlayer();
+        //设置相关的监听回调
+        //资源准备好监听
         wlPlayer.setOnPreparedListener(new OnPreparedListener() {
             @Override
             public void onPrepared() {
-                wlPlayer.cutAudioPlay(20, 40, true);
+                wlPlayer.cutAudioPlay(20, 40, true);//开始裁剪，并回调pcm数据
             }
         });
 
+        //播放时间戳信息监听
         wlPlayer.setOnTimeInfoListener(new OnTimeInfoListener() {
             @Override
             public void onTimeInfo(TimeInfoBean timeInfoBean) {
@@ -36,6 +39,7 @@ public class CutActivity extends AppCompatActivity {
             }
         });
 
+        //音频解码pcm数据监听
         wlPlayer.setOnPcmInfoListener(new OnPcmInfoListener() {
             @Override
             public void onPcmInfo(byte[] buffer, int buffersize) {
@@ -49,6 +53,7 @@ public class CutActivity extends AppCompatActivity {
         });
     }
 
+    //按钮响应函数：裁剪音频文件
     public void cutAudio(View view) {
 //        wlPlayer.setSource("/sdcard/testziliao/first-love-wangxinling.ape");
         wlPlayer.setSource("/sdcard/testziliao/mydream.m4a");

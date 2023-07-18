@@ -55,10 +55,7 @@ void *playVideo(void *data) {
                 continue;
             }
             while (av_bsf_receive_packet(video->abs_ctx, avPacket) == 0){
-//                LOGI("av_bsf_receive_packet");
                 double diff = video->getFrameDiffTime(NULL, avPacket);
-//                LOGI("diff is %lf", diff);
-
                 av_usleep(video->getDelayTime(diff) * 1000000);
 
                 video->callJava->onCallDecodeVPacket(CHILD_THREAD, avPacket->size, avPacket->data);

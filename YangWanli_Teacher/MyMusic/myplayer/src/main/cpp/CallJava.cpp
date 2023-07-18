@@ -16,15 +16,15 @@ CallJava::CallJava(JavaVM *vm, JNIEnv *env, jobject obj) {
     jmid_prepared = env->GetMethodID(clz, "onCallPrepared", "()V");
     jmid_load = env->GetMethodID(clz, "onCallLoad", "(Z)V");
     jmid_timeinfo = env->GetMethodID(clz, "onCallTimeInfo", "(II)V");
-    jmid_error = env->GetMethodID(clz, "onCallError", "(ILjava/lang/String;)V");
     jmid_complete = env->GetMethodID(clz, "onCallComplete", "()V");
+    jmid_error = env->GetMethodID(clz, "onCallError", "(ILjava/lang/String;)V");
     jmid_volumeDB = env->GetMethodID(clz, "onCallVolumeDB", "(I)V");
-    jmid_pcmtoaac = env->GetMethodID(clz, "encodePcmToAAC", "([BI)V");
     jmid_pcminfo = env->GetMethodID(clz, "onCallPcmInfo", "([BI)V");
     jmid_pcmrate = env->GetMethodID(clz, "onCallPcmRate", "(III)V");
-    jmid_renderyuv = env->GetMethodID(clz, "onCallRenderYUV", "(II[B[B[B)V");
+    jmid_pcmtoaac = env->GetMethodID(clz, "encodePcmToAAC", "([BI)V");
     jmid_supportvideo = env->GetMethodID(clz, "onCallIsSupportMediaCodec", "(Ljava/lang/String;)Z");
     jmid_initmediacodec = env->GetMethodID(clz, "onCallinitMediaCodec", "(Ljava/lang/String;II[B[B)V");
+    jmid_renderyuv = env->GetMethodID(clz, "onCallRenderYUV", "(II[B[B[B)V");
     jmid_decodeVPacket = env->GetMethodID(clz, "onCallDecodeVPacket", "(I[B)V");
 }
 

@@ -285,8 +285,7 @@ void pcmBufferCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
             }
 
 //            if (wlAudio->isRecordPcm){
-//                wlAudio->callJava->onCallPcmToAAC(CHILD_THREAD, wlAudio->sampleBuffer,
-//                                                  bufferSize * 2 * 2);
+//                wlAudio->callJava->onCallPcmToAAC(CHILD_THREAD, wlAudio->sampleBuffer, bufferSize * 2 * 2);
 //            }
 
             wlAudio->bufferQueue->putBuffer(wlAudio->sampleBuffer, bufferSize * 4);
@@ -294,7 +293,6 @@ void pcmBufferCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
             (*wlAudio->pcmBufferQueue)->Enqueue(wlAudio->pcmBufferQueue, wlAudio->sampleBuffer, bufferSize * 2 * 2);
             if (wlAudio->isCut) {
 //                if (wlAudio->showPcm){
-//                    //
 //                    wlAudio->callJava->onCallPcmInfo(CHILD_THREAD, wlAudio->sampleBuffer, bufferSize * 2 * 2);
 //                }
                 if (wlAudio->clock > wlAudio->end_time) {
@@ -427,18 +425,21 @@ SLuint32 WLAudio::getCurrentSampleRateForOpenSLES(int sample_rate) {
     return rate;
 }
 
+//音频暂停播放Opensl
 void WLAudio::pause() {
     if (pcmPlayerPlay != NULL) {
         (*pcmPlayerPlay)->SetPlayState(pcmPlayerPlay, SL_PLAYSTATE_PAUSED);
     }
 }
 
+//音频恢复播放Opensl
 void WLAudio::resume() {
     if (pcmPlayerPlay != NULL) {
         (*pcmPlayerPlay)->SetPlayState(pcmPlayerPlay, SL_PLAYSTATE_PLAYING);
     }
 }
 
+//音频停止播放Opensl
 void WLAudio::stop() {
     if (pcmPlayerPlay != NULL) {
         (*pcmPlayerPlay)->SetPlayState(pcmPlayerPlay, SL_PLAYSTATE_STOPPED);
@@ -520,6 +521,7 @@ void WLAudio::release() {
     }
 }
 
+//控制音频音量调整（opensl）
 void WLAudio::setVolume(int percent) {
     volumePercent = percent;
     if (pcmPlayerVolume != NULL) {
@@ -546,6 +548,7 @@ void WLAudio::setVolume(int percent) {
     }
 }
 
+//控制音频左右声道的播放（opensl）
 void WLAudio::setMute(int mute) {
     this->mute = mute;
     if (pcmPlayerMute != NULL) {
@@ -562,6 +565,7 @@ void WLAudio::setMute(int mute) {
     }
 }
 
+//设置音调值(soundtouch)
 void WLAudio::setPitch(float pitch) {
     this->pitch = pitch;
     LOGI("WLAudio setPitch: %f soundTouch: %p", this->pitch, soundTouch);
@@ -570,6 +574,7 @@ void WLAudio::setPitch(float pitch) {
     }
 }
 
+//设置音频播放速度值(soundtouch)
 void WLAudio::setSpeed(float speed) {
     this->speed = speed;
     LOGI("WLAudio setSpeed: %f soundTouch: %p", this->speed, soundTouch);

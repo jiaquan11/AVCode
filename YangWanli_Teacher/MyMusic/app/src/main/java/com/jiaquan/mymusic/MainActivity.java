@@ -63,18 +63,19 @@ public class MainActivity extends AppCompatActivity {
 
         //初始化设置
         wlPlayer.setVolume(80);//设置初始音量
+        tv_volume.setText("音量: " + wlPlayer.getVolumePercent() + "%");//设置当前音量值显示的文本
+        seekBarVolume.setProgress(wlPlayer.getVolumePercent());//设置音量调节控件的进度,就是用当前音量值设置更新到进度条上面
         wlPlayer.setMute(MuteEnum.MUTE_LEFT);//设置声道控制
-        tv_volume.setText("音量: " + wlPlayer.getVolumePercent() + "%");//设置音量显示的文本
         wlPlayer.setPitch(1.0f);//设置音调值
         wlPlayer.setSpeed(1.0f);//设置音频播放速度值
-        seekBarVolume.setProgress(wlPlayer.getVolumePercent());//设置音量调节控件的进度
 
+        //Handler消息处理
         Handler handler = new Handler() {
             @Override
             public void handleMessage(@NonNull Message msg) {//重写类方法 处理Handler的消息
                 super.handleMessage(msg);
                 if (msg.what == 1) {
-                    if (!isSeekBar) {
+                    if (!isSeekBar) {//拖拽结束后，更新seek进度条的位置及播放时间戳显示
                         TimeInfoBean timeInfoBean = (TimeInfoBean) msg.obj;
                         tv_time.setText(TimeUtil.secdsToDateFormat(timeInfoBean.getTotalTime(), timeInfoBean.getTotalTime()) + "/" + TimeUtil.secdsToDateFormat(timeInfoBean.getCurrentTime(), timeInfoBean.getTotalTime()));
                         seekBarSeek.setProgress(timeInfoBean.getCurrentTime() * 100 / timeInfoBean.getTotalTime());
@@ -83,6 +84,9 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
+        /*
+        * 监听回调设置
+        * */
         //资源准备回调，准备好后会进行回调，然后就可以开始播放
         wlPlayer.setOnPreparedListener(new OnPreparedListener() {
             @Override
@@ -116,7 +120,28 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        //回调时间戳信息，用于播放进度的显示
+        //设置seek进度条监听
+        seekBarSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {//进度条变化得到进度条的值
+                if ((wlPlayer.getDuration() > 0) && isSeekBar) {
+                    position = wlPlayer.getDuration() * (progress / 100);//实时更新进度条值，并转换为需要seek的点
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {//开始拖拽
+                isSeekBar = true;
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {//结束拖拽,进行seek
+                wlPlayer.seek(position);
+                isSeekBar = false;
+            }
+        });
+
+        //回调时间戳信息，用于播放进度的自动显示
         wlPlayer.setOnTimeInfoListener(new OnTimeInfoListener() {
             @Override
             public void onTimeInfo(TimeInfoBean timeInfoBean) {
@@ -128,11 +153,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        //回调错误信息
-        wlPlayer.setOnErrorListener(new OnErrorListener() {
+        //音量进度条操作
+        seekBarVolume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
-            public void onError(int code, String msg) {
-                MyLog.i("code is: " + code + " msg: " + msg);
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                wlPlayer.setVolume(progress);
+                tv_volume.setText("音量: " + wlPlayer.getVolumePercent() + "%");
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
             }
         });
 
@@ -141,6 +177,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onComplete() {
                 MyLog.i("播放完成了");
+            }
+        });
+
+        //回调错误信息
+        wlPlayer.setOnErrorListener(new OnErrorListener() {
+            @Override
+            public void onError(int code, String msg) {
+                MyLog.i("code is: " + code + " msg: " + msg);
             }
         });
 
@@ -159,48 +203,10 @@ public class MainActivity extends AppCompatActivity {
 //                MyLog.i("record time is: " + recordTime);
             }
         });
-
-        //设置seek进度条监听
-        seekBarSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {//进度条变化得到进度条的值
-                if ((wlPlayer.getDuration() > 0) && isSeekBar) {
-                    position = wlPlayer.getDuration() * progress / 100;
-                }
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {//开始拖拽
-                isSeekBar = true;
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {//结束拖拽,进行seek
-                wlPlayer.seek(position);
-                isSeekBar = false;
-            }
-        });
-
-        seekBarVolume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                wlPlayer.setVolume(progress);
-                tv_volume.setText("音量: " + wlPlayer.getVolumePercent() + "%");
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
     }
 
     //页面控件的按钮响应函数
+    //开始播放
     public void begin(View view) {
 //        wlPlayer.setSource("http://mpge.5nd.com/2015/2015-11-26/69708/1.mp3");
 //        wlPlayer.setSource("/sdcard/testziliao/mydream.m4a");
@@ -216,22 +222,27 @@ public class MainActivity extends AppCompatActivity {
         wlPlayer.prepared();
     }
 
+    //暂停播放
     public void pause(View view) {
         wlPlayer.pause();
     }
 
+    //恢复播放
     public void resume(View view) {
         wlPlayer.resume();
     }
 
+    //停止播放
     public void stop(View view) {
         wlPlayer.stop();
     }
 
+    //seek操作(按钮点击)，每次seek 20s
     public void seek(View view) {
         wlPlayer.seek(20);
     }
 
+    //切换下一个播放资源
     public void next(View view) {
 //        wlPlayer.playNext("http://ngcdn004.cnr.cn/live/dszs/index.m3u8");
 //        wlPlayer.playNext("/sdcard/testziliao/first-love-wangxinling.ape");
@@ -239,14 +250,17 @@ public class MainActivity extends AppCompatActivity {
         wlPlayer.playNext("/sdcard/testziliao/建国大业.mpg");
     }
 
+    //左声道
     public void left(View view) {
         wlPlayer.setMute(MuteEnum.MUTE_LEFT);
     }
 
+    //右声道
     public void right(View view) {
         wlPlayer.setMute(MuteEnum.MUTE_RIGHT);
     }
 
+    //立体声
     public void center(View view) {
         wlPlayer.setMute(MuteEnum.MUTE_CENTER);
     }
@@ -263,28 +277,34 @@ public class MainActivity extends AppCompatActivity {
         wlPlayer.setSpeed(1.0f);
     }
 
+    //变速又变调
     public void speedpitch(View view) {
         wlPlayer.setPitch(1.5f);
         wlPlayer.setSpeed(1.5f);
     }
 
+    //正常音调和速度
     public void normalspeedpitch(View view) {
         wlPlayer.setPitch(1.0f);
         wlPlayer.setSpeed(1.0f);
     }
 
+    //开始音频录制,指定了录制输出文件
     public void start_record(View view) {
         wlPlayer.startRecord(new File("/sdcard/testziliao/testplayer1.aac"));
     }
 
+    //暂停音频录制
     public void pause_record(View view) {
         wlPlayer.pauseRecord();
     }
 
+    //恢复音频录制
     public void resume_record(View view) {
         wlPlayer.resumeRecord();
     }
 
+    //停止音频录制
     public void stop_record(View view) {
         wlPlayer.stopRecord();
     }
