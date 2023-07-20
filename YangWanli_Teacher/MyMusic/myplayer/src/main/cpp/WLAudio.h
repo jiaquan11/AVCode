@@ -27,6 +27,7 @@ public:
 
     ~WLAudio();
 
+public:
     void play();
 
     int resampleAudio(void **pcmbuf);

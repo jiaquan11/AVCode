@@ -30,8 +30,6 @@ public:
 
     void release();
 
-    int getCodecContext(AVCodecParameters *codecPar, AVCodecContext** avCodecContext);
-
     void setVolume(int percent);
 
     void setMute(int mute);
@@ -46,26 +44,29 @@ public:
 
     bool cutAudioPlay(int start_time, int end_time, bool showPcm);
 
-    void decodeFFmpegThread();
+    void demuxFFmpegThread();
+
+    void startFFmpegThread();
+
+private:
+    int getCodecContext(AVCodecParameters *codecPar, AVCodecContext** avCodecContext);
 
 public:
+    WLPlayStatus *playStatus = NULL;
     CallJava *callJava = NULL;
     char url[256] = {0};
 
     pthread_mutex_t init_mutex;
-    pthread_t decodeThread;
+    pthread_mutex_t seek_mutex;
+    pthread_t demuxThread;
+    pthread_t startThread;
 
     AVFormatContext *pFormatCtx = NULL;
-    const AVBitStreamFilter * bsFilter = NULL;
     WLAudio *pWLAudio = NULL;
     WLVideo* pWLVideo = NULL;
 
-    WLPlayStatus *playStatus = NULL;
-
     bool isExit = false;
-    int duration = 0;
-    pthread_mutex_t seek_mutex;
-
+    int duration = 0;//媒体文件总时长
     bool supportMediaCodec = false;
 };
 #endif

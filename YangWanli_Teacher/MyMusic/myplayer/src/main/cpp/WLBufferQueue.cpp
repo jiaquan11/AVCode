@@ -38,13 +38,12 @@ int WLBufferQueue::getBuffer(WLPcmBean **pcmBean) {
             }
         }
     }
-
     pthread_mutex_unlock(&mutexBuffer);
     return 0;
 }
 
 int WLBufferQueue::clearBuffer() {
-    pthread_cond_signal(&condBuffer);
+    noticeThread();
     pthread_mutex_lock(&mutexBuffer);
     while (!queueBuffer.empty()) {
         WLPcmBean *pcmBean = queueBuffer.front();

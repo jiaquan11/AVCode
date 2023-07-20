@@ -22,23 +22,23 @@ public:
 
     void onCallTimeInfo(int type, int curr, int total);
 
-    void onCallError(int type, int code, char *msg);
-
     void onCallComplete(int type);
 
-    void onCallVolumeDB(int type, int db);
+    void onCallError(int type, int code, char *msg);
 
-    void onCallPcmToAAC(int type, void *buffer, int size);
+    void onCallVolumeDB(int type, int db);
 
     void onCallPcmInfo(int type, void *buffer, int size);
 
     void onCallPcmRate(int type, int samplerate, int bit, int channels);
 
-    void onCallRenderYUV(int type, int width, int linesize, int height, uint8_t *fy, uint8_t *fu, uint8_t *fv);
+    void onCallPcmToAAC(int type, void *buffer, int size);
 
     bool onCallIsSupportVideo(int type, const char* ffcodecname);
 
-    void onCallinitMediaCodec(int type, const char* mime, int width, int height, int csd0_size, int csd1_size, uint8_t* csd_0, uint8_t* csd_1);
+    void onCallinitMediaCodec(int type, const char *mime, int width, int height, int csd_size, uint8_t *csd);
+
+    void onCallRenderYUV(int type, int width, int linesize, int height, uint8_t *fy, uint8_t *fu, uint8_t *fv);
 
     void onCallDecodeVPacket(int type, int datasize, uint8_t* data);
 

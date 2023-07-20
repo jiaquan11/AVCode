@@ -40,8 +40,7 @@ int WLQueue::getAVPacket(AVPacket *packet) {
             /*
              * av_packet_free
              * avPacket如果有引用计数，av_packet_free会取消引用，但不会释放数据buf。
-             * 只有没有引用计数为0，才会释放数据buf
-             * 释放packet malloc的内存
+             * 只有没有引用计数为0，才会释放数据buf, 释放packet malloc的内存
              * */
             av_packet_free(&avPacket);
             av_free(avPacket);
@@ -66,6 +65,7 @@ int WLQueue::getQueueSize() {
     return size;
 }
 
+//清除缓冲区队列
 void WLQueue::clearAvPacket() {
     pthread_cond_signal(&condPacket);
 

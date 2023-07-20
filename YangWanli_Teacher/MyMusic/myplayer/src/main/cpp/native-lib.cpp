@@ -11,24 +11,12 @@ extern "C" {
 #include "include/libavutil/avutil.h"
 }
 
+//全局变量
 JavaVM *javaVM = NULL;
 CallJava *callJava = NULL;
 WLFFmpeg *wlfFmpeg = NULL;
 WLPlayStatus *playStatus = NULL;
-
-bool isExit = true;
-
-pthread_t thread_start;
-
-extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
-    jint result = -1;
-    javaVM = vm;
-    JNIEnv *env;
-    if (vm->GetEnv((void **) (&env), JNI_VERSION_1_4) != JNI_OK) {
-        return result;
-    }
-    return JNI_VERSION_1_4;
-}
+bool isExit = false;
 
 extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_myplayer_player_WLPlayer__1prepared(JNIEnv *env, jobject thiz, jstring sourceStr) {
     LOGI("call jni prepared!");
@@ -38,6 +26,9 @@ extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_myplayer_player_WLPlayer__1pr
             callJava = new CallJava(javaVM, env, thiz);
         }
 
+        /*主线程中回调当前为加载缓冲状态,
+         只有在JNI环境中创建了子线程，那么回调需要在子线程中回调，同时需要加载新的JNIenv环境
+         */
         callJava->onCallLoad(MAIN_THREAD, true);
 
         playStatus = new WLPlayStatus();
@@ -47,17 +38,9 @@ extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_myplayer_player_WLPlayer__1pr
     env->ReleaseStringUTFChars(sourceStr, source);
 }
 
-void *startCallBack(void *data) {
-    WLFFmpeg *wlfFmpeg = (WLFFmpeg *) (data);
-    wlfFmpeg->start();
-//    pthread_exit(&thread_start);
-    return 0;
-}
-
 extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_myplayer_player_WLPlayer__1start(JNIEnv *env, jobject thiz) {
     if (wlfFmpeg != NULL) {
-//        fFmpeg->start();
-        pthread_create(&thread_start, NULL, startCallBack, wlfFmpeg);
+        wlfFmpeg->start();
     }
 }
 
@@ -74,19 +57,15 @@ extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_myplayer_player_WLPlayer__1re
 }
 
 extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_myplayer_player_WLPlayer__1stop(JNIEnv *env, jobject thiz) {
-    if (!isExit) {
+    if (isExit) {//正在资源销毁的过程中，直接退出，不允许调用stop操作
         return;
     }
-
     jclass jcz = env->GetObjectClass(thiz);
     jmethodID jmid_next = env->GetMethodID(jcz, "onCallNext", "()V");
 
-    isExit = false;
-
+    isExit = true;
     if (wlfFmpeg != NULL) {
         wlfFmpeg->release();
-
-        pthread_join(thread_start, NULL);
 
         delete wlfFmpeg;
         wlfFmpeg = NULL;
@@ -101,7 +80,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_myplayer_player_WLPlayer__1st
             playStatus = NULL;
         }
     }
-    isExit = true;
+    isExit = false;
     env->CallVoidMethod(thiz, jmid_next);
 }
 
@@ -160,4 +139,15 @@ extern "C" JNIEXPORT jboolean JNICALL Java_com_jiaquan_myplayer_player_WLPlayer_
         return wlfFmpeg->cutAudioPlay(start_time, end_time, show_pcm);
     }
     return false;
+}
+
+//系统调用函数JNI_OnLoad
+extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+    jint result = -1;
+    javaVM = vm;
+    JNIEnv *env;
+    if (vm->GetEnv((void **) (&env), JNI_VERSION_1_4) != JNI_OK) {
+        return result;
+    }
+    return JNI_VERSION_1_4;
 }

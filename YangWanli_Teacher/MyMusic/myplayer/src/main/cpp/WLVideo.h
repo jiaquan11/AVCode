@@ -22,6 +22,7 @@ public:
 
     ~WLVideo();
 
+public:
     void play();
 
     void release();
@@ -51,5 +52,4 @@ public:
     int codectype = CODEC_YUV;
     AVBSFContext *abs_ctx = NULL;
 };
-
 #endif

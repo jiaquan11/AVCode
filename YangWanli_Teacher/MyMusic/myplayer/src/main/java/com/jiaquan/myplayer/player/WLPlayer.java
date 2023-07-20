@@ -191,13 +191,25 @@ public class WLPlayer {
 
         stopRecord();
 
-        new Thread(new Runnable() {
+        new Thread(new Runnable() {//开启一个线程，停止播放，释放底层ffmpeg的资源及释放硬解解码器的相关资源
             @Override
             public void run() {
                 _stop();
                 releaseVMediaCodec();
             }
         }).start();
+    }
+
+    //播放seek操作
+    public void seek(int secds) {
+        _seek(secds);
+    }
+
+    //切换下一个播放资源
+    public void playNext(String url) {
+        sourcePath = url;
+        playNext = true;
+        stop();
     }
 
     //获取总时长
@@ -221,18 +233,6 @@ public class WLPlayer {
         return volumePercent;
     }
 
-    //播放seek操作
-    public void seek(int secds) {
-        _seek(secds);
-    }
-
-    //切换下一个播放资源
-    public void playNext(String url) {
-        sourcePath = url;
-        playNext = true;
-        stop();
-    }
-
     //设置控制的左右声道
     public void setMute(MuteEnum mute) {
         muteEnum = mute;
@@ -251,10 +251,10 @@ public class WLPlayer {
         _speed(speed);
     }
 
-    //开始录制
+    //开始音频录制，创建音频编码器
     public void startRecord(File outfile) {
         if (!isInitMediaCodec) {
-            audioSamplerate = _samplerate();
+            audioSamplerate = _samplerate();//获取音频文件的采样率
             if (audioSamplerate > 0) {
                 isInitMediaCodec = true;
                 initMediaCodec(audioSamplerate, outfile);
@@ -280,7 +280,7 @@ public class WLPlayer {
     public void stopRecord() {
         if (isInitMediaCodec) {
             _startstopRecord(false);
-            releaseMediacodec();
+            releaseAMediaCodec();
             MyLog.i("完成录制....");
         }
     }
@@ -342,6 +342,7 @@ public class WLPlayer {
 
     //native回调方法:
     private void onCallNext() {
+        MyLog.i("onCallNext playNext: " + playNext);
         if (playNext) {
             playNext = false;
             prepared();
@@ -376,7 +377,7 @@ public class WLPlayer {
             recordTime += size * 1.0 / (audioSamplerate * 2 * 2);
 //            MyLog.i("recordTime: " + recordTime);
             if (onRecordTimeListener != null) {
-                onRecordTimeListener.onRecordTime((int) recordTime);
+                onRecordTimeListener.onRecordTime((int) recordTime);//回调当前录制时长
             }
 
             int inputBufferIndex = encoder.dequeueInputBuffer(0);//获取到编码输入buffer的可用索引
@@ -397,7 +398,7 @@ public class WLPlayer {
                     byteBuffer.position(bufferInfo.offset);
                     byteBuffer.limit(bufferInfo.offset + bufferInfo.size);
 
-                    addADTSHeader(outByteBuffer, perpcmSize, aacSampleRateType);//增加AAC码流头
+                    addADTSHeader(outByteBuffer, perpcmSize, aacSampleRateType);//mediacodec编码出来的aac码流没有aac头，增加AAC码流头
 
                     byteBuffer.get(outByteBuffer, 7, bufferInfo.size);//将编码码流数据放入AAC码流头后面存放
                     byteBuffer.position(bufferInfo.offset);
@@ -405,7 +406,6 @@ public class WLPlayer {
                     fileOutputStream.write(outByteBuffer, 0, perpcmSize);//将完整的一帧音频码流数据写入文件
 
                     encoder.releaseOutputBuffer(index, false);//取出码流数据后，释放这个buffer,返回给队列中循环使用
-
                     index = encoder.dequeueOutputBuffer(bufferInfo, 0);
                     outByteBuffer = null;
                 } catch (IOException e) {
@@ -425,7 +425,7 @@ public class WLPlayer {
 
     //video
     //native回调方法：初始化视频硬件解码器
-    private void onCallinitMediaCodec(String codecName, int width, int height, byte[] csd_0, byte[] csd_1) {
+    private void onCallinitMediaCodec(String codecName, int width, int height, byte[] csd) {
         if (surface != null) {
             try {
                 wlglSurfaceView.getWlRender().setRenderType(WLRender.RENDER_MEDIACODEC);
@@ -434,10 +434,13 @@ public class WLPlayer {
                 MyLog.i("onCallinitMediaCodec mime is " + mime + " width is " + width + " height is " + height);
                 mediaFormat = MediaFormat.createVideoFormat(mime, width, height);
                 mediaFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
-                mediaFormat.setByteBuffer("csd-0", ByteBuffer.wrap(csd_0));
-                mediaFormat.setByteBuffer("csd-1", ByteBuffer.wrap(csd_1));
+                /*这里三个字段都是设置为ffmpeg提取的extradata数据，目前硬件解码是没问题的，理论上是需要分别提取SPS和PPS数据填充设置，
+                    H265需要设置VPS，SPS，PPS三个字段
+                 */
+                mediaFormat.setByteBuffer("csd-0", ByteBuffer.wrap(csd));
+                mediaFormat.setByteBuffer("csd-1", ByteBuffer.wrap(csd));
                 if (mime.equals("video/hevc")){
-                    mediaFormat.setByteBuffer("csd-2", ByteBuffer.wrap(csd_1));
+                    mediaFormat.setByteBuffer("csd-2", ByteBuffer.wrap(csd));
                 }
                 MyLog.i(mediaFormat.toString());
                 mediaCodec = MediaCodec.createDecoderByType(mime);
@@ -513,7 +516,7 @@ public class WLPlayer {
         }
     }
 
-    //mediacodec
+    //音频录制的编码器创建-mediacodec
     private MediaFormat encoderFormat = null;
     private MediaCodec encoder = null;
     private FileOutputStream fileOutputStream = null;
@@ -523,10 +526,9 @@ public class WLPlayer {
     private int aacSampleRateType = 4;
     private double recordTime = 0;
     private int audioSamplerate = 0;
-
     private void initMediaCodec(int samplerate, File outfile) {
         try {
-            aacSampleRateType = getADTSSampleRate(samplerate);
+            aacSampleRateType = getADTSSampleRate(samplerate);//根据音频采样率得到填充ADTS的采样率对应的值
 
             encoderFormat = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, samplerate, 2);
             encoderFormat.setInteger(MediaFormat.KEY_BIT_RATE, 96000);//码率
@@ -534,7 +536,6 @@ public class WLPlayer {
             encoderFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 4096);//输入编码的最大pcm数据大小
             encoder = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC);//创建音频编码器
             bufferInfo = new MediaCodec.BufferInfo();
-
             if (encoder == null) {
                 MyLog.e("create encoder wrong");
                 return;
@@ -543,13 +544,14 @@ public class WLPlayer {
             recordTime = 0;
 
             encoder.configure(encoderFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);//配置编码器
-            fileOutputStream = new FileOutputStream(outfile);
+            fileOutputStream = new FileOutputStream(outfile);//创建写文件输出流
             encoder.start();//启动音频编码器
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    //为每个AAC码流包增加ADTS头
     private void addADTSHeader(byte[] packet, int packetLen, int samplerate) {
         int profile = 2; // AAC LC
         int freqIdx = samplerate; // samplerate
@@ -565,6 +567,7 @@ public class WLPlayer {
         packet[6] = (byte) 0xFC;
     }
 
+    //获取ADTS对应的采样率值
     private int getADTSSampleRate(int samplerate) {
         int rate = 4;
         switch (samplerate) {
@@ -611,7 +614,8 @@ public class WLPlayer {
         return rate;
     }
 
-    private void releaseMediacodec() {
+    //释放音频编码器
+    private void releaseAMediaCodec() {
         if (encoder == null) {
             return;
         }

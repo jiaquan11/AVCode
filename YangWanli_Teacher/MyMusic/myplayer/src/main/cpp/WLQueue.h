@@ -10,12 +10,16 @@ extern "C" {
 #include "libavcodec/avcodec.h"
 };
 
+/*
+ * 存放packet的队列
+ * */
 class WLQueue {
 public:
     WLQueue(WLPlayStatus *playStatus);
 
     ~WLQueue();
 
+public:
     int putAVPacket(AVPacket *packet);
 
     int getAVPacket(AVPacket *packet);
@@ -26,12 +30,11 @@ public:
 
     void noticeQueue();
 
-public:
-    std::queue<AVPacket *> queuePacket;
+private:
+    std::queue<AVPacket *> queuePacket;//包缓冲区队列
     pthread_mutex_t mutexPacket;
     pthread_cond_t condPacket;
 
     WLPlayStatus *playStatus = NULL;
 };
-
 #endif

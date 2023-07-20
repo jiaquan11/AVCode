@@ -1,12 +1,9 @@
-//
-// Created by jiaqu on 2020/11/25.
-//
 #include "WLFFmpeg.h"
 
 WLFFmpeg::WLFFmpeg(WLPlayStatus *playStatus, CallJava *calljava, const char *url) {
+    this->playStatus = playStatus;
     this->callJava = calljava;
     strcpy(this->url, url);
-    this->playStatus = playStatus;
     isExit = false;
     pthread_mutex_init(&init_mutex, NULL);
     pthread_mutex_init(&seek_mutex, NULL);
@@ -15,24 +12,6 @@ WLFFmpeg::WLFFmpeg(WLPlayStatus *playStatus, CallJava *calljava, const char *url
 WLFFmpeg::~WLFFmpeg() {
     pthread_mutex_destroy(&init_mutex);
     pthread_mutex_destroy(&seek_mutex);
-}
-
-void *decodeFFmpeg(void *data) {
-    WLFFmpeg *wlfFmpeg = (WLFFmpeg *) (data);
-    wlfFmpeg->decodeFFmpegThread();
-
-    /*
-     * 使用return语句退出线程比使用pthread_exit()函数更简单和直观。
-     * 一般情况下，如果只需要退出当前线程，
-     * 而不需要精确的控制，使用return语句是更常见和推荐的做法。
-     * 只有在需要在任意位置立即终止线程执行的特殊情况下，才需要使用pthread_exit()函数。
-     * */
-//    pthread_exit(&wlfFmpeg->decodeThread);
-    return 0;
-}
-
-void WLFFmpeg::prepared() {
-    pthread_create(&decodeThread, NULL, decodeFFmpeg, this);
 }
 
 /*
@@ -47,7 +26,7 @@ int avformat_callback(void *ctx) {
     return 0;
 }
 
-void WLFFmpeg::decodeFFmpegThread() {
+void WLFFmpeg::demuxFFmpegThread() {
     pthread_mutex_lock(&init_mutex);
 
     av_register_all();
@@ -61,7 +40,6 @@ void WLFFmpeg::decodeFFmpegThread() {
             LOGE("can not open url: %s", url);
             callJava->onCallError(CHILD_THREAD, 1001, "can not open url");
         }
-
         isExit = true;
         pthread_mutex_unlock(&init_mutex);
         return;
@@ -71,7 +49,6 @@ void WLFFmpeg::decodeFFmpegThread() {
             LOGE("can not find streams from url: %s", url);
             callJava->onCallError(CHILD_THREAD, 1002, "can not find streams from url");
         }
-
         isExit = true;
         pthread_mutex_unlock(&init_mutex);
         return;
@@ -83,11 +60,11 @@ void WLFFmpeg::decodeFFmpegThread() {
                 pWLAudio = new WLAudio(playStatus, pFormatCtx->streams[i]->codecpar->sample_rate, callJava);
                 pWLAudio->streamIndex = i;
                 pWLAudio->codecPar = pFormatCtx->streams[i]->codecpar;
-                pWLAudio->duration = pFormatCtx->duration / AV_TIME_BASE;
+                pWLAudio->duration = pFormatCtx->duration / AV_TIME_BASE;//媒体总时长，单位为秒
                 pWLAudio->time_base = pFormatCtx->streams[i]->time_base;
                 duration = pWLAudio->duration;
 
-                callJava->onCallPcmRate(CHILD_THREAD, pWLAudio->sample_Rate, 16, 2);
+                callJava->onCallPcmRate(CHILD_THREAD, pWLAudio->sample_Rate, 16, 2);//上报音频采样率，采样位宽，和声道数信息
             }
         } else if (pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             if (pWLVideo == NULL) {
@@ -98,26 +75,28 @@ void WLFFmpeg::decodeFFmpegThread() {
 
                 int num = pFormatCtx->streams[i]->avg_frame_rate.num;
                 int den = pFormatCtx->streams[i]->avg_frame_rate.den;
-                if ((num != 0) && (den != 0)) {
+                if ((num != 0) && (den != 0)) {//获取到平均帧率值
                     int fps = num / den;//比如25/1
-                    pWLVideo->defaultDelayTime = 1.0 / fps;
+                    pWLVideo->defaultDelayTime = 1.0 / fps;//根据帧率值计算得到每一帧的播放延时
                     LOGI("fps %d, defaultDelayTime: %lf", fps, pWLVideo->defaultDelayTime);
                 }
             }
         }
     }
 
+    //打开ffmpeg音频解码器
     if (pWLAudio != NULL) {
         getCodecContext(pWLAudio->codecPar, &pWLAudio->avCodecContext);
     }
 
+    //打开ffmpeg视频解码器
     if (pWLVideo != NULL) {
         getCodecContext(pWLVideo->codecPar, &pWLVideo->avCodecContext);
     }
 
     if (callJava != NULL) {
         if ((playStatus != NULL) && !playStatus->isExit) {
-            callJava->onCallPrepared(CHILD_THREAD);
+            callJava->onCallPrepared(CHILD_THREAD);//回调已准备好资源
         } else {
             isExit = true;
         }
@@ -125,7 +104,25 @@ void WLFFmpeg::decodeFFmpegThread() {
     pthread_mutex_unlock(&init_mutex);
 }
 
-void WLFFmpeg::start() {
+void *demuxFFmpeg(void *data) {
+    WLFFmpeg *wlfFmpeg = (WLFFmpeg *) (data);
+    wlfFmpeg->demuxFFmpegThread();
+
+    /*
+     * 使用return语句退出线程比使用pthread_exit()函数更简单和直观。
+     * 一般情况下，如果只需要退出当前线程，
+     * 而不需要精确的控制，使用return语句是更常见和推荐的做法。
+     * 只有在需要在任意位置立即终止线程执行的特殊情况下，才需要使用pthread_exit()函数。
+     * */
+//    pthread_exit(&wlfFmpeg->demuxThread);
+    return 0;
+}
+
+void WLFFmpeg::prepared() {
+    pthread_create(&demuxThread, NULL, demuxFFmpeg, this);
+}
+
+void WLFFmpeg::startFFmpegThread() {
     if (pWLAudio == NULL) {
         if (LOG_DEBUG) {
             LOGE("audio is NULL");
@@ -137,13 +134,17 @@ void WLFFmpeg::start() {
     if (pWLVideo == NULL) {//目前要求必须要有视频流
         return;
     }
-    supportMediaCodec = false;
-    pWLVideo->audio = pWLAudio;
 
-    const char *codecName = ((const AVCodec *) pWLVideo->avCodecContext->codec)->name;
+    supportMediaCodec = false;
+    pWLVideo->audio = pWLAudio;//将音频播放对象设置到视频播放对象中，用于获取音频参数进行音视频时间戳同步操作
+    const char *codecName = (pWLVideo->avCodecContext->codec)->name;
     LOGI("WLFFmpeg start codecName: %s", codecName);
-    if (supportMediaCodec = callJava->onCallIsSupportVideo(CHILD_THREAD, codecName)) {//支持硬解，优先使用硬解
+    if (supportMediaCodec = callJava->onCallIsSupportVideo(CHILD_THREAD, codecName)) {//回调Java函数，支持硬解，优先使用硬解
         LOGI("当前设备支持硬解码当前视频!!!");
+        /*
+         * 对于硬解视频，必须传入的码流头是annexb格式，所以需要转换数据，添加annexb格式头
+         * */
+        const AVBitStreamFilter * bsFilter = NULL;
         if (strcasecmp(codecName, "h264") == 0) {
             bsFilter = av_bsf_get_by_name("h264_mp4toannexb");
         } else if (strcasecmp(codecName, "hevc") == 0) {
@@ -168,19 +169,20 @@ void WLFFmpeg::start() {
             pWLVideo->abs_ctx = NULL;
             goto end;
         }
-        pWLVideo->abs_ctx->time_base_in = pWLVideo->time_base;
+        pWLVideo->abs_ctx->time_base_in = pWLVideo->time_base;//时间基准
     }
 
     end:
     if (supportMediaCodec) {
         pWLVideo->codectype = CODEC_MEDIACODEC;
+        /*
+         * 回调Java方法，传递ffmepg的extradata数据，用来初始化硬件解码器，
+         * */
         pWLVideo->callJava->onCallinitMediaCodec(CHILD_THREAD,
                                                  codecName,
                                                  pWLVideo->avCodecContext->width,
                                                  pWLVideo->avCodecContext->height,
                                                  pWLVideo->avCodecContext->extradata_size,
-                                                 pWLVideo->avCodecContext->extradata_size,
-                                                 pWLVideo->avCodecContext->extradata,
                                                  pWLVideo->avCodecContext->extradata);
     }
 
@@ -195,7 +197,7 @@ void WLFFmpeg::start() {
             LOGI("now is seek continue");
             continue;
         }
-        /*对于ape音频文件，一个音频packet可以解码多个frame，因此需要减少缓冲区packet的个数，
+        /*对于ape音频文件，一个音频packet可以解码为多个frame，因此需要减少缓冲区packet的个数，
          * 避免seek时卡顿,但是对于一个packet对应一个frame的音频文件，这里要改为40
          */
         if (pWLAudio->queue->getQueueSize() > 40) {
@@ -245,10 +247,27 @@ void WLFFmpeg::start() {
     }
 
     isExit = true;
-
     if (LOG_DEBUG) {
         LOGI("get packet is over");
     }
+}
+
+void *startFFmpeg(void *data) {
+    WLFFmpeg *wlfFmpeg = (WLFFmpeg *) (data);
+    wlfFmpeg->startFFmpegThread();
+
+    /*
+     * 使用return语句退出线程比使用pthread_exit()函数更简单和直观。
+     * 一般情况下，如果只需要退出当前线程，
+     * 而不需要精确的控制，使用return语句是更常见和推荐的做法。
+     * 只有在需要在任意位置立即终止线程执行的特殊情况下，才需要使用pthread_exit()函数。
+     * */
+//    pthread_exit(&wlfFmpeg->demuxThread);
+    return 0;
+}
+
+void WLFFmpeg::start() {
+    pthread_create(&startThread, NULL, startFFmpeg, this);//开启一个子线程，用于读取流数据，并存放到缓存队列中
 }
 
 void WLFFmpeg::pause() {
@@ -312,7 +331,8 @@ void WLFFmpeg::release() {
     LOGI("WLFFmpeg release in");
     playStatus->isExit = true;
 
-    pthread_join(decodeThread, NULL);
+    pthread_join(demuxThread, NULL);//等待子线程结束
+    pthread_join(startThread, NULL);//等待子线程结束
 
     pthread_mutex_lock(&init_mutex);
     int sleepCount = 0;
@@ -396,7 +416,7 @@ void WLFFmpeg::startStopRecord(bool start) {
 }
 
 bool WLFFmpeg::cutAudioPlay(int start_time, int end_time, bool showPcm) {
-    if ((start_time >= 0) && (end_time <= duration) && (start_time < end_time)) {
+    if ((start_time >= 0) && (end_time <= duration) && (start_time < end_time)) {//符合裁剪条件
         pWLAudio->isCut = true;
         pWLAudio->end_time = end_time;
         pWLAudio->showPcm = showPcm;

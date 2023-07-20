@@ -8,6 +8,9 @@
 
 using namespace soundtouch;
 
+/*
+ * 存放PCM的数据封装类
+ * */
 class WLPcmBean {
 public:
     WLPcmBean(SAMPLETYPE *buffer, int size);

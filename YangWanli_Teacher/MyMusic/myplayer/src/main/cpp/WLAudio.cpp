@@ -10,10 +10,10 @@ WLAudio::WLAudio(WLPlayStatus *playStatus, int sample_rate, CallJava *callJava) 
 
     queue = new WLQueue(playStatus);
 
-    buffer = (uint8_t *) (av_malloc(sample_rate * 2 * 2));
+    buffer = (uint8_t *) (av_malloc(sample_rate * 2 * 2));//分配了一秒的音频pcm数据内存
 
     //音频变速变调功能
-    sampleBuffer = static_cast<SAMPLETYPE *>(malloc(sample_rate * 2 * 2));
+    sampleBuffer = static_cast<SAMPLETYPE *>(malloc(sample_rate * 2 * 2));//分配了一秒的音频pcm数据内存
     soundTouch = new SoundTouch();
 
     soundTouch->setSampleRate(sample_rate);
@@ -23,7 +23,6 @@ WLAudio::WLAudio(WLPlayStatus *playStatus, int sample_rate, CallJava *callJava) 
     soundTouch->setTempo(speed);
 //    outFile = fopen("/sdcard/testziliao/outAudio.pcm", "wb");
     LOGI("WLAudio construct pitch: %f speed: %f soundTouch:%p", pitch, speed, soundTouch);
-
     pthread_mutex_init(&codecMutex, NULL);
 }
 
@@ -50,12 +49,10 @@ void *pcmCallBack(void *data) {
         }
         if (pcmBean->buffsize <= wlAudio->defaultPcmSize) {//不用分包
             if (wlAudio->isRecordPcm) {
-                wlAudio->callJava->onCallPcmToAAC(CHILD_THREAD, pcmBean->buffer,
-                                                  pcmBean->buffsize);
+                wlAudio->callJava->onCallPcmToAAC(CHILD_THREAD, pcmBean->buffer, pcmBean->buffsize);
             }
             if (wlAudio->showPcm) {
-                wlAudio->callJava->onCallPcmInfo(CHILD_THREAD, pcmBean->buffer,
-                                                 pcmBean->buffsize);
+                wlAudio->callJava->onCallPcmInfo(CHILD_THREAD, pcmBean->buffer, pcmBean->buffsize);
             }
         }else{//分包
             int pack_num = pcmBean->buffsize / wlAudio->defaultPcmSize;
@@ -86,11 +83,9 @@ void *pcmCallBack(void *data) {
                 bf = NULL;
             }
         }
-
         delete pcmBean;
         pcmBean = NULL;
     }
-
 //    pthread_exit(&wlAudio->pcmCallBackThread);
     return 0;
 }
@@ -149,7 +144,6 @@ int WLAudio::resampleAudio(void **pcmbuf) {
         ret = avcodec_receive_frame(avCodecContext, avFrame);
         if (ret == 0) {
             readFrameFinish = false;
-
             if ((avFrame->channels > 0) && (avFrame->channel_layout == 0)) {
                 avFrame->channel_layout = av_get_default_channel_layout(avFrame->channels);
             } else if ((avFrame->channels == 0) && (avFrame->channel_layout > 0)) {
@@ -175,17 +169,11 @@ int WLAudio::resampleAudio(void **pcmbuf) {
                 avFrame = NULL;
                 swr_free(&swr_ctx);
                 readFrameFinish = true;
-
                 pthread_mutex_unlock(&codecMutex);
                 continue;
             }
 
-            nb = swr_convert(
-                    swr_ctx,
-                    &buffer,
-                    avFrame->nb_samples,
-                    (const uint8_t **) (avFrame->data),
-                    avFrame->nb_samples);
+            nb = swr_convert(swr_ctx, &buffer, avFrame->nb_samples, (const uint8_t **) (avFrame->data), avFrame->nb_samples);
             int out_channels = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_STEREO);
             data_size = nb * out_channels * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
 
@@ -211,7 +199,6 @@ int WLAudio::resampleAudio(void **pcmbuf) {
             avFrame = NULL;
             swr_free(&swr_ctx);
             swr_ctx = NULL;
-
             pthread_mutex_unlock(&codecMutex);
             break;
         } else {
@@ -228,7 +215,6 @@ int WLAudio::resampleAudio(void **pcmbuf) {
             continue;
         }
     }
-
 //    fclose(outFile);
 //    LOGI("fclose the pcm file");
     return data_size;
@@ -599,6 +585,7 @@ int WLAudio::getPCMDB(char *pcmdata, size_t pcmsize) {
     return db;
 }
 
+//
 void WLAudio::startStopRecord(bool start) {
     this->isRecordPcm = start;
 }
