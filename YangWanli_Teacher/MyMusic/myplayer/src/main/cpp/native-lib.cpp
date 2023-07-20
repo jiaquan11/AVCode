@@ -60,8 +60,6 @@ extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_myplayer_player_WLPlayer__1st
     if (isExit) {//正在资源销毁的过程中，直接退出，不允许调用stop操作
         return;
     }
-    jclass jcz = env->GetObjectClass(thiz);
-    jmethodID jmid_next = env->GetMethodID(jcz, "onCallNext", "()V");
 
     isExit = true;
     if (wlfFmpeg != NULL) {
@@ -81,6 +79,10 @@ extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_myplayer_player_WLPlayer__1st
         }
     }
     isExit = false;
+
+    //若是播放结束，或者是播放过程中点击了Next按钮，才会先stop，然后播放下一个播放资源
+    jclass jcz = env->GetObjectClass(thiz);
+    jmethodID jmid_next = env->GetMethodID(jcz, "onCallNext", "()V");
     env->CallVoidMethod(thiz, jmid_next);
 }
 
