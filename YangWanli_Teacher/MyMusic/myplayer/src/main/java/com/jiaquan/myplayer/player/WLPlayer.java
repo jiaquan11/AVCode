@@ -287,8 +287,8 @@ public class WLPlayer {
 
     //裁剪音频
     public void cutAudioPlay(int start_time, int end_time, boolean showPcm) {
-        if (_cutAudioPlay(start_time, end_time, showPcm)) {
-            start();
+        if (_cutAudioPlay(start_time, end_time, showPcm)) {//先seek
+            start();//然后提取数据上报
         } else {
             stop();
             onCallError(2001, "cutAudioPlay params is wrong!");
@@ -374,8 +374,7 @@ public class WLPlayer {
     private void encodePcmToAAC(byte[] buffer, int size) {
         MyLog.i("encodePcmToAAC buffer size: " + size);
         if ((buffer != null) && (encoder != null)) {
-            recordTime += size * 1.0 / (audioSamplerate * 2 * 2);
-//            MyLog.i("recordTime: " + recordTime);
+            recordTime += size * 1.0 / (audioSamplerate * 2 * 2);//计算当前包的时长，并累加
             if (onRecordTimeListener != null) {
                 onRecordTimeListener.onRecordTime((int) recordTime);//回调当前录制时长
             }
@@ -391,7 +390,7 @@ public class WLPlayer {
             int index = encoder.dequeueOutputBuffer(bufferInfo, 0);//获取编码器码流输出buffer的索引
             while (index >= 0) {
                 try {
-                    perpcmSize = bufferInfo.size + 7;
+                    perpcmSize = bufferInfo.size + 7;//AAC码流需要添加7字节的头
                     outByteBuffer = new byte[perpcmSize];
 
                     ByteBuffer byteBuffer = encoder.getOutputBuffers()[index];//获取到编码器输出的码流buffer

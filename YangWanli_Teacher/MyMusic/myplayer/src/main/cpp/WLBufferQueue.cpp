@@ -8,6 +8,7 @@ WLBufferQueue::WLBufferQueue(WLPlayStatus *playStatus) {
 
 WLBufferQueue::~WLBufferQueue() {
     wlPlayStatus = NULL;
+    clearBuffer();
     pthread_mutex_destroy(&mutexBuffer);
     pthread_cond_destroy(&condBuffer);
     if (LOG_DEBUG) {
@@ -17,7 +18,6 @@ WLBufferQueue::~WLBufferQueue() {
 
 int WLBufferQueue::putBuffer(SAMPLETYPE *buffer, int size) {
     pthread_mutex_lock(&mutexBuffer);
-//    LOGI("WLBufferQueue putBuffer size: %d", size);
     WLPcmBean *pcmBean = new WLPcmBean(buffer, size);
     queueBuffer.push_back(pcmBean);
     pthread_cond_signal(&condBuffer);
@@ -34,7 +34,7 @@ int WLBufferQueue::getBuffer(WLPcmBean **pcmBean) {
             break;
         } else {
             if (!wlPlayStatus->isExit) {
-                pthread_cond_wait(&condBuffer, &mutexBuffer);
+                pthread_cond_wait(&condBuffer, &mutexBuffer);//阻塞当前线程，唤醒其它线程
             }
         }
     }
@@ -52,17 +52,6 @@ int WLBufferQueue::clearBuffer() {
     }
     pthread_mutex_unlock(&mutexBuffer);
     return 0;
-}
-
-void WLBufferQueue::release() {
-    if (LOG_DEBUG) {
-        LOGI("WLBufferQueue::release()");
-    }
-    noticeThread();
-    clearBuffer();
-    if (LOG_DEBUG) {
-        LOGI("WLBufferQueue::release() success!");
-    }
 }
 
 int WLBufferQueue::getBufferSize() {

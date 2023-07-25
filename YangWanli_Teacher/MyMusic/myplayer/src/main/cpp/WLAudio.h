@@ -30,11 +30,7 @@ public:
 public:
     void play();
 
-    int resampleAudio(void **pcmbuf);
-
     void initOpenSLES();
-
-    SLuint32 getCurrentSampleRateForOpenSLES(int sample_rate);
 
     void pause();
 
@@ -48,8 +44,6 @@ public:
 
     void setMute(int mute);
 
-    int getSoundTouchData();
-
     void setPitch(float pitch);
 
     void setSpeed(float speed);
@@ -57,6 +51,13 @@ public:
     int getPCMDB(char *pcmdata, size_t pcmsize);
 
     void startStopRecord(bool start);
+
+    int getSoundTouchData();
+
+private:
+    int resampleAudio(void **pcmbuf);
+
+    SLuint32 getCurrentSampleRateForOpenSLES(int sample_rate);
 
 public:
     int streamIndex = -1;

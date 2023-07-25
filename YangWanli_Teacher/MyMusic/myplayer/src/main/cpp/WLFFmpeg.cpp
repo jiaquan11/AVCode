@@ -57,7 +57,7 @@ void WLFFmpeg::demuxFFmpegThread() {
     for (int i = 0; i < pFormatCtx->nb_streams; ++i) {
         if (pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             if (pWLAudio == NULL) {
-                pWLAudio = new WLAudio(playStatus, pFormatCtx->streams[i]->codecpar->sample_rate, callJava);
+                pWLAudio = new WLAudio(playStatus, pFormatCtx->streams[i]->codecpar->sample_rate, callJava);//创建音频播放类实例
                 pWLAudio->streamIndex = i;
                 pWLAudio->codecPar = pFormatCtx->streams[i]->codecpar;
                 pWLAudio->duration = pFormatCtx->duration / AV_TIME_BASE;//媒体总时长，单位为秒
@@ -68,7 +68,7 @@ void WLFFmpeg::demuxFFmpegThread() {
             }
         } else if (pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             if (pWLVideo == NULL) {
-                pWLVideo = new WLVideo(playStatus, callJava);
+                pWLVideo = new WLVideo(playStatus, callJava);//创建视频播放类实例
                 pWLVideo->streamIndex = i;
                 pWLVideo->codecPar = pFormatCtx->streams[i]->codecpar;
                 pWLVideo->time_base = pFormatCtx->streams[i]->time_base;
@@ -186,13 +186,13 @@ void WLFFmpeg::startFFmpegThread() {
                                                  pWLVideo->avCodecContext->extradata);
     }
 
-    pWLAudio->play();
-    pWLVideo->play();
+    pWLAudio->play();//开启音频播放，内部创建子线程用于获取缓冲区的pacekt，解码为pcm并给到opengles播放
+    pWLVideo->play();//开启视频播放,内部创建子线程用于获取缓冲区的pacekt,然后进行解码渲染
 
     LOGI("WLFFmpeg is start");
     int count = 0;
     while ((playStatus != NULL) && !playStatus->isExit) {
-        if (playStatus->seek) {
+        if (playStatus->seek) {//seek状态时，不往下读取
             av_usleep(100 * 1000);//100毫秒
             LOGI("now is seek continue");
             continue;
@@ -200,15 +200,14 @@ void WLFFmpeg::startFFmpegThread() {
         /*对于ape音频文件，一个音频packet可以解码为多个frame，因此需要减少缓冲区packet的个数，
          * 避免seek时卡顿,但是对于一个packet对应一个frame的音频文件，这里要改为40
          */
-        if (pWLAudio->queue->getQueueSize() > 40) {
+        if (pWLAudio->queue->getQueueSize() > 40) {//这里控制一下读取包的速度，音频包缓冲队列存储的数据不宜过多，不往下读取
             av_usleep(100 * 1000);//100毫秒
             continue;
         }
 
-        AVPacket *avPacket = av_packet_alloc();
-
+        AVPacket *avPacket = av_packet_alloc();//分配packet内存
         pthread_mutex_lock(&seek_mutex);
-        int ret = av_read_frame(pFormatCtx, avPacket);
+        int ret = av_read_frame(pFormatCtx, avPacket);//读取媒体文件的packet
         pthread_mutex_unlock(&seek_mutex);
         if (ret == 0) {
             if (avPacket->stream_index == pWLAudio->streamIndex) {
@@ -223,14 +222,14 @@ void WLFFmpeg::startFFmpegThread() {
                 av_packet_free(&avPacket);
                 av_free(avPacket);
             }
-        } else {
+        } else {//读取到文件尾，等待缓冲区中的数据消耗完
             av_packet_free(&avPacket);
             av_free(avPacket);
             while ((playStatus != NULL) && !playStatus->isExit) {
-                if (pWLAudio->queue->getQueueSize() > 0) {
+                if (pWLAudio->queue->getQueueSize() > 0) {//音频缓冲区中的packet未消耗完，则处于线程延迟中，等待音频播放线程消耗
                     av_usleep(100 * 1000);//100毫秒
                     continue;
-                } else {
+                } else {//音频缓冲区中的packet已消耗完
                     if (!playStatus->seek) {
                         av_usleep(100 * 1000);
                         playStatus->isExit = true;
@@ -242,6 +241,9 @@ void WLFFmpeg::startFFmpegThread() {
         }
     }
 
+    /*回调整个播放已完成
+     按上面的逻辑，是以音频播放结束为准
+     */
     if (callJava != NULL) {
         callJava->onCallComplete(CHILD_THREAD);
     }
@@ -296,10 +298,10 @@ void WLFFmpeg::seek(int64_t secds) {
         return;
     }
     if ((secds >= 0) && (secds <= duration)) {
-        playStatus->seek = true;
+        playStatus->seek = true;//设置为seek状态
         pthread_mutex_lock(&seek_mutex);
         int64_t rel = secds * AV_TIME_BASE;
-        avformat_seek_file(pFormatCtx, -1, INT64_MIN, rel, INT64_MAX, 0);
+        avformat_seek_file(pFormatCtx, -1, INT64_MIN, rel, INT64_MAX, 0);//seek到指定的时间点，这里没有指定某个流进行seek，由ffmpeg内部去判断
         if (pWLAudio != NULL) {
             pWLAudio->queue->clearAvPacket();
             pWLAudio->clock = 0;
@@ -325,9 +327,6 @@ void WLFFmpeg::seek(int64_t secds) {
 }
 
 void WLFFmpeg::release() {
-//    if (playStatus->isExit) {
-//        return;
-//    }
     LOGI("WLFFmpeg release in");
     playStatus->isExit = true;
 
@@ -336,7 +335,7 @@ void WLFFmpeg::release() {
 
     pthread_mutex_lock(&init_mutex);
     int sleepCount = 0;
-    while (!isExit) {
+    while (!isExit) {//若播放子线程仍然没有退出，则延迟等待10s
         if (sleepCount > 1000) {
             isExit = true;
         }

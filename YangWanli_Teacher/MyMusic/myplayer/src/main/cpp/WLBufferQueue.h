@@ -23,8 +23,6 @@ public:
 
     int getBufferSize();
 
-    void release();
-
     int noticeThread();
 
 private:

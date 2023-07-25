@@ -40,14 +40,13 @@ public:
     CallJava *callJava = NULL;
     AVRational time_base;
 
+    pthread_mutex_t codecMutex;
     pthread_t thread_play;
 
     WLAudio *audio = NULL;
     double clock = 0;
     double delayTime = 0;
     double defaultDelayTime = 0.04;
-
-    pthread_mutex_t codecMutex;
 
     int codectype = CODEC_YUV;
     AVBSFContext *abs_ctx = NULL;

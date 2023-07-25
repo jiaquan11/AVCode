@@ -20,7 +20,7 @@ int WLQueue::putAVPacket(AVPacket *packet) {
 //        LOGI("put a packet into queue, the count: %d", queuePacket.size());
     }
 
-    pthread_cond_signal(&condPacket);
+    noticeQueue();
     pthread_mutex_unlock(&mutexPacket);
     return 0;
 }
@@ -50,7 +50,7 @@ int WLQueue::getAVPacket(AVPacket *packet) {
             }
             break;
         } else {
-            pthread_cond_wait(&condPacket, &mutexPacket);
+            pthread_cond_wait(&condPacket, &mutexPacket);//阻塞当前线程，其它线程可以继续操作
         }
     }
     pthread_mutex_unlock(&mutexPacket);
@@ -67,7 +67,7 @@ int WLQueue::getQueueSize() {
 
 //清除缓冲区队列
 void WLQueue::clearAvPacket() {
-    pthread_cond_signal(&condPacket);
+    noticeQueue();
 
     pthread_mutex_lock(&mutexPacket);
     while (!queuePacket.empty()) {

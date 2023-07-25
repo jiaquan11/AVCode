@@ -13,19 +13,18 @@ WLVideo::~WLVideo() {
 
 void *playVideo(void *data) {
     WLVideo *video = static_cast<WLVideo *>(data);
-
-    while ((video->playStatus != NULL) && !video->playStatus->isExit) {
-        if (video->playStatus->seek) {
+    while ((video->playStatus != NULL) && !video->playStatus->isExit) {//音频播放结束,playStatus->isExit会置为true,同时就结束了视频播放
+        if (video->playStatus->seek) {//seek时，无需从缓冲区中读取数据
             av_usleep(1000 * 100);
             continue;
         }
 
-        if (video->playStatus->pause) {
+        if (video->playStatus->pause) {//暂停时，无需从缓冲区中读取数据
             av_usleep(1000 * 100);
             continue;
         }
 
-        if (video->queue->getQueueSize() == 0) {
+        if (video->queue->getQueueSize() == 0) {//视频缓冲区中数据读取完，回调缓冲中，等待数据
             if (!video->playStatus->load) {
                 video->playStatus->load = true;
                 video->callJava->onCallLoad(CHILD_THREAD, true);
@@ -58,7 +57,7 @@ void *playVideo(void *data) {
                 double diff = video->getFrameDiffTime(NULL, avPacket);
                 av_usleep(video->getDelayTime(diff) * 1000000);
 
-                video->callJava->onCallDecodeVPacket(CHILD_THREAD, avPacket->size, avPacket->data);
+                video->callJava->onCallDecodeVPacket(CHILD_THREAD, avPacket->size, avPacket->data);//调用Java层硬解
                 av_packet_free(&avPacket);
                 av_free(avPacket);
                 continue;
@@ -90,9 +89,8 @@ void *playVideo(void *data) {
             LOGI("子线程解码一个AVFrame成功!");
             if (avFrame->format == AV_PIX_FMT_YUV420P) {
                 LOGI("当前视频是YUV420P格式!");
-                double diff = video->getFrameDiffTime(avFrame, NULL);
+                double diff = video->getFrameDiffTime(avFrame, NULL);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
                 LOGI("diff is %lf", diff);
-
                 av_usleep(video->getDelayTime(diff) * 1000000);
 //            av_usleep(diff * 1000000);
                 //直接渲染
@@ -142,8 +140,7 @@ void *playVideo(void *data) {
 
                 double diff = video->getFrameDiffTime(pFrameYUV420p, NULL);
                 LOGI("diff2222 is %lf", diff);
-
-                av_usleep(video->getDelayTime(diff) * 1000000);
+                av_usleep(video->getDelayTime(diff) * 1000000);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
 
                 //渲染
                 video->callJava->onCallRenderYUV(CHILD_THREAD,
@@ -175,7 +172,7 @@ void *playVideo(void *data) {
 
 void WLVideo::play() {
     if ((playStatus != NULL) && !playStatus->isExit){
-        pthread_create(&thread_play, NULL, playVideo, this);
+        pthread_create(&thread_play, NULL, playVideo, this);//创建一个视频解码渲染线程，用于从缓冲区获取packet并解码渲染
     }
 }
 
@@ -184,7 +181,7 @@ void WLVideo::release() {
         queue->noticeQueue();
     }
 
-    pthread_join(thread_play, NULL);
+    pthread_join(thread_play, NULL);//等待子线程结束
 
     if (queue != NULL) {
         delete queue;
@@ -225,20 +222,21 @@ double WLVideo::getFrameDiffTime(AVFrame *avFrame, AVPacket* avPacket) {
     if (pts == AV_NOPTS_VALUE) {
         pts = 0;
     }
-    pts *= av_q2d(time_base);
+    pts *= av_q2d(time_base);//去掉时间基准，单位为秒
     if (pts > 0) {
         clock = pts;
     }
-    double diff = audio->clock - clock;
+    double diff = audio->clock - clock;//音频-视频，得到差值，这里的audio clock是音频的当前pcm播放时间戳
     LOGI("audio->clock: %lf, video clock: %lf, diff: %lf", audio->clock, clock, diff);
     return diff;
 }
 
 double WLVideo::getDelayTime(double diff) {
-    if (diff > 0.003) {//音频快 视频慢，减少休眠时间
+    //以差值3毫秒为标准进行调整(音视频差值在3毫秒内认为是同步的)  (defaultDelayTime:为正常的视频播放帧率耗时)
+    if (diff > 0.003) {//音频快 视频慢，视频减少休眠时间
         delayTime = delayTime * 2 / 3;
         if (delayTime < defaultDelayTime / 2) {
-            delayTime = defaultDelayTime * 2 / 3;
+            delayTime = defaultDelayTime * 2 / 3;//减少延时
         } else if (delayTime > defaultDelayTime * 2) {
             delayTime = defaultDelayTime * 2;
         }
