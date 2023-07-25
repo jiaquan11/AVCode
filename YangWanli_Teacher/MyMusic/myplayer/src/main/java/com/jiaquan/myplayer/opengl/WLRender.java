@@ -57,11 +57,12 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
 
     private FloatBuffer vertexBuffer;
     private FloatBuffer textureBuffer;
-
+    private FloatBuffer matrixBuffer;
     //yuv
     private int program_yuv;
     private int avPosition_yuv;
     private int afPosition_yuv;
+    private int u_matrix_yuv;
 
     private int sampler_y;
     private int sampler_u;
@@ -76,12 +77,15 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
 
     //mediacodec
     private int program_mediacodec = -1;
+    private int u_matrix_mediacodec = -1;
     private int avPosition_mediacodec = -1;
     private int afPosition_mediacodec = -1;
     private int samplerOES_mediacodec = -1;
     private int textureId_mediacodec = -1;
     private SurfaceTexture surfaceTexture = null;
     private Surface surface = null;
+
+    private float[] matrix = new float[16];
 
     public interface OnSurfaceCreateListener {
         void onSurfaceCreate(Surface surface);
@@ -103,6 +107,8 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         MyLog.i("construct WLRender in");
         context = ctx;
 
+        initMatrix();//单位矩阵初始化
+
         vertexBuffer = ByteBuffer.allocateDirect(vertexData.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
@@ -114,6 +120,12 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
                 .asFloatBuffer()
                 .put(textureData);
         textureBuffer.position(0);
+
+        matrixBuffer = ByteBuffer.allocateDirect(matrix.length * 4)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer()
+                .put(matrix);
+        matrixBuffer.position(0);
         MyLog.i("construct WLRender end");
     }
 
@@ -132,6 +144,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         GLES20.glViewport(0, 0, width, height);
+
     }
 
     /*
@@ -180,10 +193,21 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         this.v = ByteBuffer.wrap(v);
     }
 
+    private void initMatrix() {//4*4矩阵，对角线数字为1，其余为0
+        for (int i = 0; i < 16; ++i) {
+            if (i % 5 == 0) {
+                matrix[i] = 1.0f;
+            } else {
+                matrix[i] = 0.0f;
+            }
+        }
+    }
+
     private void initRenderYUV() {
         String vertexSource = WLShaderUtil.readRawTxt(context, R.raw.vertex_shader);
         String fragmentSource = WLShaderUtil.readRawTxt(context, R.raw.fragment_yuv);
         program_yuv = WLShaderUtil.createProgram(vertexSource, fragmentSource);
+        u_matrix_yuv = GLES20.glGetUniformLocation(program_yuv, "u_Matrix");
         avPosition_yuv = GLES20.glGetAttribLocation(program_yuv, "av_Position");
         afPosition_yuv = GLES20.glGetAttribLocation(program_yuv, "af_Position");
 
@@ -207,6 +231,8 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     private void renderYUV() {
         if ((width_yuv > 0) && (height_yuv > 0) && (y != null) && (u != null) && (v != null)) {
             GLES20.glUseProgram(program_yuv);
+
+            GLES20.glUniformMatrix4fv(u_matrix_yuv, 1, false, matrixBuffer);//给矩阵变量赋值
 
             GLES20.glEnableVertexAttribArray(avPosition_yuv);
             GLES20.glVertexAttribPointer(avPosition_yuv, 2, GLES20.GL_FLOAT, false, 8, vertexBuffer);
@@ -246,6 +272,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         String vertexSource = WLShaderUtil.readRawTxt(context, R.raw.vertex_shader);
         String fragmentSource = WLShaderUtil.readRawTxt(context, R.raw.fragment_mediacodec);
         program_mediacodec = WLShaderUtil.createProgram(vertexSource, fragmentSource);
+        u_matrix_mediacodec = GLES20.glGetUniformLocation(program_mediacodec, "u_Matrix");
         avPosition_mediacodec = GLES20.glGetAttribLocation(program_mediacodec, "av_Position");
         afPosition_mediacodec = GLES20.glGetAttribLocation(program_mediacodec, "af_Position");
         samplerOES_mediacodec = GLES20.glGetUniformLocation(program_mediacodec, "sTexture");
@@ -276,6 +303,8 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         surfaceTexture.updateTexImage();
 
         GLES20.glUseProgram(program_mediacodec);
+
+        GLES20.glUniformMatrix4fv(u_matrix_mediacodec, 1, false, matrixBuffer);//给矩阵变量赋值
 
         GLES20.glEnableVertexAttribArray(avPosition_mediacodec);
         GLES20.glVertexAttribPointer(avPosition_mediacodec, 2, GLES20.GL_FLOAT, false, 8, vertexBuffer);
