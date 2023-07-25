@@ -9,15 +9,12 @@
 
 SLObjectItf slObjectEngine = NULL;
 SLEngineItf engineItf = NULL;
-
 SLObjectItf recordObj = NULL;
 SLRecordItf recordItf = NULL;
-
 SLAndroidSimpleBufferQueueItf recordBufferQueue = NULL;
 
 RecordBuffer *recordBuffer = NULL;
 FILE *pcmFile = NULL;
-
 bool finish = false;
 
 void bqRecorderCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
@@ -60,7 +57,6 @@ extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_openslesrecord_MainActivity_s
         return;
     }
     finish = false;
-
     const char *path = env->GetStringUTFChars(jPath, 0);
     pcmFile = fopen(path, "wb");
 
@@ -82,14 +78,12 @@ extern "C" JNIEXPORT void JNICALL Java_com_jiaquan_openslesrecord_MainActivity_s
             SL_PCMSAMPLEFORMAT_FIXED_16, SL_PCMSAMPLEFORMAT_FIXED_16,
             SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT, SL_BYTEORDER_LITTLEENDIAN
     };
-
     SLDataSink audioSnk = {&loc_bq, &format_pcm};
 
     const SLInterfaceID id[1] = {SL_IID_ANDROIDSIMPLEBUFFERQUEUE};
     const SLboolean req[1] = {SL_BOOLEAN_TRUE};
     (*engineItf)->CreateAudioRecorder(engineItf, &recordObj, &audioSrc, &audioSnk, 1, id, req);//引擎集合里面的engineItf对象调用自身接口创建录制器，同时得到一个录制器句柄
     (*recordObj)->Realize(recordObj, SL_BOOLEAN_FALSE);//实例化这个录制器的句柄
-
     (*recordObj)->GetInterface(recordObj, SL_IID_RECORD, &recordItf);//获取录制器集合里面某个修改录制状态的对象
 
     (*recordObj)->GetInterface(recordObj, SL_IID_ANDROIDSIMPLEBUFFERQUEUE, &recordBufferQueue);//获取录制器集合里面某个缓冲队列的对象

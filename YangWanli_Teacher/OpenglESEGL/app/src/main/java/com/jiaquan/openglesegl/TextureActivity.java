@@ -9,8 +9,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class TextureActivity extends AppCompatActivity {
-    private WLGLTextureView wlglTextureView;
-    private LinearLayout lyContent;
+    private WLGLTextureView wlglTextureView = null;
+    private LinearLayout lyContent = null;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {

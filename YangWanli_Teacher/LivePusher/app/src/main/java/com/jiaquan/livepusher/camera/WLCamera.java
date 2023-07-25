@@ -12,16 +12,18 @@ import java.io.IOException;
 import java.util.List;
 
 public class WLCamera {
-    private SurfaceTexture surfaceTexture;
-    private Camera camera;
+    private final static String TAG = WLCamera.class.getSimpleName();
 
-    private int width;
-    private int height;
+    private SurfaceTexture surfaceTexture = null;
+    private Camera camera = null;
+
+    private int width = 0;
+    private int height = 0;
 
     public WLCamera(Context context) {
         this.width = DisplayUtil.getScreenWidth(context);
         this.height = DisplayUtil.getScreenHeight(context);
-        Log.i("WLCamera", "WLCamera width: " + width + " height: " + height);
+        Log.i(TAG, "WLCamera width: " + width + " height: " + height);
     }
 
     public void initCamera(SurfaceTexture surfaceTexture, int cameraId) {
@@ -41,10 +43,10 @@ public class WLCamera {
 
             Camera.Size size = getFitSize(parameters.getSupportedPictureSizes());
             parameters.setPictureSize(size.width, size.height);
-            Log.i("WLCamera", "setPictureSize width: " + size.width + " height: " + size.height);
+            Log.i(TAG, "setPictureSize width: " + size.width + " height: " + size.height);
             size = getFitSize(parameters.getSupportedPreviewSizes());
             parameters.setPreviewSize(size.width, size.height);
-            Log.i("WLCamera", "setPreviewSize width: " + size.width + " height: " + size.height);
+            Log.i(TAG, "setPreviewSize width: " + size.width + " height: " + size.height);
 
             camera.setParameters(parameters);
             camera.startPreview();
@@ -81,8 +83,7 @@ public class WLCamera {
                 return size;
             }
         }
-
-        Log.i("WLCamera", "getFitSize sizes.get(0) width: " + sizes.get(0).width + " height: " + sizes.get(0).height);
+        Log.i(TAG, "getFitSize sizes.get(0) width: " + sizes.get(0).width + " height: " + sizes.get(0).height);
         return sizes.get(0);
     }
 }

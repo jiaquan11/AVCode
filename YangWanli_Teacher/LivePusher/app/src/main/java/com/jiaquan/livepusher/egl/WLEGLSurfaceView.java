@@ -14,8 +14,8 @@ public abstract class WLEGLSurfaceView extends SurfaceView implements SurfaceHol
     private Surface surface = null;
     private EGLContext eglContext = null;
 
-    private WLEGLThread wleglThread;
-    private WLGLRender wlglRender;
+    private WLEGLThread wleglThread = null;
+    private WLGLRender wlglRender = null;
 
     private int mRenderMode = RENDERMODE_CONTINUOUSLY;
 

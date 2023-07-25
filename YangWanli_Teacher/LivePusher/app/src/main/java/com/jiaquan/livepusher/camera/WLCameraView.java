@@ -11,8 +11,8 @@ import android.view.WindowManager;
 import com.jiaquan.livepusher.egl.WLEGLSurfaceView;
 
 public class WLCameraView extends WLEGLSurfaceView {
-    private WLCameraRender wlCameraRender;
-    private WLCamera wlCamera;
+    private WLCameraRender wlCameraRender = null;
+    private WLCamera wlCamera = null;
 
     private int cameraId = Camera.CameraInfo.CAMERA_FACING_BACK;
 

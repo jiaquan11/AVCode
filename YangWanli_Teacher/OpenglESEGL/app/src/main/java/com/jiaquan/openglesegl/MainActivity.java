@@ -8,7 +8,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 public class MainActivity extends AppCompatActivity {
-    private SurfaceView surfaceView;
+    private SurfaceView surfaceView = null;
     EglHelper mEglHelper = null;
 
     @Override

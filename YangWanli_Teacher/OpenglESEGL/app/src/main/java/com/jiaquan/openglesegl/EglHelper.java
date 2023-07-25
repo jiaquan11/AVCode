@@ -11,10 +11,10 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
 
 public class EglHelper {
-    private EGL10 mEgl;
-    private EGLDisplay mEglDisplay;
-    private EGLContext mEglContext;
-    private EGLSurface mEglSurface;
+    private EGL10 mEgl = null;
+    private EGLDisplay mEglDisplay = null;
+    private EGLContext mEglContext = null;
+    private EGLSurface mEglSurface = null;
 
     public void initEgl(Surface surface, EGLContext eglContext) {
         //1.得到Egl实例

@@ -11,10 +11,10 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
 
 public class EglHelper {
-    private EGL10 mEgl;
-    private EGLDisplay mEglDisplay;
-    private EGLContext mEglContext;
-    private EGLSurface mEglSurface;
+    private EGL10 mEgl = null;
+    private EGLDisplay mEglDisplay = null;
+    private EGLContext mEglContext = null;
+    private EGLSurface mEglSurface = null;
 
     public void initEgl(Surface surface, EGLContext eglContext) {
         //1.得到Egl实例
@@ -60,10 +60,7 @@ public class EglHelper {
         }
 
         //6.创建EglContext
-        int[] attrib_list = {
-                EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
-                EGL10.EGL_NONE};
-
+        int[] attrib_list = {EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE};
         Log.i("EglHelper", "eglContext: " + eglContext);
         if (eglContext != null) {
             mEglContext = mEgl.eglCreateContext(mEglDisplay, configs[0], eglContext, attrib_list);
@@ -95,9 +92,7 @@ public class EglHelper {
 
     public void destroyEgl() {
         if (mEgl != null) {
-            mEgl.eglMakeCurrent(mEglDisplay, EGL10.EGL_NO_SURFACE,
-                    EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
-
+            mEgl.eglMakeCurrent(mEglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
             mEgl.eglDestroySurface(mEglDisplay, mEglSurface);
             mEglSurface = null;
 

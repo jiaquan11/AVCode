@@ -18,30 +18,30 @@ import java.nio.ByteBuffer;
 import javax.microedition.khronos.egl.EGLContext;
 
 public abstract class WLBaseMediaEncoder {
-    private Surface surface;
-    private EGLContext eglContext;
+    private Surface surface = null;
+    private EGLContext eglContext = null;
 
-    private int width;
-    private int height;
+    private int width = -1;
+    private int height = -1;
 
-    private MediaCodec videoEncoder;
-    private MediaFormat videoFormat;
-    private MediaCodec.BufferInfo videoBufferInfo;
+    private MediaCodec videoEncoder = null;
+    private MediaFormat videoFormat = null;
+    private MediaCodec.BufferInfo videoBufferInfo = null;
 
-    private MediaCodec audioEncoder;
-    private MediaFormat audioFormat;
-    private MediaCodec.BufferInfo audioBufferInfo;
+    private MediaCodec audioEncoder = null;
+    private MediaFormat audioFormat = null;
+    private MediaCodec.BufferInfo audioBufferInfo = null;
     private long audioPts = 0;
-    private int sampleRate;
+    private int sampleRate = 0;
 
-    private MediaMuxer mediaMuxer;
+    private MediaMuxer mediaMuxer = null;
     private boolean encoderStart;
     private boolean audioExit;
     private boolean videoExit;
 
-    private WLEGLMediaThread wleglMediaThread;
-    private VideoEncoderThread videoEncoderThread;
-    private AudioEncoderThread audioEncoderThread;
+    private WLEGLMediaThread wleglMediaThread = null;
+    private VideoEncoderThread videoEncoderThread = null;
+    private AudioEncoderThread audioEncoderThread = null;
 
     private WLEGLSurfaceView.WLGLRender wlglRender = null;
 
@@ -50,8 +50,10 @@ public abstract class WLBaseMediaEncoder {
     public final static int RENDERMODE_WHEN_DIRTY = 0;
     public final static int RENDERMODE_CONTINUOUSLY = 1;
 
-    private OnMediaInfoListener onMediaInfoListener;
-
+    public interface OnMediaInfoListener {
+        void onMediaTime(int times);
+    }
+    private OnMediaInfoListener onMediaInfoListener = null;
     public void setOnMediaInfoListener(OnMediaInfoListener onMediaInfoListener) {
         this.onMediaInfoListener = onMediaInfoListener;
     }
@@ -454,10 +456,6 @@ public abstract class WLBaseMediaEncoder {
         public void exit() {
             isExit = true;
         }
-    }
-
-    public interface OnMediaInfoListener {
-        void onMediaTime(int times);
     }
 
     private long getAudioPts(int size, int sampleRate) {

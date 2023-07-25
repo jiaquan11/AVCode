@@ -17,7 +17,7 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTexture.OnFrameAvailableListener {
-    private Context context;
+    private Context context = null;
 
     private final float[] vertexData = {//顶点坐标
 //            -1f, 0f,

@@ -14,7 +14,7 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 public class WLCameraFboRender {
-    private Context context;
+    private Context context = null;
 
     private final float[] vertexData = {//顶点坐标
 //            -1f, 0f,
@@ -132,7 +132,6 @@ public class WLCameraFboRender {
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
             Log.i("WLTextureRender", "vertexData.length: " + vertexData.length);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
             bitmapTextureId = WLShaderUtil.loadBitmapTexture(bitmap);
         }
     }

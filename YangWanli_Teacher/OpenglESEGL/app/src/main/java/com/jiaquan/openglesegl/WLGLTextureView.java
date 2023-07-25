@@ -8,7 +8,7 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 public class WLGLTextureView extends WLEGLSurfaceView{
-    private WLTextureRender wlTextureRender;
+    private WLTextureRender wlTextureRender = null;
 
     public WLGLTextureView(Context context) {
         this(context, null);
