@@ -428,6 +428,7 @@ public class WLPlayer {
         if (surface != null) {
             try {
                 wlglSurfaceView.getWlRender().setRenderType(WLRender.RENDER_MEDIACODEC);
+                wlglSurfaceView.getWlRender().setVideoSize(width, height);
 
                 String mime = WLVideoSupportUtil.findVideoCodecName(codecName);
                 MyLog.i("onCallinitMediaCodec mime is " + mime + " width is " + width + " height is " + height);

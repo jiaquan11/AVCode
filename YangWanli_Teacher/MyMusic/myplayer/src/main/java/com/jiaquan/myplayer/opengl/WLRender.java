@@ -69,8 +69,8 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     private int sampler_v;
 
     private int[] textureId_yuv;
-    private int width_yuv;
-    private int height_yuv;
+    private int mYuvWidth = 0;
+    private int mYuvHeight = 0;
     private ByteBuffer y;
     private ByteBuffer u;
     private ByteBuffer v;
@@ -85,6 +85,10 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     private SurfaceTexture surfaceTexture = null;
     private Surface surface = null;
 
+    private int mScreenWidth = 0;
+    private int mScreenHeight = 0;
+    private int mPicWdith = 0;
+    private int mPicHeight = 0;
     private float[] matrix = new float[16];
 
     public interface OnSurfaceCreateListener {
@@ -144,7 +148,8 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         GLES20.glViewport(0, 0, width, height);
-
+        mScreenWidth = width;
+        mScreenHeight = height;
     }
 
     /*
@@ -179,28 +184,27 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
             onRenderListener.onRender();
             MyLog.i("onFrameAvailable out");
         }
+
+        setMatrix(mScreenWidth, mScreenHeight, mPicWdith, mPicHeight);
     }
 
     public void setRenderType(int renderType) {
         this.renderType = renderType;
     }
 
+    public void setVideoSize(int width, int height) {
+        mPicWdith = width;
+        mPicHeight = height;
+    }
+
     public void setYUVRenderData(int width, int height, byte[] y, byte[] u, byte[] v) {
-        this.width_yuv = width;
-        this.height_yuv = height;
+        this.mYuvWidth = width;
+        this.mYuvHeight = height;
         this.y = ByteBuffer.wrap(y);
         this.u = ByteBuffer.wrap(u);
         this.v = ByteBuffer.wrap(v);
-    }
 
-    private void initMatrix() {//4*4矩阵，对角线数字为1，其余为0
-        for (int i = 0; i < 16; ++i) {
-            if (i % 5 == 0) {
-                matrix[i] = 1.0f;
-            } else {
-                matrix[i] = 0.0f;
-            }
-        }
+        setMatrix(mScreenWidth, mScreenHeight, mYuvWidth, mYuvHeight);
     }
 
     private void initRenderYUV() {
@@ -229,7 +233,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     }
 
     private void renderYUV() {
-        if ((width_yuv > 0) && (height_yuv > 0) && (y != null) && (u != null) && (v != null)) {
+        if ((mYuvWidth > 0) && (mYuvHeight > 0) && (y != null) && (u != null) && (v != null)) {
             GLES20.glUseProgram(program_yuv);
 
             GLES20.glUniformMatrix4fv(u_matrix_yuv, 1, false, matrixBuffer);//给矩阵变量赋值
@@ -242,15 +246,15 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
 
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId_yuv[0]);
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, width_yuv, height_yuv, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, y);
+            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, mYuvWidth, mYuvHeight, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, y);
 
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId_yuv[1]);
             GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
-            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, width_yuv / 2, height_yuv / 2, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, u);
+            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, mYuvWidth / 2, mYuvHeight / 2, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, u);
 
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId_yuv[2]);
             GLES20.glActiveTexture(GLES20.GL_TEXTURE2);
-            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, width_yuv / 2, height_yuv / 2, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, v);
+            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, mYuvWidth / 2, mYuvHeight / 2, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, v);
 
             GLES20.glUniform1i(sampler_y, 0);
             GLES20.glUniform1i(sampler_u, 1);
@@ -318,5 +322,43 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         GLES20.glUniform1i(samplerOES_mediacodec, 0);
 //        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
         MyLog.i("renderMediaCodec out");
+    }
+
+    private void initMatrix() {//4*4矩阵，对角线数字为1，其余为0
+        for (int i = 0; i < 16; ++i) {
+            if (i % 5 == 0) {
+                matrix[i] = 1.0f;
+            } else {
+                matrix[i] = 0.0f;
+            }
+        }
+    }
+
+    private void setMatrix(int screen_width, int screen_height, int pic_width, int pic_height) {
+        //屏幕720*1280 图片:517*685
+        float screen_r = 1.0f * screen_width / screen_height;
+        float picture_r = 1.0f * pic_width / pic_height;
+        if (screen_r > picture_r) {//图片宽度缩放
+            float r = screen_width / (1.0f * screen_height / pic_height * pic_width);
+            orthoM(-r, r, -1, 1, matrix);
+        } else {//图片宽的比率大于屏幕，则宽进行直接覆盖屏幕，而图片高度缩放
+            float r = screen_height / (1.0f * screen_width / pic_width * pic_height);
+            orthoM(-1, 1, -r, r, matrix);
+        }
+
+        matrixBuffer.put(matrix);
+        matrixBuffer.position(0);
+    }
+
+    /**
+     * 正交投影
+     */
+    private void orthoM(float left, float right, float bottom, float top, float []matrix) {
+        matrix[0] = 2 / (right - left);
+        matrix[3] = (right + left) / (right - left) * -1;
+        matrix[5] = 2 / (top - bottom);
+        matrix[7] = (top + bottom) / (top - bottom) * -1;
+        matrix[10] = 1;
+        matrix[11] = 1;
     }
 }
