@@ -22,9 +22,10 @@ public class WLGLTextureView extends WLEGLSurfaceView{
         super(context, attrs, defStyleAttr);
 
         wlTextureRender = new WLTextureRender(context);
-        setRender(wlTextureRender);
+        setRender(wlTextureRender);//设置渲染器
     }
 
+    //获取渲染器
     public WLTextureRender getWlTextureRender(){
         return wlTextureRender;
     }

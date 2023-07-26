@@ -39,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
                             GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
 
                             mEglHelper.swapBuffers();
-
                             try {
                                 Thread.sleep(16);
                             }catch (InterruptedException e){

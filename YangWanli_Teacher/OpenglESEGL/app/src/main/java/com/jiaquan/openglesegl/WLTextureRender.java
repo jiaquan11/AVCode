@@ -13,8 +13,9 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
-    private Context context;
+    private final static String TAG = WLTextureRender.class.getSimpleName();
 
+    private Context context = null;
     private final float[] vertexData = {//顶点坐标
 //            -1f, 0f,
 //            0f, -1f,
@@ -36,12 +37,12 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
     };
 
     private final float[] fragmentData = {//FBO坐标
-//            0f, 0f,//FBO坐标
+//            0f, 0f,//FBO坐标 (左下角为原点)
 //            1f, 0f,
 //            0f, 1f,
 //            1f, 1f,
 
-            0f, 1f,//纹理坐标
+            0f, 1f,//纹理坐标 (以左上角为原点)
             1f, 1f,
             0f, 0f,
             1f, 0f
@@ -52,9 +53,8 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
 //            0f, 1f
     };
 
-
-    private FloatBuffer vertexBuffer;
-    private FloatBuffer fragmentBuffer;
+    private FloatBuffer vertexBuffer = null;
+    private FloatBuffer fragmentBuffer = null;
 
     private int program;
     private int vPosition;
@@ -70,18 +70,17 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
     private int imgTextureId;
     private int imgTextureId2;
 
-    private FboRender fboRender;
+    private FboRender fboRender = null;
 
-    private int width;
-    private int height;
-
-    private OnRenderCreateListener onRenderCreateListener = null;
-    public void setOnRenderCreateListener(OnRenderCreateListener onRenderCreateListener) {
-        this.onRenderCreateListener = onRenderCreateListener;
-    }
+    private int width = -1;
+    private int height = -1;
 
     public interface OnRenderCreateListener{
         void onCreate(int textid);
+    }
+    private OnRenderCreateListener onRenderCreateListener = null;
+    public void setOnRenderCreateListener(OnRenderCreateListener onRenderCreateListener) {
+        this.onRenderCreateListener = onRenderCreateListener;
     }
 
     public WLTextureRender(Context context) {
@@ -93,14 +92,12 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(vertexData);
-
         vertexBuffer.position(0);
 
         fragmentBuffer = ByteBuffer.allocateDirect(fragmentData.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(fragmentData);
-
         fragmentBuffer.position(0);
     }
 
@@ -134,7 +131,7 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
 
             //5.解绑VBO
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
-            Log.i("WLTextureRender", "vertexData.length: " + vertexData.length);
+            Log.i(TAG, "vertexData.length: " + vertexData.length);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             //////////////////////////////////////////////
@@ -150,30 +147,26 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
             int[] textureIds = new int[1];
             GLES20.glGenTextures(1, textureIds, 0);
             textureid = textureIds[0];
-
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureid);
-
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glUniform1i(sTexture, 0);
 
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_REPEAT);
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_REPEAT);
-
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
 
             //3.设置FBO分配内存大小
             GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, 1080, 2000, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
             //////////////////////////////////////////////
-
             //4.将纹理绑定到FBO
             GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, textureid, 0);
 
             //5.检查FBO绑定是否成功
             if (GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER) != GLES20.GL_FRAMEBUFFER_COMPLETE) {
-                Log.e("WLTextureRender", "fbo is wrong!!!");
+                Log.e(TAG, "fbo is wrong!!!");
             } else {
-                Log.i("WLTextureRender", "fbo is successed!!!");
+                Log.i(TAG, "fbo is successed!!!");
             }
 
 //            bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.mingren);
@@ -197,7 +190,7 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
 
     @Override
     public void onSurfaceChanged(int width, int height) {
-        Log.i("WLTextureRender", "onSurfaceChanged width: " + width + " height: " + height);
+        Log.i(TAG, "onSurfaceChanged width: " + width + " height: " + height);
 //        GLES20.glViewport(0, 0, width, height);
 //
 //        fboRender.onChange(width, height);
@@ -242,7 +235,7 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
 
         GLES20.glEnableVertexAttribArray(vPosition);
 //        GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8, vertexBuffer);
-        GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8, 0);
+        GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8, 0);//最后一个参数为数据偏移
 
         GLES20.glEnableVertexAttribArray(fPosition);
 //        GLES20.glVertexAttribPointer(fPosition, 2, GLES20.GL_FLOAT, false, 8, textureBuffer);

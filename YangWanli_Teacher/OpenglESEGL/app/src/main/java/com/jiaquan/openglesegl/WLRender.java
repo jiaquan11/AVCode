@@ -2,6 +2,9 @@ package com.jiaquan.openglesegl;
 
 import android.opengl.GLES20;
 
+/*
+* 自定义GLSurfaceView的渲染器类
+* */
 public class WLRender implements WLEGLSurfaceView.WLGLRender {
     public WLRender() {
 

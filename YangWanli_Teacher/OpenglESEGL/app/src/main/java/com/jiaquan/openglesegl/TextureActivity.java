@@ -15,7 +15,6 @@ public class TextureActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_texture);
 
         wlglTextureView = findViewById(R.id.wlglsurfaceview);
@@ -31,18 +30,16 @@ public class TextureActivity extends AppCompatActivity {
                             lyContent.removeAllViews();
                         }
 
+                        //自定义一个线性布局器
                         for (int i = 0; i < 3; i++) {
                             WlMutiSurfaceView wlMutiSurfaceView = new WlMutiSurfaceView(TextureActivity.this);
-
                             wlMutiSurfaceView.setTextureId(textid, i);
                             wlMutiSurfaceView.setSurfaceAndEglContext(null, wlglTextureView.getEglContext());
 
                             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
                             lp.width = 200;
                             lp.height = 300;
-
                             wlMutiSurfaceView.setLayoutParams(lp);
-
                             lyContent.addView(wlMutiSurfaceView);
                         }
                     }

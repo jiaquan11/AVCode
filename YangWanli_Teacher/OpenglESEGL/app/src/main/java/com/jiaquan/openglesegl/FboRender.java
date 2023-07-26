@@ -8,7 +8,13 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
+/*
+* 这个渲染类的操作是把离屏渲染缓冲中的纹理
+* 完整地渲染到窗口中
+* */
 public class FboRender {
+    private static final String TAG = FboRender.class.getSimpleName();
+
     private Context context = null;
 
     private final float[] vertexData = {//顶点坐标
@@ -26,7 +32,7 @@ public class FboRender {
             1f, 1f
     };
 
-    private final float[] fragmentData = {//纹理坐标
+    private final float[] fragmentData = {//纹理坐标(以左上角为原点)
             0f, 1f,
             1f, 1f,
             0f, 0f,
@@ -40,8 +46,8 @@ public class FboRender {
     };
 
 
-    private FloatBuffer vertexBuffer;
-    private FloatBuffer fragmentBuffer;
+    private FloatBuffer vertexBuffer = null;
+    private FloatBuffer fragmentBuffer = null;
     private int program;
     private int vPosition;
     private int fPosition;
@@ -56,14 +62,12 @@ public class FboRender {
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(vertexData);
-
         vertexBuffer.position(0);
 
         fragmentBuffer = ByteBuffer.allocateDirect(fragmentData.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(fragmentData);
-
         fragmentBuffer.position(0);
     }
 
@@ -94,7 +98,7 @@ public class FboRender {
 
             //5.解绑VBO
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
-            Log.i("WLTextureRender", "vertexData.length: " + vertexData.length);
+            Log.i(TAG, "vertexData.length: " + vertexData.length);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         }
     }
