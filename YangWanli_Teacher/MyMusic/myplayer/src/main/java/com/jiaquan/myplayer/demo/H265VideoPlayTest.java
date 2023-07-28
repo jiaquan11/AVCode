@@ -9,9 +9,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /*
-* 开启一个线程，执行H265视频文件的码流提取及硬件解码，
-* 只是测试流程，不进行画面渲染操作，并统计了平均解码耗时
-* */
+ * 开启一个线程，执行H265视频文件的码流提取及硬件解码，
+ * 只是测试流程，不进行画面渲染操作，并统计了平均解码耗时
+ * */
 public class H265VideoPlayTest extends Thread {
     private final String TAG = H265VideoPlayTest.class.getSimpleName();
 
@@ -32,6 +32,7 @@ public class H265VideoPlayTest extends Thread {
             for (int i = 0; i < extractor.getTrackCount(); i++) {
                 MediaFormat format = extractor.getTrackFormat(i);
                 String mime = format.getString(MediaFormat.KEY_MIME);
+                Log.i(TAG, "mime is " + mime);
                 if (mime.startsWith("video/")) {
                     extractor.selectTrack(i);
                     decoder = MediaCodec.createDecoderByType(mime);
@@ -61,7 +62,8 @@ public class H265VideoPlayTest extends Thread {
                         buffer = decoder.getInputBuffer(inIndex);
                     }
                     int sampleSize = extractor.readSampleData(buffer, 0);
-                    if (sampleSize < 0) {
+                    Log.i(TAG, "sampleSize is: " + sampleSize);
+                    if (sampleSize <= 0) {
                         decoder.queueInputBuffer(inIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                         isEOS = true;
                     } else {
@@ -72,17 +74,20 @@ public class H265VideoPlayTest extends Thread {
             }
 
             int outIndex = decoder.dequeueOutputBuffer(info, 10000);
+            Log.i(TAG, "outIndex: " + outIndex);
             switch (outIndex) {
                 case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
                     break;
                 case MediaCodec.INFO_TRY_AGAIN_LATER:
+                    break;
+                case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
                     break;
                 default:
                     long decodeTime = System.currentTimeMillis() - startMs;
                     startMs = System.currentTimeMillis();
                     frameCount++;
                     totalTime += decodeTime;
-                    decoder.releaseOutputBuffer(outIndex, true);
+                    decoder.releaseOutputBuffer(outIndex, false);
                     break;
             }
 
