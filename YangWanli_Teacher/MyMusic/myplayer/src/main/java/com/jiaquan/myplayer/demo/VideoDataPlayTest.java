@@ -25,14 +25,10 @@ public class VideoDataPlayTest extends Thread {
     private int mWidth = 1080;
     private int mHeight = 1920;
     private byte[] bytes = null;
+    private int mAvgTime = 0;
 
     public VideoDataPlayTest() {
-        try {
-            bytes = getBytes("/sdcard/testziliao/hanleiVideo.265");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        Log.e(TAG, "bytes size " + bytes.length);
+
     }
 
     public void setSurface(Surface s) {
@@ -49,6 +45,13 @@ public class VideoDataPlayTest extends Thread {
 
     @Override
     public void run() {
+        try {
+            bytes = getBytes("/sdcard/testziliao/hanleiVideo.265");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Log.i(TAG, "bytes size " + bytes.length);
+
         try {
             decoder = MediaCodec.createDecoderByType(mMine);
         } catch (IOException e) {
@@ -136,7 +139,8 @@ public class VideoDataPlayTest extends Thread {
 
         decoder.stop();
         decoder.release();
-        Log.i(TAG, "All the Frames: " + frameCount + " Average decode time per frame: " + (totalTime / frameCount) + "ms");
+        mAvgTime = (int)(totalTime / frameCount);
+        Log.i(TAG, "All the Frames: " + frameCount + ", Average decode time per frame: " + mAvgTime + "ms");
     }
 
     //读取一帧数据
