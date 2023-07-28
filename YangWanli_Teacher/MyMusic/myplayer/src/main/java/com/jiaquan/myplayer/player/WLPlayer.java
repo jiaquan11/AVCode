@@ -2,9 +2,13 @@ package com.jiaquan.myplayer.player;
 
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
+import android.media.MediaCodecList;
 import android.media.MediaFormat;
+import android.os.Build;
 import android.text.TextUtils;
 import android.view.Surface;
+
+import androidx.annotation.RequiresApi;
 
 import com.jiaquan.myplayer.listener.OnCompleteListener;
 import com.jiaquan.myplayer.listener.OnErrorListener;
@@ -94,6 +98,7 @@ public class WLPlayer {
     }
 
     private OnTimeInfoListener onTimeInfoListener = null;
+
     public void setOnTimeInfoListener(OnTimeInfoListener onTimeInfoListener) {
         this.onTimeInfoListener = onTimeInfoListener;
     }
@@ -114,6 +119,7 @@ public class WLPlayer {
     }
 
     private OnPcmInfoListener onPcmInfoListener = null;
+
     public void setOnPcmInfoListener(OnPcmInfoListener onPcmInfoListener) {
         this.onPcmInfoListener = onPcmInfoListener;
     }
@@ -123,9 +129,38 @@ public class WLPlayer {
         this.onRecordTimeListener = onRecordTimeListener;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private void getSupportedCodec() {
+        MediaCodecList list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
+        MediaCodecInfo[] codecs = list.getCodecInfos();
+        MyLog.i("Decoders:");
+        for (MediaCodecInfo codec : codecs) {
+            if (!codec.isEncoder()) {
+                //基本就是一个name对应一个type，但是多个name可能对应的是同一个type
+                String[] types = codec.getSupportedTypes();
+                for (String type : types) {
+                    MyLog.i("Name: " + codec.getName() + ", Type: " + type + ", isHardwareAccelerated: " + codec.isHardwareAccelerated());
+                }
+            }
+        }
+        MyLog.i("Encoders:");
+        for (MediaCodecInfo codec : codecs) {
+            if (codec.isEncoder()) {
+                String[] types = codec.getSupportedTypes();
+                for (String type : types) {
+                    MyLog.i("Name: " + codec.getName() + ", Type: " + type + ", isHardwareAccelerated: " + codec.isHardwareAccelerated());
+                }
+            }
+        }
+    }
+
     //构造函数
     public WLPlayer() {
-
+        //仅用于测试：打印获取该机器支持的编解码器类型
+        MyLog.i("print getSupportCodec");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getSupportedCodec();
+        }
     }
 
     public void setSource(String source) {
@@ -439,7 +474,7 @@ public class WLPlayer {
                  */
                 mediaFormat.setByteBuffer("csd-0", ByteBuffer.wrap(csd));
                 mediaFormat.setByteBuffer("csd-1", ByteBuffer.wrap(csd));
-                if (mime.equals("video/hevc")){
+                if (mime.equals("video/hevc")) {
                     mediaFormat.setByteBuffer("csd-2", ByteBuffer.wrap(csd));
                 }
                 MyLog.i(mediaFormat.toString());
@@ -526,6 +561,7 @@ public class WLPlayer {
     private int aacSampleRateType = 4;
     private double recordTime = 0;
     private int audioSamplerate = 0;
+
     private void initMediaCodec(int samplerate, File outfile) {
         try {
             aacSampleRateType = getADTSSampleRate(samplerate);//根据音频采样率得到填充ADTS的采样率对应的值

@@ -105,7 +105,7 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
     public void onSurfaceCreated() {
         fboRender.onCreate();
 
-        String vertexSource = WLShaderUtil.readRawTxt(context, R.raw.vertex_shader_m);
+        String vertexSource = WLShaderUtil.readRawTxt(context, R.raw.vertex_shader_m);//这个shader顶点文件支持实现图片的正交投影，缩放等操作
         String fragmentSource = WLShaderUtil.readRawTxt(context, R.raw.fragment_shader);
         program = WLShaderUtil.createProgram(vertexSource, fragmentSource);
         if (program > 0) {
@@ -179,11 +179,12 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
             //解绑FBO
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
+            //加载两张图片，并返回图片纹理
             imgTextureId = loadTexture(R.drawable.androids);
             imgTextureId2 = loadTexture(R.drawable.ghnl);
 
             if (onRenderCreateListener != null){
-                onRenderCreateListener.onCreate(textureid);
+                onRenderCreateListener.onCreate(textureid);//回调当前渲染纹理id
             }
         }
     }
@@ -277,7 +278,6 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
         int[] textureIds = new int[1];
         GLES20.glGenTextures(1, textureIds, 0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureIds[0]);
-
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_REPEAT);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_REPEAT);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);

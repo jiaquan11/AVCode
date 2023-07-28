@@ -22,7 +22,7 @@ public class TextureActivity extends AppCompatActivity {
 
         wlglTextureView.getWlTextureRender().setOnRenderCreateListener(new WLTextureRender.OnRenderCreateListener() {
             @Override
-            public void onCreate(final int textid) {
+            public void onCreate(final int textid) {//wlglTextureView的渲染器回调一个纹理id过来
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -32,9 +32,9 @@ public class TextureActivity extends AppCompatActivity {
 
                         //自定义一个线性布局器
                         for (int i = 0; i < 3; i++) {
-                            WlMutiSurfaceView wlMutiSurfaceView = new WlMutiSurfaceView(TextureActivity.this);
-                            wlMutiSurfaceView.setTextureId(textid, i);
-                            wlMutiSurfaceView.setSurfaceAndEglContext(null, wlglTextureView.getEglContext());
+                            WlMutiSurfaceView wlMutiSurfaceView = new WlMutiSurfaceView(TextureActivity.this);//定义三个渲染控件WlMutiSurfaceView
+                            wlMutiSurfaceView.setTextureId(textid, i);//设置同一个纹理，即处理同一张图片
+                            wlMutiSurfaceView.setSurfaceAndEglContext(null, wlglTextureView.getEglContext());//同时必须在同样的EGL上下文中处理
 
                             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
                             lp.width = 200;
