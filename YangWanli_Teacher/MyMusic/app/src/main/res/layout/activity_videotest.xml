@@ -3,10 +3,26 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <Button
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:onClick="test"
-        android:text="测试265视频文件硬解" />
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <com.jiaquan.myplayer.opengl.WLGLSurfaceView
+            android:id="@+id/WlglSurfaceView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/playButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="20dp"
+            android:onClick="play"
+            android:text="Play" />
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

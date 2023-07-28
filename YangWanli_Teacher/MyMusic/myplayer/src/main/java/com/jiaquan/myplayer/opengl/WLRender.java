@@ -180,9 +180,9 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
         if (onRenderListener != null) {
-            MyLog.i("onFrameAvailable in");
+//            MyLog.i("onFrameAvailable in");
             onRenderListener.onRender();
-            MyLog.i("onFrameAvailable out");
+//            MyLog.i("onFrameAvailable out");
         }
 
         setMatrix(mScreenWidth, mScreenHeight, mPicWdith, mPicHeight);
