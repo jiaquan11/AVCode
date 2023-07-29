@@ -16,6 +16,9 @@ import com.jiaquan.myplayer.opengl.WLRender;
 
 /*
 * 这个页面仅仅用于测试，测试视频播放渲染相关操作
+* 这里使用的是GLSurfaceView控件，使用GLSurfaceView的render线程，同时
+* 使用opengl创建一个OES纹理，并生成surface,配置给硬件解码器，然后更新surface使用openg进行绘制,
+* GLSurfaceView内部封装的EGL环境会自动进行渲染出来
 * */
 public class VideoTestActivity extends AppCompatActivity {
     private WLGLSurfaceView wlglSurfaceView = null;
