@@ -3,6 +3,7 @@ package com.jiaquan.mymusic;
 import android.Manifest;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Surface;
 import android.view.View;
 
@@ -16,6 +17,8 @@ import com.jiaquan.myplayer.demo.WlSurfaceView;
 * 直接使用SurfaceView控件，将surface配置给硬件解码器，然后直接解码渲染出来
 * */
 public class VideoTest2Activity extends AppCompatActivity {
+    private static final String TAG = VideoTest2Activity.class.getSimpleName();
+
     private WlSurfaceView wlSurfaceView = null;
     private VideoDataPlayTest videoDataPlayTest = null;
 
@@ -37,6 +40,7 @@ public class VideoTest2Activity extends AppCompatActivity {
         wlSurfaceView.setOnSurfaceListener(new WlSurfaceView.OnSurfaceListener() {
             @Override
             public void init(Surface surface) {
+                Log.i(TAG, "VideoTest2Activity init surface: " + surface);
                 videoDataPlayTest.setSurface(surface);
             }
         });

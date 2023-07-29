@@ -13,6 +13,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
+/*
+ * 开启一个线程，码流文件的码流数据提取及硬件解码，
+ * 只是测试流程，不进行画面渲染操作，并统计了平均解码耗时
+ * 这里是使用直接读取视频码流数据，裸流文件
+ * */
 public class VideoDataPlayTest extends Thread {
     private final String TAG = VideoDataPlayTest.class.getSimpleName();
 
@@ -58,14 +63,21 @@ public class VideoDataPlayTest extends Thread {
             e.printStackTrace();
         }
 
+        Log.i(TAG, "MediaCodec createDecoderByType ok");
         if (decoder == null) {
             return;
         }
 
         mVideoFormat = MediaFormat.createVideoFormat(mMine, mWidth, mHeight);
         mVideoFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, mWidth * mHeight);
+        mVideoFormat.setInteger(MediaFormat.KEY_FRAME_RATE, 30);//设置无效
+        Log.i(TAG, "MediaCodec createVideoFormat framerate 30");
+        Log.i(TAG, "MediaCodec createVideoFormat ok");
+        Log.i(TAG, "MediaCodec configure surface: " + surface);
         decoder.configure(mVideoFormat, surface, null, 0);
+        Log.i(TAG, "MediaCodec configure ok");
         decoder.start();
+        Log.i(TAG, "MediaCodec start ok");
 
         //开始位置
         int startIndex = 0;
