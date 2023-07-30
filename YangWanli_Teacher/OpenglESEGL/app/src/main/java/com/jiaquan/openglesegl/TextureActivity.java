@@ -30,7 +30,7 @@ public class TextureActivity extends AppCompatActivity {
                             lyContent.removeAllViews();
                         }
 
-                        //自定义一个线性布局器
+                        //自定义一个线性布局器  多个surface绘制同一个纹理
                         for (int i = 0; i < 3; i++) {
                             WlMutiSurfaceView wlMutiSurfaceView = new WlMutiSurfaceView(TextureActivity.this);//定义三个渲染控件WlMutiSurfaceView
                             wlMutiSurfaceView.setTextureId(textid, i);//设置同一个纹理，即处理同一张图片

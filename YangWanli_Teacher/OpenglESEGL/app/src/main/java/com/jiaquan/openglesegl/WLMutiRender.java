@@ -12,6 +12,7 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 public class WLMutiRender implements WLEGLSurfaceView.WLGLRender {
+    private static final String TAG = WLMutiRender.class.getSimpleName();
     private Context context = null;
 
     private final float[] vertexData = {//顶点坐标
@@ -73,14 +74,12 @@ public class WLMutiRender implements WLEGLSurfaceView.WLGLRender {
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(vertexData);
-
         vertexBuffer.position(0);
 
         fragmentBuffer = ByteBuffer.allocateDirect(fragmentData.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(fragmentData);
-
         fragmentBuffer.position(0);
     }
 
@@ -90,14 +89,14 @@ public class WLMutiRender implements WLEGLSurfaceView.WLGLRender {
         String fragmentSource = WLShaderUtil.readRawTxt(context, R.raw.fragment_shader);
 
         if (index == 0) {
-            fragmentSource = WLShaderUtil.readRawTxt(context, R.raw.fragment_shader1);
-            Log.i("WLMutiRender", "WLMutiRender index 0");
+            fragmentSource = WLShaderUtil.readRawTxt(context, R.raw.fragment_shader1);//反色
+            Log.i(TAG, "WLMutiRender index 0");
         } else if (index == 1) {
-            fragmentSource = WLShaderUtil.readRawTxt(context, R.raw.fragment_shader2);
-            Log.i("WLMutiRender", "WLMutiRender index 1");
+            fragmentSource = WLShaderUtil.readRawTxt(context, R.raw.fragment_shader2);//黑白
+            Log.i(TAG, "WLMutiRender index 1");
         } else if (index == 2) {
-            fragmentSource = WLShaderUtil.readRawTxt(context, R.raw.fragment_shader3);
-            Log.i("WLMutiRender", "WLMutiRender index 2");
+            fragmentSource = WLShaderUtil.readRawTxt(context, R.raw.fragment_shader3);//降低亮度
+            Log.i(TAG, "WLMutiRender index 2");
         }
 
         program = WLShaderUtil.createProgram(vertexSource, fragmentSource);
@@ -123,7 +122,7 @@ public class WLMutiRender implements WLEGLSurfaceView.WLGLRender {
 
             //5.解绑VBO
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
-            Log.i("WLTextureRender", "vertexData.length: " + vertexData.length);
+            Log.i(TAG, "vertexData.length: " + vertexData.length);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             imgTextureId = loadTexture(R.drawable.girl);
@@ -146,6 +145,7 @@ public class WLMutiRender implements WLEGLSurfaceView.WLGLRender {
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboId);
 
         //////////////////////////////////////////////////////////////////////////
+        //单个surface绘制多个纹理
         //第一个纹理绘制
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);

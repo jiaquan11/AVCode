@@ -190,7 +190,7 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
     }
 
     @Override
-    public void onSurfaceChanged(int width, int height) {
+    public void onSurfaceChanged(int width, int height) {//屏幕尺寸变化
         Log.i(TAG, "onSurfaceChanged width: " + width + " height: " + height);
 //        GLES20.glViewport(0, 0, width, height);
 //
@@ -202,6 +202,7 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
         width = 1080;
         height = 2000;
 
+        //正交投影
         if (width > height) {//横屏
             Matrix.orthoM(matrix, 0, -width / ((height / 702f) * 526f), width / ((height / 702f) * 526f), -1f, 1f, -1f, 1f);
         } else {//竖屏
@@ -251,7 +252,7 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
 
         GLES20.glEnableVertexAttribArray(vPosition);
 //        GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8, vertexBuffer);
-        GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8, 32);
+        GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8, 32);//顶点坐标数组偏移
 
         GLES20.glEnableVertexAttribArray(fPosition);
 //        GLES20.glVertexAttribPointer(fPosition, 2, GLES20.GL_FLOAT, false, 8, textureBuffer);
