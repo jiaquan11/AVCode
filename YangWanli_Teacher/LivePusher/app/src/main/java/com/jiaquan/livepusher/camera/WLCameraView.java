@@ -11,6 +11,8 @@ import android.view.WindowManager;
 import com.jiaquan.livepusher.egl.WLEGLSurfaceView;
 
 public class WLCameraView extends WLEGLSurfaceView {
+    private static final String TAG = WLCameraView.class.getSimpleName();
+
     private WLCameraRender wlCameraRender = null;
     private WLCamera wlCamera = null;
 
@@ -39,7 +41,8 @@ public class WLCameraView extends WLEGLSurfaceView {
         wlCameraRender.setOnSurfaceCreateListener(new WLCameraRender.OnSurfaceCreateListener() {
             @Override
             public void onSurfaceCreate(SurfaceTexture surfaceTexture, int textureid) {
-                wlCamera.initCamera(surfaceTexture, cameraId);
+                //opengl创建surfaceTexture用于给到摄像头进行传递数据，并在opengl中进行绘制
+                wlCamera.initCamera(surfaceTexture, cameraId);//默认打开后置摄像头
                 textureId = textureid;//回调回来的FBO最终渲染的窗口纹理id
             }
         });
@@ -57,7 +60,7 @@ public class WLCameraView extends WLEGLSurfaceView {
 
         wlCameraRender.resetMatrix();//重置矩阵，后面会进行重新赋值
 
-        Log.i("WLCameraView", "angle is: " + angle);
+        Log.i(TAG, "angle is: " + angle);
         switch (angle) {
             case Surface.ROTATION_0:
                 if (cameraId == Camera.CameraInfo.CAMERA_FACING_BACK) {
@@ -96,7 +99,7 @@ public class WLCameraView extends WLEGLSurfaceView {
         }
     }
 
-    public int getTextureId(){
+    public int getTextureId() {
         return textureId;
     }
 }

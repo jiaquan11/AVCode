@@ -35,7 +35,7 @@ public class WLCamera {
     private void setCameraParam(int cameraId) {
         try {
             camera = Camera.open(cameraId);
-            camera.setPreviewTexture(surfaceTexture);
+            camera.setPreviewTexture(surfaceTexture);//摄像头预览需要一个surfaceTexture纹理传递数据
 
             Camera.Parameters parameters = camera.getParameters();
             parameters.setFlashMode("off");

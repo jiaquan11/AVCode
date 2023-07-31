@@ -10,12 +10,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.jiaquan.livepusher.camera.WLCameraView;
 
 public class CameraActivity extends AppCompatActivity {
-    private WLCameraView wlCameraView;
+    private WLCameraView wlCameraView = null;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_camera);
 
         wlCameraView = findViewById(R.id.cameraview);
@@ -24,7 +23,6 @@ public class CameraActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
         wlCameraView.onDestroy();//关闭摄像头预览
     }
 

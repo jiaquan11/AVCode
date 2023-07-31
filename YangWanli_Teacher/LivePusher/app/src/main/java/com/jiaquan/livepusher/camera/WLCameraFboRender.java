@@ -14,6 +14,8 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 public class WLCameraFboRender {
+    private static final String TAG = WLCameraFboRender.class.getSimpleName();
+
     private Context context = null;
 
     private final float[] vertexData = {//顶点坐标
@@ -49,9 +51,8 @@ public class WLCameraFboRender {
 //            0f, 1f
     };
 
-
-    private FloatBuffer vertexBuffer;
-    private FloatBuffer fragmentBuffer;
+    private FloatBuffer vertexBuffer = null;
+    private FloatBuffer fragmentBuffer = null;
     private int program;
     private int vPosition;
     private int fPosition;
@@ -59,18 +60,16 @@ public class WLCameraFboRender {
 
     private int vboId;
 
-    private Bitmap bitmap;
+    private Bitmap bitmap = null;
     private int bitmapTextureId;
 
     public WLCameraFboRender(Context context) {
         this.context = context;
-
+        //水印图片会绘制到窗口，所以会随着窗口变化
         bitmap = WLShaderUtil.createTextImage("视频直播和推流:jiaquan", 50, "#ff0000", "#00000000", 0);
-
         float r = 1.0f * bitmap.getWidth() / bitmap.getHeight();
         float w = r * 0.1f;//相当于正交投影，图片等比例
-        Log.i("WLCameraFboRender", "w is " + w);
-
+        Log.i(TAG, "w is " + w);
         vertexData[8] = 0.8f - w;//左下角坐标
         vertexData[9] = -0.8f;
 
@@ -87,14 +86,12 @@ public class WLCameraFboRender {
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(vertexData);
-
         vertexBuffer.position(0);
 
         fragmentBuffer = ByteBuffer.allocateDirect(fragmentData.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(fragmentData);
-
         fragmentBuffer.position(0);
     }
 
@@ -121,8 +118,7 @@ public class WLCameraFboRender {
             //2.绑定VBO
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboId);
             //3.分配VBO需要的缓存大小
-            GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, vertexData.length * 4 + fragmentData.length * 4, null,
-                    GLES20.GL_STATIC_DRAW);
+            GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, vertexData.length * 4 + fragmentData.length * 4, null, GLES20.GL_STATIC_DRAW);
 
             //4.为VBO设置顶点数据的值
             GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, 0, vertexData.length * 4, vertexBuffer);
@@ -130,7 +126,7 @@ public class WLCameraFboRender {
 
             //5.解绑VBO
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
-            Log.i("WLTextureRender", "vertexData.length: " + vertexData.length);
+            Log.i(TAG, "vertexData.length: " + vertexData.length);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             bitmapTextureId = WLShaderUtil.loadBitmapTexture(bitmap);
         }
@@ -149,7 +145,6 @@ public class WLCameraFboRender {
         //绑定使用VBO
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboId);
 
-        //fbo
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glUniform1i(sTexture, 0);

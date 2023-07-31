@@ -17,6 +17,8 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTexture.OnFrameAvailableListener {
+    private static final String TAG = WLCameraRender.class.getSimpleName();
+
     private Context context = null;
 
     private final float[] vertexData = {//顶点坐标
@@ -51,8 +53,8 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
 //            0f, 1f
     };
 
-    private FloatBuffer vertexBuffer;
-    private FloatBuffer fragmentBuffer;
+    private FloatBuffer vertexBuffer = null;
+    private FloatBuffer fragmentBuffer = null;
 
     private int program;
     private int vPosition;
@@ -73,24 +75,22 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
     private int width;
     private int height;
 
-    private WLCameraFboRender wlCameraFboRender;
+    private WLCameraFboRender wlCameraFboRender = null;
 
-    private SurfaceTexture surfaceTexture;
-
-    private OnSurfaceCreateListener onSurfaceCreateListener;
-
-    public void setOnSurfaceCreateListener(OnSurfaceCreateListener onSurfaceCreateListener) {
-        this.onSurfaceCreateListener = onSurfaceCreateListener;
-    }
+    private SurfaceTexture surfaceTexture = null;
 
     public interface OnSurfaceCreateListener {
         void onSurfaceCreate(SurfaceTexture surfaceTexture, int textureid);
+    }
+    private OnSurfaceCreateListener onSurfaceCreateListener = null;
+    public void setOnSurfaceCreateListener(OnSurfaceCreateListener onSurfaceCreateListener) {
+        this.onSurfaceCreateListener = onSurfaceCreateListener;
     }
 
     public WLCameraRender(Context context) {
         this.context = context;
 
-        //获取到屏幕宽高
+        //一开始就获取到屏幕宽高
         screenWidth = DisplayUtil.getScreenWidth(context);
         screenHeight = DisplayUtil.getScreenHeight(context);
 
@@ -100,20 +100,18 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(vertexData);
-
         vertexBuffer.position(0);
 
         fragmentBuffer = ByteBuffer.allocateDirect(fragmentData.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(fragmentData);
-
         fragmentBuffer.position(0);
     }
 
     @Override
     public void onSurfaceCreated() {
-        Log.i("WLCameraRender", "onSurfaceCreated");
+        Log.i(TAG, "onSurfaceCreated");
         wlCameraFboRender.onCreate();
 
         String vertexSource = WLShaderUtil.readRawTxt(context, R.raw.vertex_shader);
@@ -134,8 +132,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
             //2.绑定VBO
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboId);
             //3.分配VBO需要的缓存大小
-            GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, vertexData.length * 4 + fragmentData.length * 4, null,
-                    GLES20.GL_STATIC_DRAW);
+            GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, vertexData.length * 4 + fragmentData.length * 4, null, GLES20.GL_STATIC_DRAW);
 
             //4.为VBO设置顶点数据的值
             GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, 0, vertexData.length * 4, vertexBuffer);
@@ -143,7 +140,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
 
             //5.解绑VBO
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
-            Log.i("WLTextureRender", "vertexData.length: " + vertexData.length);
+            Log.i(TAG, "vertexData.length: " + vertexData.length);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             //////////////////////////////////////////////
@@ -180,9 +177,9 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
 
             //5.检查FBO绑定是否成功
             if (GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER) != GLES20.GL_FRAMEBUFFER_COMPLETE) {
-                Log.e("WLTextureRender", "fbo is wrong!!!");
+                Log.e(TAG, "fbo is wrong!!!");
             } else {
-                Log.i("WLTextureRender", "fbo is successed!!!");
+                Log.i(TAG, "fbo is successed!!!");
             }
 
 //            bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.mingren);
@@ -196,6 +193,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
             ///////////////////////////////////////////////////////////////////////////
+            //生成摄像头预览所需的OES纹理SurfaceTexture
             int[] textureIdsoes = new int[1];
             GLES20.glGenTextures(1, textureIdsoes, 0);
             cameraTextureid = textureIdsoes[0];
@@ -211,7 +209,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
             GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
 
             surfaceTexture = new SurfaceTexture(cameraTextureid);
-            surfaceTexture.setOnFrameAvailableListener(this);
+            surfaceTexture.setOnFrameAvailableListener(this);//当前对象监听摄像头的数据到来
 
             if (onSurfaceCreateListener != null) {
                 onSurfaceCreateListener.onSurfaceCreate(surfaceTexture, fboTextureid);
@@ -230,7 +228,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
 
     @Override
     public void onSurfaceChanged(int width, int height) {
-        Log.i("WLCameraRender", "onSurfaceChanged width: " + width + " height: " + height);
+        Log.i(TAG, "onSurfaceChanged width: " + width + " height: " + height);
 //        wlCameraFboRender.onChange(width, height);
 //
 //        GLES20.glViewport(0, 0, width, height);
@@ -241,7 +239,6 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
 
     @Override
     public void onDrawFrame() {
-
         surfaceTexture.updateTexImage();
 
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -249,6 +246,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
 
         GLES20.glUseProgram(program);
 
+        //注意：这里FBO中绘制的是摄像头图像数据，之后再绘制到窗口中
         //在FBO中使用屏幕宽高进行渲染
         GLES20.glViewport(0, 0, screenWidth, screenHeight);
 

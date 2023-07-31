@@ -85,8 +85,7 @@ public class WLShaderUtil {
         paint.setStyle(Paint.Style.FILL);
         paint.setAntiAlias(true);//抗锯齿
 
-        float width = paint.measureText(text, 0, text.length());//文字的宽度
-
+        float width = paint.measureText(text, 0, text.length());//文字的总宽度
         float top = paint.getFontMetrics().top;//获取字体的顶端位置
         float bottom = paint.getFontMetrics().bottom;//获取字体的底端位置
 
@@ -114,8 +113,7 @@ public class WLShaderUtil {
         bitmap.copyPixelsToBuffer(bitmapBuffer);
         bitmapBuffer.flip();
 
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, bitmap.getWidth(),
-                bitmap.getHeight(), 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, bitmapBuffer);
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, bitmap.getWidth(), bitmap.getHeight(), 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, bitmapBuffer);
         return textureIds[0];
     }
 

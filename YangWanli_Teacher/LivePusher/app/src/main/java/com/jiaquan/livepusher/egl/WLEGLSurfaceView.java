@@ -45,7 +45,7 @@ public abstract class WLEGLSurfaceView extends SurfaceView implements SurfaceHol
             throw new RuntimeException("must set render before");
         }
 
-        this.mRenderMode = mRenderMode;
+        this.mRenderMode = renderMode;
     }
 
     public void setSurfaceAndEglContext(Surface surface, EGLContext eglContext) {
