@@ -21,8 +21,8 @@ public class WLCamera {
     private int height = 0;
 
     public WLCamera(Context context) {
-        this.width = DisplayUtil.getScreenWidth(context);
-        this.height = DisplayUtil.getScreenHeight(context);
+        this.width = DisplayUtil.getScreenWidth(context);//屏幕显示宽
+        this.height = DisplayUtil.getScreenHeight(context);//屏幕显示高
         Log.i(TAG, "WLCamera width: " + width + " height: " + height);
     }
 
@@ -42,7 +42,7 @@ public class WLCamera {
             parameters.setPreviewFormat(ImageFormat.NV21);
 
             Camera.Size size = getFitSize(parameters.getSupportedPictureSizes());
-            parameters.setPictureSize(size.width, size.height);
+            parameters.setPictureSize(size.width, size.height);//设置摄像头预览宽高
             Log.i(TAG, "setPictureSize width: " + size.width + " height: " + size.height);
             size = getFitSize(parameters.getSupportedPreviewSizes());
             parameters.setPreviewSize(size.width, size.height);

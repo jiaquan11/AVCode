@@ -17,17 +17,14 @@ import com.ywl5320.listener.OnPreparedListener;
 import com.ywl5320.listener.OnShowPcmDataListener;
 
 public class VideoActivity extends AppCompatActivity {
-    private WLCameraView wlCameraView;
-    private Button btnRecord;
-
-    private WLMediaEncoder wlMediaEncoder;
-
-    private WlMusic wlMusic;
+    private WLCameraView wlCameraView = null;
+    private Button btnRecord = null;
+    private WLMediaEncoder wlMediaEncoder = null;
+    private WlMusic wlMusic = null;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.avtivity_video);
 
         wlCameraView = findViewById(R.id.cameraview);

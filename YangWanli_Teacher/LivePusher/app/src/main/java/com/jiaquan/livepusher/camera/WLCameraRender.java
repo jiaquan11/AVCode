@@ -222,6 +222,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
         Matrix.setIdentityM(matrix, 0);
     }
 
+    //设置角度旋转
     public void setAngle(float angle, float x, float y, float z) {
         Matrix.rotateM(matrix, 0, angle, x, y, z);
     }
@@ -239,6 +240,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
 
     @Override
     public void onDrawFrame() {
+        //这里持续不断的有摄像头数据过来，并更新，后面就是绘制的摄像头数据
         surfaceTexture.updateTexImage();
 
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -282,6 +284,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
         wlCameraFboRender.onDraw(fboTextureid);
     }
 
+    //这个摄像头预览的案例中设置的是RENDERMODE_CONTINUOUSLY，持续渲染
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
 
