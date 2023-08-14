@@ -17,42 +17,20 @@ public class WLCamera {
     private SurfaceTexture surfaceTexture = null;
     private Camera camera = null;
 
-    private int width = 0;
-    private int height = 0;
+    private int screenWidth = 0;
+    private int screenHeight = 0;
 
     public WLCamera(Context context) {
-        this.width = DisplayUtil.getScreenWidth(context);//屏幕显示宽
-        this.height = DisplayUtil.getScreenHeight(context);//屏幕显示高
-        Log.i(TAG, "WLCamera width: " + width + " height: " + height);
+        //手机屏幕的宽高
+        this.screenWidth = DisplayUtil.getScreenWidth(context);
+        this.screenHeight = DisplayUtil.getScreenHeight(context);
+        Log.i(TAG, "WLCamera screen width: " + screenWidth + " height: " + screenHeight);
     }
 
     public void initCamera(SurfaceTexture surfaceTexture, int cameraId) {
         this.surfaceTexture = surfaceTexture;
 
         setCameraParam(cameraId);
-    }
-
-    private void setCameraParam(int cameraId) {
-        try {
-            camera = Camera.open(cameraId);
-            camera.setPreviewTexture(surfaceTexture);//摄像头预览需要一个surfaceTexture纹理传递数据
-
-            Camera.Parameters parameters = camera.getParameters();
-            parameters.setFlashMode("off");
-            parameters.setPreviewFormat(ImageFormat.NV21);
-
-            Camera.Size size = getFitSize(parameters.getSupportedPictureSizes());
-            parameters.setPictureSize(size.width, size.height);//设置摄像头预览宽高
-            Log.i(TAG, "setPictureSize width: " + size.width + " height: " + size.height);
-            size = getFitSize(parameters.getSupportedPreviewSizes());
-            parameters.setPreviewSize(size.width, size.height);
-            Log.i(TAG, "setPreviewSize width: " + size.width + " height: " + size.height);
-
-            camera.setParameters(parameters);
-            camera.startPreview();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public void stopPreview() {
@@ -71,18 +49,45 @@ public class WLCamera {
         setCameraParam(cameraId);
     }
 
+    private void setCameraParam(int cameraId) {
+        Log.i(TAG, "setCameraParam cameraId:" + cameraId);
+        try {
+            camera = Camera.open(cameraId);
+            camera.setPreviewTexture(surfaceTexture);//摄像头预览需要一个surfaceTexture纹理传递数据
+
+            Camera.Parameters parameters = camera.getParameters();
+            parameters.setFlashMode("off");
+            parameters.setPreviewFormat(ImageFormat.NV21);
+
+            Camera.Size size = getFitSize(parameters.getSupportedPictureSizes());
+            parameters.setPictureSize(size.width, size.height);//设置摄像头拍摄的宽高
+            Log.i(TAG, "setPictureSize width: " + size.width + " height: " + size.height);
+            size = getFitSize(parameters.getSupportedPreviewSizes());//设置摄像头预览的宽高
+            parameters.setPreviewSize(size.width, size.height);
+            Log.i(TAG, "setPreviewSize width: " + size.width + " height: " + size.height);
+
+            camera.setParameters(parameters);
+            camera.startPreview();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private Camera.Size getFitSize(List<Camera.Size> sizes) {
-        if (width < height) {
-            int t = height;
-            height = width;
-            width = t;
+        if (screenWidth < screenHeight) {
+            int t = screenHeight;
+            screenHeight = screenWidth;
+            screenWidth = t;
         }
 
-        for (Camera.Size size : sizes) {
-            if ((1.0f * size.width / size.height) == (1.0f * width / height)) {
+        for (Camera.Size size : sizes) {//摄像头的可支持尺寸都是(宽>高)的值
+            Log.i(TAG, "size.width: " + size.width + ", size.height: " + size.height);
+            if ((1.0f * size.width / size.height) == (1.0f * screenWidth / screenHeight)) {//等比例
                 return size;
             }
         }
+
+        //没有匹配到等比例，就返回第一组宽高尺寸数据
         Log.i(TAG, "getFitSize sizes.get(0) width: " + sizes.get(0).width + " height: " + sizes.get(0).height);
         return sizes.get(0);
     }

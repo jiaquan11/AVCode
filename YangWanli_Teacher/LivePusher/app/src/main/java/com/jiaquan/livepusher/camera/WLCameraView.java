@@ -15,9 +15,7 @@ public class WLCameraView extends WLEGLSurfaceView {
 
     private WLCameraRender wlCameraRender = null;
     private WLCamera wlCamera = null;
-
     private int cameraId = Camera.CameraInfo.CAMERA_FACING_BACK;
-
     private int textureId = -1;
 
     public WLCameraView(Context context) {
@@ -43,7 +41,7 @@ public class WLCameraView extends WLEGLSurfaceView {
             public void onSurfaceCreate(SurfaceTexture surfaceTexture, int textureid) {
                 //opengl创建surfaceTexture用于给到摄像头进行传递数据，并在opengl中进行绘制
                 wlCamera.initCamera(surfaceTexture, cameraId);//默认打开后置摄像头
-                textureId = textureid;//回调回来的FBO最终渲染的窗口纹理id
+                textureId = textureid;//回调回来的FBO最终渲染的窗口纹理id,这个是用于编码的
             }
         });
     }
@@ -55,11 +53,10 @@ public class WLCameraView extends WLEGLSurfaceView {
     }
 
     public void previewAngle(Context context) {
-        //获取acitvity真实的显示角度，然后调整摄像头的角度变化进行渲染
-        int angle = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
-
         wlCameraRender.resetMatrix();//重置矩阵，后面会进行重新赋值
 
+        //获取acitvity真实的显示角度，然后调整摄像头的角度变化进行渲染
+        int angle = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
         Log.i(TAG, "angle is: " + angle);
         switch (angle) {
             case Surface.ROTATION_0:

@@ -9,6 +9,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.jiaquan.livepusher.camera.WLCameraView;
 
+/*
+* 摄像头预览
+* */
 public class CameraActivity extends AppCompatActivity {
     private WLCameraView wlCameraView = null;
 

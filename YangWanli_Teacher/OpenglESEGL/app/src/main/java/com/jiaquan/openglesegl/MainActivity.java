@@ -25,14 +25,14 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-                new Thread(){
+                new Thread() {
                     @Override
-                    public void run(){
+                    public void run() {
                         super.run();
                         mEglHelper = new EglHelper();
                         mEglHelper.initEgl(holder.getSurface(), null);
 
-                        while (true){
+                        while (true) {
                             GLES20.glViewport(0, 0, width, height);
 
                             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
                             mEglHelper.swapBuffers();
                             try {
                                 Thread.sleep(16);
-                            }catch (InterruptedException e){
+                            } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
                         }

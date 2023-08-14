@@ -80,7 +80,7 @@ void WLAudio::initOpenSLES() {
     }
 
     //3.创建播放器
-    SLDataLocator_AndroidSimpleBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 2};//指定了两个buffer队列
+    SLDataLocator_AndroidSimpleBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,2};//指定了两个buffer队列
     SLDataFormat_PCM pcm = {//指定设备进行播放的pcm格式参数，按照指定的参数设置进行播放
             SL_DATAFORMAT_PCM,
             2,
@@ -152,11 +152,11 @@ void *pcmCallBack(void *data) {
             if (wlAudio->showPcm) {
                 wlAudio->callJava->onCallPcmInfo(CHILD_THREAD, pcmBean->buffer, pcmBean->buffsize);
             }
-        }else{//分包上报
+        } else {//分包上报
             int pack_num = pcmBean->buffsize / wlAudio->defaultPcmSize;
             int pack_sub = pcmBean->buffsize % wlAudio->defaultPcmSize;//剩余的size
             for (int i = 0; i < pack_num; ++i) {
-                char* bf = (char*)malloc(wlAudio->defaultPcmSize);
+                char *bf = (char *) malloc(wlAudio->defaultPcmSize);
                 memcpy(bf, pcmBean->buffer + i * wlAudio->defaultPcmSize, wlAudio->defaultPcmSize);
                 if (wlAudio->isRecordPcm) {
                     wlAudio->callJava->onCallPcmToAAC(CHILD_THREAD, bf, wlAudio->defaultPcmSize);
@@ -168,8 +168,8 @@ void *pcmCallBack(void *data) {
                 bf = NULL;
             }
 
-            if (pack_sub > 0){
-                char* bf = (char*)malloc(pack_sub);
+            if (pack_sub > 0) {
+                char *bf = (char *) malloc(pack_sub);
                 memcpy(bf, pcmBean->buffer + pack_num * wlAudio->defaultPcmSize, pack_sub);
                 if (wlAudio->isRecordPcm) {
                     wlAudio->callJava->onCallPcmToAAC(CHILD_THREAD, bf, pack_sub);
@@ -189,7 +189,7 @@ void *pcmCallBack(void *data) {
 }
 
 void WLAudio::play() {
-    if ((playStatus != NULL) && !playStatus->isExit){
+    if ((playStatus != NULL) && !playStatus->isExit) {
         pthread_create(&thread_play, NULL, decodePlay, this);//创建音频播放子线程，初始化opensles相关流程，并注册好播放回调
         pthread_create(&pcmCallBackThread, NULL, pcmCallBack, this);//创建pcm数据的回调子线程
     }
@@ -219,14 +219,14 @@ void WLAudio::stop() {
 void WLAudio::release() {
     stop();
 
-    if (bufferQueue != NULL){
+    if (bufferQueue != NULL) {
         bufferQueue->noticeThread();
         pthread_join(pcmCallBackThread, NULL);
         delete bufferQueue;
         bufferQueue = NULL;
     }
 
-    if (queue != NULL){
+    if (queue != NULL) {
         queue->noticeQueue();
         pthread_join(thread_play, NULL);
         delete queue;

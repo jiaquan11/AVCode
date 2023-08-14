@@ -65,7 +65,7 @@ public class WLCameraFboRender {
 
     public WLCameraFboRender(Context context) {
         this.context = context;
-        //水印图片会绘制到窗口，所以会随着窗口变化
+        //水印图片会绘制到窗口，所以会随着窗口变化而变化
         bitmap = WLShaderUtil.createTextImage("视频直播和推流:jiaquan", 50, "#ff0000", "#00000000", 0);
         float r = 1.0f * bitmap.getWidth() / bitmap.getHeight();
         float w = r * 0.1f;//相当于正交投影，图片等比例

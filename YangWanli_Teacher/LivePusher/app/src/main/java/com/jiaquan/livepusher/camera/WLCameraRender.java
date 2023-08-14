@@ -69,14 +69,12 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
     private int vboId;
     private int fboId;
 
-    private int screenWidth;
-    private int screenHeight;
-
-    private int width;
-    private int height;
+    private int screenWidth = -1;
+    private int screenHeight = -1;
+    private int surfaceWidth = -1;
+    private int surfaceHeight = -1;
 
     private WLCameraFboRender wlCameraFboRender = null;
-
     private SurfaceTexture surfaceTexture = null;
 
     public interface OnSurfaceCreateListener {
@@ -228,14 +226,15 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
     }
 
     @Override
-    public void onSurfaceChanged(int width, int height) {
+    public void onSurfaceChanged(int width, int height) {//显示预览的宽高变化
         Log.i(TAG, "onSurfaceChanged width: " + width + " height: " + height);
 //        wlCameraFboRender.onChange(width, height);
 //
 //        GLES20.glViewport(0, 0, width, height);
 
-        this.width = width;
-        this.height = height;
+        //这是实际预览窗口的尺寸(即surface显示宽高)
+        this.surfaceWidth = width;
+        this.surfaceHeight = height;
     }
 
     @Override
@@ -279,7 +278,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
         //FBO处理完成后，绘制到窗口时，使用实际的窗口大小进行显示
-        wlCameraFboRender.onChange(width, height);
+        wlCameraFboRender.onChange(surfaceWidth, surfaceHeight);
         //将FBO输出纹理id绘制到窗口
         wlCameraFboRender.onDraw(fboTextureid);
     }

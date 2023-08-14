@@ -69,7 +69,6 @@ public class WLMutiRender implements WLEGLSurfaceView.WLGLRender {
 
     public WLMutiRender(Context context) {
         this.context = context;
-
         vertexBuffer = ByteBuffer.allocateDirect(vertexData.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()

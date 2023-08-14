@@ -18,6 +18,8 @@ import java.nio.ByteBuffer;
 import javax.microedition.khronos.egl.EGLContext;
 
 public abstract class WLBaseMediaEncoder {
+    private static final String TAG = WLBaseMediaEncoder.class.getSimpleName();
+
     private Surface surface = null;
     private EGLContext eglContext = null;
 
@@ -66,12 +68,12 @@ public abstract class WLBaseMediaEncoder {
         this.wlglRender = wlglRender;
     }
 
-    public void setmRenderMode(int mRenderMode) {
+    public void setmRenderMode(int renderMode) {
         if (wlglRender == null) {
             throw new RuntimeException("must set render before");
         }
 
-        this.mRenderMode = mRenderMode;
+        this.mRenderMode = renderMode;
     }
 
     public void initEncoder(EGLContext eglContext, String savePath, int width, int height, int sampleRate, int channelCount) {
@@ -292,7 +294,6 @@ public abstract class WLBaseMediaEncoder {
 
         private boolean isExit;
         private MediaCodec videoEncoder;
-        private MediaFormat videoFormat;
         private MediaCodec.BufferInfo videoBufferInfo;
         private MediaMuxer mediaMuxer;
         private long pts;
@@ -329,7 +330,7 @@ public abstract class WLBaseMediaEncoder {
                         mediaMuxer.stop();
                         mediaMuxer.release();
                         mediaMuxer = null;
-                        Log.i("WLBaseMediaEncoder", "Video 录制完成!!!");
+                        Log.i(TAG, "Video 录制完成!!!");
                     }
                     break;
                 }
@@ -339,7 +340,6 @@ public abstract class WLBaseMediaEncoder {
                     videoTrackIndex = mediaMuxer.addTrack(videoEncoder.getOutputFormat());
                     if (encoder.get().audioEncoderThread.audioTrackIndex != -1) {
                         mediaMuxer.start();
-
                         encoder.get().encoderStart = true;
                     }
                 } else {
@@ -349,7 +349,6 @@ public abstract class WLBaseMediaEncoder {
                             outputBuffer.position(videoBufferInfo.offset);
                             outputBuffer.limit(videoBufferInfo.offset + videoBufferInfo.size);
 
-                            //
                             if (pts == 0) {
                                 pts = videoBufferInfo.presentationTimeUs;
                             }
@@ -374,12 +373,12 @@ public abstract class WLBaseMediaEncoder {
     }
 
     static class AudioEncoderThread extends Thread {
-        private WeakReference<WLBaseMediaEncoder> encoder;
+        private WeakReference<WLBaseMediaEncoder> encoder = null;
         private boolean isExit;
 
-        private MediaCodec audioEncoder;
-        private MediaCodec.BufferInfo bufferInfo;
-        private MediaMuxer mediaMuxer;
+        private MediaCodec audioEncoder = null;
+        private MediaCodec.BufferInfo bufferInfo = null;
+        private MediaMuxer mediaMuxer = null;
 
         private int audioTrackIndex = -1;
         long pts;
@@ -415,8 +414,7 @@ public abstract class WLBaseMediaEncoder {
                         mediaMuxer.stop();
                         mediaMuxer.release();
                         mediaMuxer = null;
-
-                        Log.i("WLBaseMediaEncoder", "Audio 录制完成!!!");
+                        Log.i(TAG, "Audio 录制完成!!!");
                     }
                     break;
                 }
@@ -427,7 +425,6 @@ public abstract class WLBaseMediaEncoder {
                         audioTrackIndex = mediaMuxer.addTrack(audioEncoder.getOutputFormat());
                         if (encoder.get().videoEncoderThread.videoTrackIndex != -1) {
                             mediaMuxer.start();
-
                             encoder.get().encoderStart = true;
                         }
                     }

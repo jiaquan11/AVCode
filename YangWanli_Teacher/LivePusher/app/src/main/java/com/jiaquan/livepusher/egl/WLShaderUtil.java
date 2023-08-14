@@ -21,7 +21,6 @@ public class WLShaderUtil {
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         StringBuffer sb = new StringBuffer();
         String line;
-
         try {
             while ((line = reader.readLine()) != null) {
                 sb.append(line).append("\n");
@@ -30,7 +29,6 @@ public class WLShaderUtil {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return sb.toString();
     }
 
@@ -117,7 +115,7 @@ public class WLShaderUtil {
         return textureIds[0];
     }
 
-    public static int loadTexture(int src, Context context){
+    public static int loadTexture(int src, Context context) {
         int[] textureIds = new int[1];
         GLES20.glGenTextures(1, textureIds, 0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureIds[0]);
@@ -132,6 +130,6 @@ public class WLShaderUtil {
         bitmap.recycle();
         bitmap = null;
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-        return  textureIds[0];
+        return textureIds[0];
     }
 }

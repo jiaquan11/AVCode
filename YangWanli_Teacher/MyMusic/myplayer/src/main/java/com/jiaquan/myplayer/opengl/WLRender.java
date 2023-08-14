@@ -159,7 +159,6 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     public void onDrawFrame(GL10 gl) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);//0 0 0是黑色清屏 1 1 1是白色
-
         if (renderType == RENDER_YUV) {
             renderYUV();
         } else if (renderType == RENDER_MEDIACODEC) {

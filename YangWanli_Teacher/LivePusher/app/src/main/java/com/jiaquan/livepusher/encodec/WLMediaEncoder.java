@@ -7,8 +7,8 @@ public class WLMediaEncoder extends WLBaseMediaEncoder {
 
     public WLMediaEncoder(Context context, int textureId) {
         super(context);
-        wlEncoderRender = new WLEncoderRender(context, textureId);
 
+        wlEncoderRender = new WLEncoderRender(context, textureId);
         setRender(wlEncoderRender);
         setmRenderMode(WLBaseMediaEncoder.RENDERMODE_CONTINUOUSLY);
     }

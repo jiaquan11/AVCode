@@ -16,6 +16,9 @@ import com.ywl5320.listener.OnCompleteListener;
 import com.ywl5320.listener.OnPreparedListener;
 import com.ywl5320.listener.OnShowPcmDataListener;
 
+/*
+* 摄像头预览及录制编码
+* */
 public class VideoActivity extends AppCompatActivity {
     private WLCameraView wlCameraView = null;
     private Button btnRecord = null;
@@ -27,15 +30,15 @@ public class VideoActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.avtivity_video);
 
-        wlCameraView = findViewById(R.id.cameraview);
+        wlCameraView = findViewById(R.id.cameraview);//开启摄像头预览界面
         btnRecord = findViewById(R.id.btn_record);
 
         wlMusic = WlMusic.getInstance();
-        wlMusic.setCallBackPcmData(true);
+        wlMusic.setCallBackPcmData(true);//设置可回调数据的标识
         wlMusic.setOnPreparedListener(new OnPreparedListener() {
             @Override
             public void onPrepared() {
-                wlMusic.playCutAudio(24, 44);
+                wlMusic.playCutAudio(24, 44);//裁剪音频，seek到目标位置
             }
         });
 
@@ -58,7 +61,6 @@ public class VideoActivity extends AppCompatActivity {
             @Override
             public void onPcmInfo(int samplerate, int bit, int channels) {
                 Log.i("VideoActivity", "textureId is " + wlCameraView.getTextureId());//回调回来的FBO最终渲染的窗口纹理id
-
                 wlMediaEncoder = new WLMediaEncoder(VideoActivity.this, wlCameraView.getTextureId());//使用摄像头预览最终渲染到窗口的纹理进行编码
 //            String destPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/testziliao/yangwlVideo.mp4";
                 String destPath = "/sdcard/testziliao/yangwlVideo.mp4";
@@ -77,7 +79,7 @@ public class VideoActivity extends AppCompatActivity {
             @Override
             public void onPcmData(byte[] pcmdata, int size, long clock) {
                 if (wlMediaEncoder != null) {
-                    wlMediaEncoder.putPCMData(pcmdata, size);
+                    wlMediaEncoder.putPCMData(pcmdata, size);//用于音频编码
                 }
             }
         });

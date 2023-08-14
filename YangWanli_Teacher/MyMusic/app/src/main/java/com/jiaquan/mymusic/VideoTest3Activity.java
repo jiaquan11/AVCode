@@ -12,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.jiaquan.myplayer.demo.MyGLSurfaceViw;
 import com.jiaquan.myplayer.demo.VideoDataPlayTest;
-import com.jiaquan.myplayer.demo.WlSurfaceView;
 
 /*
 SurfaceView和GLSurfaceView在处理Surface的方式上有一些不同。
