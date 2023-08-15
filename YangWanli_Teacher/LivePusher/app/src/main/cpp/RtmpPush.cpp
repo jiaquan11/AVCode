@@ -1,7 +1,3 @@
-//
-// Created by jiaqu on 2021/2/17.
-//
-
 #include "RtmpPush.h"
 
 RtmpPush::RtmpPush(const char *url, CallJava *callJava) {
@@ -52,14 +48,14 @@ void *callBackPush(void *data) {
     rtmpPush->callJava->onConnectSuccess(CHILD_THREAD);
     rtmpPush->startPushing = true;
     rtmpPush->startTime = RTMP_GetTime();
-    while (true){
-        if (!rtmpPush->startPushing){
+    while (true) {
+        if (!rtmpPush->startPushing) {
             break;
         }
 
         RTMPPacket *packet = NULL;
         packet = rtmpPush->queue->getRtmpPacket();
-        if(packet != NULL){
+        if (packet != NULL) {
             int result = RTMP_SendPacket(rtmpPush->rtmp, packet, 1);
             LOGI("RtmpPush RTMP_SendPacket result: %d", result);
             RTMPPacket_Free(packet);
@@ -83,12 +79,12 @@ void RtmpPush::init() {
 
 void RtmpPush::pushSPSPPS(char *sps, int sps_len, char *pps, int pps_len) {
     int bodysize = sps_len + pps_len + 16;
-    RTMPPacket *packet = (RTMPPacket*)malloc(sizeof(RTMPPacket));
+    RTMPPacket *packet = (RTMPPacket *) malloc(sizeof(RTMPPacket));
     RTMPPacket_Alloc(packet, bodysize);
     RTMPPacket_Reset(packet);
 
     //将SPS和PPS数据按照rtmp协议的格式存放在rtmp的数据body中
-    char* body = packet->m_body;
+    char *body = packet->m_body;
     int i = 0;
     body[i++] = 0x17;
 
@@ -126,18 +122,18 @@ void RtmpPush::pushSPSPPS(char *sps, int sps_len, char *pps, int pps_len) {
     queue->putRtmpPacket(packet);
 }
 
-void RtmpPush::pushVideoData(char* data, int data_len, bool keyframe) {
+void RtmpPush::pushVideoData(char *data, int data_len, bool keyframe) {
     int bodysize = data_len + 9;
-    RTMPPacket *packet = (RTMPPacket*)malloc(sizeof(RTMPPacket));
+    RTMPPacket *packet = (RTMPPacket *) malloc(sizeof(RTMPPacket));
     RTMPPacket_Alloc(packet, bodysize);
     RTMPPacket_Reset(packet);
 
     //将码流数据按照rtmp协议的格式存放在rtmp的数据body中
-    char* body = packet->m_body;
+    char *body = packet->m_body;
     int i = 0;
-    if (keyframe){
+    if (keyframe) {
         body[i++] = 0x17;
-    }else{
+    } else {
         body[i++] = 0x27;
     }
 
@@ -165,12 +161,12 @@ void RtmpPush::pushVideoData(char* data, int data_len, bool keyframe) {
 
 void RtmpPush::pushAudioData(char *data, int data_len) {
     int bodysize = data_len + 2;
-    RTMPPacket *packet = (RTMPPacket*)malloc(sizeof(RTMPPacket));
+    RTMPPacket *packet = (RTMPPacket *) malloc(sizeof(RTMPPacket));
     RTMPPacket_Alloc(packet, bodysize);
     RTMPPacket_Reset(packet);
 
     //将码流数据按照rtmp协议的格式存放在rtmp的数据body中
-    char* body = packet->m_body;
+    char *body = packet->m_body;
     body[0] = 0xAF;
     body[1] = 0x01;
     memcpy(&body[2], data, data_len);

@@ -1,7 +1,3 @@
-//
-// Created by jiaqu on 2021/2/17.
-//
-
 #ifndef LIVEPUSHER_RTMPPUSH_H
 #define LIVEPUSHER_RTMPPUSH_H
 
@@ -23,9 +19,12 @@ public:
 
     void init();
 
-    void pushSPSPPS(char* sps, int sps_len, char* pps, int pps_len);
-    void pushVideoData(char* data, int data_len, bool keyframe);
-    void pushAudioData(char* data, int data_len);
+    void pushSPSPPS(char *sps, int sps_len, char *pps, int pps_len);
+
+    void pushVideoData(char *data, int data_len, bool keyframe);
+
+    void pushAudioData(char *data, int data_len);
+
     void pushStop();
 
 public:
@@ -38,4 +37,5 @@ public:
     bool startPushing = false;
     long startTime = 0;
 };
+
 #endif //LIVEPUSHER_RTMPPUSH_H

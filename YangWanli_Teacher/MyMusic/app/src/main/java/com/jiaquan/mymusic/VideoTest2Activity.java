@@ -33,7 +33,7 @@ public class VideoTest2Activity extends AppCompatActivity {
             requestPermissions(permissions, 321);
         }
 
-        videoDataPlayTest = new VideoDataPlayTest();
+        videoDataPlayTest = new VideoDataPlayTest(this);
 
         wlSurfaceView = findViewById(R.id.wlsurfaceview);
 

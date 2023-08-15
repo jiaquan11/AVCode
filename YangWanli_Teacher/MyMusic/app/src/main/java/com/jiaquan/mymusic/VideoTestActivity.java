@@ -1,6 +1,7 @@
 package com.jiaquan.mymusic;
 
 import android.Manifest;
+import android.app.Application;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Surface;
@@ -40,7 +41,7 @@ public class VideoTestActivity extends AppCompatActivity {
         }
 
 //        videoPlayTest = new VideoPlayTest();
-        videoDataPlayTest = new VideoDataPlayTest();
+        videoDataPlayTest = new VideoDataPlayTest(this);
 
         wlglSurfaceView = findViewById(R.id.WlglSurfaceView);
         wlglSurfaceView.getWlRender().setOnSurfaceCreateListener(new WLRender.OnSurfaceCreateListener() {

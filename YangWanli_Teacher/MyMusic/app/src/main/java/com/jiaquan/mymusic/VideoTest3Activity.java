@@ -41,7 +41,7 @@ public class VideoTest3Activity extends AppCompatActivity {
             requestPermissions(permissions, 321);
         }
 
-        videoDataPlayTest = new VideoDataPlayTest();
+        videoDataPlayTest = new VideoDataPlayTest(this);
 
         myGLSurfaceViw = findViewById(R.id.myGlSurfaceView);
         myGLSurfaceViw.setOnSurfaceListener(new MyGLSurfaceViw.OnSurfaceListener() {

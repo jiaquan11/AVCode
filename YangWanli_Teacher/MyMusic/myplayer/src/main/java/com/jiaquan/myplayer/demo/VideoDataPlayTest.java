@@ -1,9 +1,12 @@
 package com.jiaquan.myplayer.demo;
 
+import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.util.Log;
 import android.view.Surface;
+
+import com.jiaquan.myplayer.R;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -32,8 +35,10 @@ public class VideoDataPlayTest extends Thread {
     private byte[] bytes = null;
     private int mAvgTime = 0;
 
-    public VideoDataPlayTest() {
+    private Context context = null;
 
+    public VideoDataPlayTest(Context applicationContext) {
+        context = applicationContext;
     }
 
     public void setSurface(Surface s) {
@@ -50,20 +55,29 @@ public class VideoDataPlayTest extends Thread {
 
     @Override
     public void run() {
+//        try {
+//            bytes = getBytes("/sdcard/testziliao/hanleiVideo.265");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        Log.i(TAG, "sd resource bytes size " + bytes.length);
+
+        InputStream is = context.getResources().openRawResource(R.raw.test);
         try {
-            bytes = getBytes("/sdcard/testziliao/hanleiVideo.265");
+            bytes = getBytes(is);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Log.i(TAG, "bytes size " + bytes.length);
+        Log.i(TAG, "raw resource bytes size " + bytes.length);
 
         try {
             decoder = MediaCodec.createDecoderByType(mMine);
         } catch (IOException e) {
             e.printStackTrace();
+            decoder = null;
         }
-
         Log.i(TAG, "MediaCodec createDecoderByType ok");
+
         if (decoder == null) {
             return;
         }
@@ -175,6 +189,19 @@ public class VideoDataPlayTest extends Thread {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         buf = new byte[size];
         while ((len = is.read(buf, 0, size)) != -1) {//循环读取
+            bos.write(buf, 0, len);
+        }
+        buf = bos.toByteArray();
+        return buf;
+    }
+
+    private byte[] getBytes(InputStream is) throws IOException {
+        int len;
+        int size = 1024;
+        byte[] buf;
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        buf = new byte[size];
+        while ((len = is.read(buf, 0, size)) != -1) { //循环读取
             bos.write(buf, 0, len);
         }
         buf = bos.toByteArray();
