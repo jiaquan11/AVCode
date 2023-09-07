@@ -62,7 +62,7 @@ public class VideoDataPlayTest extends Thread {
 //        }
 //        Log.i(TAG, "sd resource bytes size " + bytes.length);
 
-        InputStream is = context.getResources().openRawResource(R.raw.test);
+        InputStream is = context.getResources().openRawResource(R.raw.test30frames_1080p_ld2);
         try {
             bytes = getBytes(is);
         } catch (IOException e) {
@@ -118,7 +118,6 @@ public class VideoDataPlayTest extends Thread {
                 }
              */
             int nextFrameStart = findByFrame(bytes, startIndex + 1, totalSize);
-            Log.i(TAG, "nextFrameStart " + nextFrameStart);
 
             if (!isEOS) {
                 int inIndex = decoder.dequeueInputBuffer(10000);
@@ -129,14 +128,16 @@ public class VideoDataPlayTest extends Thread {
                         buffer.clear();
                     }
 
+                    Log.i(TAG, "nextFrameStart " + nextFrameStart);
                     if (nextFrameStart == -1) {
                         decoder.queueInputBuffer(inIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                         isEOS = true;
                     } else {
+                        Log.i(TAG, "video size: " + (nextFrameStart - startIndex));
                         buffer.put(bytes, startIndex, nextFrameStart - startIndex);
                         decoder.queueInputBuffer(inIndex, 0, nextFrameStart - startIndex, 0, 0);
                     }
-                    //为下一帧做准备，下一帧首就是前一帧的尾。
+                    //为下一帧做准备，下一帧首就是前一帧的尾
                     startIndex = nextFrameStart;
                 }
             }
@@ -196,15 +197,13 @@ public class VideoDataPlayTest extends Thread {
     }
 
     private byte[] getBytes(InputStream is) throws IOException {
-        int len;
-        int size = 1024;
-        byte[] buf;
+        int bytesRead;
+        int bufferSize = 8192; // 8KB 缓冲区大小
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        buf = new byte[size];
-        while ((len = is.read(buf, 0, size)) != -1) { //循环读取
-            bos.write(buf, 0, len);
+        byte[] buffer = new byte[bufferSize]; // 缓冲区
+        while ((bytesRead = is.read(buffer, 0, bufferSize)) != -1) { //循环读取
+            bos.write(buffer, 0, bytesRead);
         }
-        buf = bos.toByteArray();
-        return buf;
+        return bos.toByteArray();
     }
 }

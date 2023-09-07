@@ -457,6 +457,20 @@ public class WLPlayer {
         return isSupport;
     }
 
+    public static void printBytesInLines(byte[] bytes, int len) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < len; i++) {
+            stringBuilder.append(String.format("%02X ", bytes[i]));
+            if ((i + 1) % 16 == 0) {
+                MyLog.i(stringBuilder.toString());
+                stringBuilder.setLength(0);
+            }
+        }
+        if (stringBuilder.length() > 0) {
+            MyLog.i(stringBuilder.toString());
+        }
+    }
+
     //video
     //native回调方法：初始化视频硬件解码器
     private void onCallinitMediaCodec(String codecName, int width, int height, byte[] csd) {
@@ -470,8 +484,11 @@ public class WLPlayer {
                 mediaFormat = MediaFormat.createVideoFormat(mime, width, height);
                 mediaFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
                 /*这里三个字段都是设置为ffmpeg提取的extradata数据，目前硬件解码是没问题的，理论上是需要分别提取SPS和PPS数据填充设置，
-                    H265需要设置VPS，SPS，PPS三个字段
+                    H265需要设置VPS，SPS，PPS三个字段.应该MediaCodec针对直接传递的extradata数据在内部进行了提取VPS,SPS,PPS,比较强大
                  */
+                MyLog.i("java onCallinitMediaCodec csd size: " + csd.length);
+                printBytesInLines(csd, csd.length);
+
                 mediaFormat.setByteBuffer("csd-0", ByteBuffer.wrap(csd));
                 mediaFormat.setByteBuffer("csd-1", ByteBuffer.wrap(csd));
                 if (mime.equals("video/hevc")) {
@@ -508,6 +525,12 @@ public class WLPlayer {
     //底层回调方法：硬解解码底层回调的码流数据包，并直接渲染到绑定的surface上面
     private void onCallDecodeVPacket(int datasize, byte[] data) {
         MyLog.i("onCallDecodeVPacket in");
+        /*
+        *这里的码流数据，底层使用了ffmpeg进行了过滤，转换为AnnexB模式，在如果是I帧，会在I帧前补充添加带有startcode的VPS,SPS,PPS，
+        * 然后再跟上实际的startcode + I帧图像数据。如果是非I帧，会直接在前面将AVCC字段转换为00 00 00 01的startcode + 实际的图像数据
+        * */
+        MyLog.i("data size: " + data.length);
+        printBytesInLines(data, 1000);
         if ((surface != null) && (datasize > 0) && (data != null) && (mediaCodec != null)) {
             try {
                 int inputBufferIndex = mediaCodec.dequeueInputBuffer(10);
@@ -525,9 +548,9 @@ public class WLPlayer {
                     mTotalTime += decodeTime;
                     mediaCodec.releaseOutputBuffer(outputBufferIndex, true);
                     outputBufferIndex = mediaCodec.dequeueOutputBuffer(info, 10);
-                    MyLog.i("mediaCodec releaseOutputBuffer");
+                    //MyLog.i("mediaCodec releaseOutputBuffer");
                 }
-                MyLog.i("onCallDecodeVPacket out");
+                //MyLog.i("onCallDecodeVPacket out");
             } catch (Exception e) {
                 e.printStackTrace();
             }

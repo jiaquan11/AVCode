@@ -1,4 +1,6 @@
 #include "WLFFmpeg.h"
+#include <iostream>
+#include <iomanip>
 
 WLFFmpeg::WLFFmpeg(WLPlayStatus *playStatus, CallJava *calljava, const char *url) {
     this->playStatus = playStatus;
@@ -178,6 +180,27 @@ void WLFFmpeg::startFFmpegThread() {
         /*
          * 回调Java方法，传递ffmepg的extradata数据，用来初始化硬件解码器，
          * */
+//        for (int i = 0;i < pWLVideo->avCodecContext->extradata_size; i++) {
+//            LOGI("%02X", pWLVideo->avCodecContext->extradata[i]);
+//        }
+        LOGI("native onCallinitMediaCodec extradata size: %d", pWLVideo->avCodecContext->extradata_size);
+        int size = pWLVideo->avCodecContext->extradata_size;
+        char output[4];
+        char buffer[1024] = {0};
+        for (size_t i = 0; i < size; ++i) {
+            sprintf(output, "%02X ", pWLVideo->avCodecContext->extradata[i]);
+            strcat(buffer, output);
+            if ((i + 1) % 16 == 0) {
+                strcat(buffer, "\n");
+                LOGD("%s", buffer);
+                memset(buffer, 0, sizeof(buffer));
+            }
+        }
+        if ((size % 16) != 0) {
+            strcat(buffer, "\n");
+            LOGD("%s", buffer);
+        }
+
         pWLVideo->callJava->onCallinitMediaCodec(CHILD_THREAD,
                                                  codecName,
                                                  pWLVideo->avCodecContext->width,
