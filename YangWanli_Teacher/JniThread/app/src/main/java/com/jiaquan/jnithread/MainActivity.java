@@ -7,31 +7,33 @@ import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-    private ThreadDemo threadDemo = null;
+    private static final String TAG = MainActivity.class.getSimpleName();
+
+    private ThreadDemo mThreadDemo_ = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        threadDemo = new ThreadDemo();
-        threadDemo.setOnErrorListener(new ThreadDemo.OnErrorListener() {
+        mThreadDemo_ = new ThreadDemo();
+        mThreadDemo_.setOnErrorListener(new ThreadDemo.OnErrorListener() {
             @Override
             public void onError(int code, String msg) {
-                Log.i("JNITHREAD", "code is: " + code + " msg is: " + msg);
+                Log.e(TAG, "code is: " + code + " msg is: " + msg);
             }
         });
     }
 
     public void normal(View view) {
-        threadDemo.normalThread();
+        mThreadDemo_.normalThread();
     }
 
     public void mutexThread(View view) {
-        threadDemo.mutexThread();
+        mThreadDemo_.mutexThread();
     }
 
     public void callJavaMethod(View view) {
-        threadDemo.callBackFromC();
+        mThreadDemo_.callBackFromC();
     }
 }

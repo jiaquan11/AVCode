@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,19 +9,19 @@
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="创建一般线程"
-        android:onClick="normal" />
+        android:onClick="normal"
+        android:text="创建一般线程" />
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="生产者和消费者"
-        android:onClick="mutexThread" />
+        android:onClick="mutexThread"
+        android:text="生产者和消费者" />
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="C++调用Java方法"
-        android:onClick="callJavaMethod" />
+        android:onClick="callJavaMethod"
+        android:text="C++调用Java方法" />
 
 </LinearLayout>
