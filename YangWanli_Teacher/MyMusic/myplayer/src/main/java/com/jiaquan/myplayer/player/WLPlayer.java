@@ -34,7 +34,6 @@ import java.nio.ByteBuffer;
 public class WLPlayer {
     private final String TAG = WLPlayer.class.getSimpleName();
 
-    //加载需要的动态库
     static {
         System.loadLibrary("native-lib");
         System.loadLibrary("avcodec");
@@ -67,7 +66,6 @@ public class WLPlayer {
     private static TimeInfoBean timeInfoBean = null;
     private WLGLSurfaceView wlglSurfaceView = null;
 
-    //设置播放渲染控件
     public void setWlglSurfaceView(WLGLSurfaceView wlglSurfaceView) {
         this.wlglSurfaceView = wlglSurfaceView;
         wlglSurfaceView.getWlRender().setOnSurfaceCreateListener(new WLRender.OnSurfaceCreateListener() {
@@ -178,7 +176,7 @@ public class WLPlayer {
         new Thread(new Runnable() {//开启一个线程，用于native层解封装文件头
             @Override
             public void run() {
-                _prepared(sourcePath);
+                _nativePrepared(sourcePath);
             }
         }).start();
     }
@@ -194,14 +192,14 @@ public class WLPlayer {
                 setPitch(pitch);
                 setSpeed(speed);
 
-                _start();
+                _nativeStart();
             }
         }).start();
     }
 
     //暂停播放
     public void pause() {
-        _pause();
+        _nativePause();
 
         //暂停后直接回调
         if (onPauseResumeListener != null) {
@@ -211,7 +209,7 @@ public class WLPlayer {
 
     //恢复播放
     public void resume() {
-        _resume();
+        _nativeResume();
 
         //恢复播放后直接回调
         if (onPauseResumeListener != null) {
@@ -229,7 +227,7 @@ public class WLPlayer {
         new Thread(new Runnable() {//开启一个线程，停止播放，释放底层ffmpeg的资源及释放硬解解码器的相关资源
             @Override
             public void run() {
-                _stop();
+                _nativeStop();
                 releaseVMediaCodec();
             }
         }).start();
@@ -237,7 +235,7 @@ public class WLPlayer {
 
     //播放seek操作
     public void seek(int secds) {
-        _seek(secds);
+        _nativeSeek(secds);
     }
 
     //切换下一个播放资源
@@ -250,7 +248,7 @@ public class WLPlayer {
     //获取总时长
     public int getDuration() {
         if (duration < 0) {
-            duration = _duration();
+            duration = _nativeDuration();
         }
         return duration;
     }
@@ -259,7 +257,7 @@ public class WLPlayer {
     public void setVolume(int percent) {
         if ((percent >= 0) && (percent <= 100)) {
             volumePercent = percent;
-            _volume(percent);
+            _nativeVolume(percent);
         }
     }
 
@@ -271,29 +269,29 @@ public class WLPlayer {
     //设置控制的左右声道
     public void setMute(MuteEnum mute) {
         muteEnum = mute;
-        _mute(mute.getValue());
+        _nativeMute(mute.getValue());
     }
 
     //设置音调
     public void setPitch(float p) {
         pitch = p;
-        _pitch(pitch);
+        _nativePitch(pitch);
     }
 
     //设置音频播放速度
     public void setSpeed(float s) {
         speed = s;
-        _speed(speed);
+        _nativeSpeed(speed);
     }
 
     //开始音频录制，创建音频编码器
     public void startRecord(File outfile) {
         if (!isInitMediaCodec) {
-            audioSamplerate = _samplerate();//获取音频文件的采样率
+            audioSamplerate = _nativeSamplerate();//获取音频文件的采样率
             if (audioSamplerate > 0) {
                 isInitMediaCodec = true;
                 initMediaCodec(audioSamplerate, outfile);
-                _startstopRecord(true);
+                _nativeStartstopRecord(true);
                 MyLog.i("开始录制....");
             }
         }
@@ -301,20 +299,20 @@ public class WLPlayer {
 
     //暂停录制
     public void pauseRecord() {
-        _startstopRecord(false);
+        _nativeStartstopRecord(false);
         MyLog.i("暂停录制....");
     }
 
     //恢复录制
     public void resumeRecord() {
-        _startstopRecord(true);
+        _nativeStartstopRecord(true);
         MyLog.i("恢复录制....");
     }
 
     //停止录制
     public void stopRecord() {
         if (isInitMediaCodec) {
-            _startstopRecord(false);
+            _nativeStartstopRecord(false);
             releaseAMediaCodec();
             MyLog.i("完成录制....");
         }
@@ -322,7 +320,7 @@ public class WLPlayer {
 
     //裁剪音频
     public void cutAudioPlay(int start_time, int end_time, boolean showPcm) {
-        if (_cutAudioPlay(start_time, end_time, showPcm)) {//先seek
+        if (_nativeCutAudioPlay(start_time, end_time, showPcm)) {//先seek
             start();//然后提取数据上报
         } else {
             stop();
@@ -708,31 +706,31 @@ public class WLPlayer {
     }
 
     //native方法
-    private native void _prepared(String source);
+    private native void _nativePrepared(String source);
 
-    private native void _start();
+    private native void _nativeStart();
 
-    private native void _pause();
+    private native void _nativePause();
 
-    private native void _resume();
+    private native void _nativeResume();
 
-    private native void _stop();
+    private native void _nativeStop();
 
-    private native void _seek(int secds);
+    private native void _nativeSeek(int secds);
 
-    private native int _duration();
+    private native int _nativeDuration();
 
-    private native void _volume(int percent);
+    private native void _nativeVolume(int percent);
 
-    private native void _mute(int mute);
+    private native void _nativeMute(int mute);
 
-    private native void _pitch(float pitch);
+    private native void _nativePitch(float pitch);
 
-    private native void _speed(float speed);
+    private native void _nativeSpeed(float speed);
 
-    private native int _samplerate();
+    private native int _nativeSamplerate();
 
-    private native void _startstopRecord(boolean start);
+    private native void _nativeStartstopRecord(boolean start);
 
-    private native boolean _cutAudioPlay(int start_time, int end_time, boolean showPcm);
+    private native boolean _nativeCutAudioPlay(int start_time, int end_time, boolean showPcm);
 }

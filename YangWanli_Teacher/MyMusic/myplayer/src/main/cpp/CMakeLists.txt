@@ -8,7 +8,7 @@ include_directories(soundtouch/SoundTouch)
 
 add_library(native-lib
         SHARED
-        native-lib.cpp
+        native_lib.cpp
         CallJava.cpp
         WLFFmpeg.cpp
         WLAudio.cpp
