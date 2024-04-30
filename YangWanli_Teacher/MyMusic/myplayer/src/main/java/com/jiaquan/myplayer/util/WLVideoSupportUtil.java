@@ -5,6 +5,9 @@ import android.media.MediaCodecList;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 视频解码器支持工具类
+ */
 public class WLVideoSupportUtil {
     private static Map<String, String> codecMap = new HashMap<>();
     static {//支持H264和H265硬件解码

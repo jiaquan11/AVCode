@@ -23,9 +23,9 @@ public class ThreadDemo {
     }
 
     // native方法
-    public native void normalThread();
+    public native void nativeNormalThread();
 
-    public native void mutexThread();
+    public native void nativeMutexThread();
 
-    public native void callBackFromC();
+    public native void nativeCallBackFromC();
 }

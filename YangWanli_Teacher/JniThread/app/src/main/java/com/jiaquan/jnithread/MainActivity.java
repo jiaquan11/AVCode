@@ -26,14 +26,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void normal(View view) {
-        mThreadDemo_.normalThread();
+        mThreadDemo_.nativeNormalThread();
     }
 
     public void mutexThread(View view) {
-        mThreadDemo_.mutexThread();
+        mThreadDemo_.nativeMutexThread();
     }
 
     public void callJavaMethod(View view) {
-        mThreadDemo_.callBackFromC();
+        mThreadDemo_.nativeCallBackFromC();
     }
 }

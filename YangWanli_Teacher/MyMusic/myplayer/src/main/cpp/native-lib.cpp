@@ -143,7 +143,6 @@ extern "C" JNIEXPORT jboolean JNICALL Java_com_jiaquan_myplayer_player_WLPlayer_
     return false;
 }
 
-//系统调用函数JNI_OnLoad
 extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     jint result = -1;
     javaVM = vm;

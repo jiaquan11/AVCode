@@ -1,9 +1,8 @@
 package com.jiaquan.myplayer.util;
 
-/*
-* 格式化显示时间的工具类
-* 将以秒为单位的时间转换为时分秒格式化显示
-* */
+/**
+ * 时间工具类
+ */
 public class TimeUtil {
     public static String secdsToDateFormat(int secds, int totalsecds) {//传入时间的单位为秒
         long hours = secds / (60 * 60);//时

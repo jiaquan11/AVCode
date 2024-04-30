@@ -1,8 +1,11 @@
 #include <jni.h>
 #include <string>
-#include "log/androidLog.h"
-
+#include "log/android_log.h"
 #include "pthread.h"
+
+#define DELETE_LOCAL_REF(env, obj)  if(obj!=NULL){env->DeleteLocalRef(obj);obj=NULL;}
+
+static const char *const kClassPathName = "com/jiaquan/jnithread/ThreadDemo";
 
 pthread_t thread;
 
@@ -11,8 +14,7 @@ void *normalCallBack(void *data) {
     pthread_exit(&thread);
 }
 
-extern "C" JNIEXPORT void JNICALL
-Java_com_jiaquan_jnithread_ThreadDemo_normalThread(JNIEnv *env, jobject thiz) {
+JNIEXPORT void JNICALL NormalThread(JNIEnv *env, jobject thiz) {
     pthread_create(&thread, NULL, normalCallBack, NULL);
 }
 
@@ -58,8 +60,7 @@ void *customerCallBack(void *data) {
 }
 
 // 创建生产者和消费者两个子线程
-extern "C" JNIEXPORT void JNICALL
-Java_com_jiaquan_jnithread_ThreadDemo_mutexThread(JNIEnv *env, jobject thiz) {
+JNIEXPORT void JNICALL MutexThread(JNIEnv *env, jobject thiz) {
     for (int i = 0; i < 10; ++i) {
         g_queue.push(i);//队列中插入10个数：0-9
     }
@@ -82,19 +83,39 @@ void *childCallback(void *data) {
     pthread_exit(&g_ChildThread);
 }
 
-extern "C" JNIEXPORT void JNICALL
-Java_com_jiaquan_jnithread_ThreadDemo_callBackFromC(JNIEnv *env, jobject thiz) {
+JNIEXPORT void JNICALL CallBackFromC(JNIEnv *env, jobject thiz) {
     g_JavaListener = new java_listener(g_JavaVm, env, env->NewGlobalRef(thiz));// NewGlobalRef 全局引用
 //    javaListener->onError(1, 100, "C++ call java method from main thread"); // 主线程中回调Java方法
 
     pthread_create(&g_ChildThread, NULL, childCallback, g_JavaListener);// 子线程中回调Java方法
 }
 
+static JNINativeMethod gMethods[] = {
+        {"nativeNormalThread",  "()V",                  (void *)NormalThread},
+        {"nativeMutexThread",   "()V",                  (void *)MutexThread},
+        {"nativeCallBackFromC", "()V",                  (void *)CallBackFromC},
+};
+
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *env;
     g_JavaVm = vm;
     if (g_JavaVm->GetEnv((void **) (&env), JNI_VERSION_1_6) != JNI_OK) {
+        LOGE("JNI_OnLoad GetEnv failed!");
         return -1;
     }
+    assert(env != NULL);
+
+    jclass clazz = env->FindClass(kClassPathName);
+    if (clazz == NULL) {
+        LOGE("ThreadDemo class not found. %s", kClassPathName);
+        return -1;
+    }
+
+    if (env->RegisterNatives(clazz, gMethods, sizeof(gMethods) / sizeof(gMethods[0])) < 0) {
+        LOGE("RegisterNatives failed!");
+        return -1;
+    }
+
+    DELETE_LOCAL_REF(env, clazz);
     return JNI_VERSION_1_6;
 }
