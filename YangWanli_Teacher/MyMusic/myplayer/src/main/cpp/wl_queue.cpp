@@ -1,4 +1,4 @@
-#include "WLQueue.h"
+#include "wl_queue.h"
 
 WLQueue::WLQueue(WLPlayStatus *playStatus) {
     pthread_mutex_init(&mutexPacket, NULL);

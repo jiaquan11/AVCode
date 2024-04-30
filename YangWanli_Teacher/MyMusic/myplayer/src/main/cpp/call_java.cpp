@@ -1,4 +1,4 @@
-#include "CallJava.h"
+#include "call_java.h"
 
 CallJava::CallJava(JavaVM *vm, JNIEnv *env, jobject obj) {
     javaVm = vm;

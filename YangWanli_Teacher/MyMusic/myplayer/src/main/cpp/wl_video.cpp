@@ -1,4 +1,4 @@
-#include "WLVideo.h"
+#include "wl_video.h"
 
 WLVideo::WLVideo(WLPlayStatus *playStatus, CallJava *callJava) {
     this->playStatus = playStatus;

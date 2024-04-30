@@ -1,9 +1,11 @@
+#include <pthread.h>
 #include <jni.h>
 #include <string>
+
 #include "log/androidLog.h"
-#include "CallJava.h"
-#include "WLFFmpeg.h"
-#include <pthread.h>
+#include "call_java.h"
+#include "wl_ffmpeg.h"
+
 
 extern "C" {
 #include "include/libavformat/avformat.h"
@@ -158,10 +160,10 @@ static JNINativeMethod gMethods[] = {
         {"_nativeVolume",          "(I)V",                  (void *) Volume},
         {"_nativeMute",            "(I)V",                  (void *) Mute},
         {"_nativePitch",           "(F)V",                  (void *) Pitch},
-        {"_nativeSpeed",           "(F)V",                 (void *) Speed},
-        {"_nativeSamplerate",      "()I",                  (void *) Samplerate},
-        {"_nativeStartstopRecord", "(Z)V",                 (void *) StartstopRecord},
-        {"_nativeCutAudioPlay",    "(IIZ)Z",               (void *) CutAudioPlay},
+        {"_nativeSpeed",           "(F)V",                  (void *) Speed},
+        {"_nativeSamplerate",      "()I",                   (void *) Samplerate},
+        {"_nativeStartstopRecord", "(Z)V",                  (void *) StartstopRecord},
+        {"_nativeCutAudioPlay",    "(IIZ)Z",                (void *) CutAudioPlay},
 };
 
 extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
@@ -175,7 +177,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 
     jclass clazz = env->FindClass(kClassPathName);
     if (clazz == NULL) {
-        LOGE("WLPlayer class not found. %s", kClassPathName);
+        LOGE("class not found. %s", kClassPathName);
         return -1;
     }
 

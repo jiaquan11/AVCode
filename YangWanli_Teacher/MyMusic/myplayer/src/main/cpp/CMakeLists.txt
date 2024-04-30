@@ -9,14 +9,14 @@ include_directories(soundtouch/SoundTouch)
 add_library(native-lib
         SHARED
         native_lib.cpp
-        CallJava.cpp
-        WLFFmpeg.cpp
-        WLAudio.cpp
-        WLQueue.cpp
-        WLPlayStatus.cpp
-        WLPcmBean.cpp
-        WLBufferQueue.cpp
-        WLVideo.cpp
+        call_java.cpp
+        wl_ffmpeg.cpp
+        wl_audio.cpp
+        wl_queue.cpp
+        wl_play_status.cpp
+        wl_pcm_bean.cpp
+        wl_buffer_queue.cpp
+        wl_video.cpp
         soundtouch/SoundTouch/AAFilter.cpp
         soundtouch/SoundTouch/FIFOSampleBuffer.cpp
         soundtouch/SoundTouch/FIRFilter.cpp

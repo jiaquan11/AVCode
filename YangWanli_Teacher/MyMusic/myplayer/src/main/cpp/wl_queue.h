@@ -1,10 +1,10 @@
-#ifndef _WLQUEUE_H_
-#define _WLQUEUE_H_
+#ifndef MYPLAYER_WLQUEUE_H_
+#define MYPLAYER_WLQUEUE_H_
 
 #include "log/androidLog.h"
 #include "queue"
 #include "pthread.h"
-#include "WLPlayStatus.h"
+#include "wl_play_status.h"
 
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -37,4 +37,5 @@ private:
 
     WLPlayStatus *playStatus = NULL;
 };
-#endif
+
+#endif //MYPLAYER_WLQUEUE_H_

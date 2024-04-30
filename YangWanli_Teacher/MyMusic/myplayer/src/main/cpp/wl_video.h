@@ -1,10 +1,10 @@
-#ifndef _WLVIDEO_H_
-#define _WLVIDEO_H_
+#ifndef MYPLAYER_WLVIDEO_H_
+#define MYPLAYER_WLVIDEO_H_
 
-#include "WLQueue.h"
-#include "CallJava.h"
+#include "wl_queue.h"
+#include "call_java.h"
 #include <pthread.h>
-#include "WLAudio.h"
+#include "wl_audio.h"
 
 #define CODEC_YUV 0
 #define CODEC_MEDIACODEC 1
@@ -51,4 +51,5 @@ public:
     int codectype = CODEC_YUV;
     AVBSFContext *abs_ctx = NULL;
 };
-#endif
+
+#endif //MYPLAYER_WLVIDEO_H_

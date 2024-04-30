@@ -1,5 +1,5 @@
-#ifndef _WLPCMBEAN_H_
-#define _WLPCMBEAN_H_
+#ifndef MYPLAYER_WLPCMBEAN_H_
+#define MYPLAYER_WLPCMBEAN_H_
 
 #include <string.h>
 #include <stdio.h>
@@ -22,4 +22,4 @@ public:
     int buffsize;
 };
 
-#endif
+#endif //MYPLAYER_WLPCMBEAN_H_

@@ -1,4 +1,4 @@
-#include "WLPcmBean.h"
+#include "wl_pcm_bean.h"
 
 WLPcmBean::WLPcmBean(SAMPLETYPE *buffer, int size) {
     this->buffer = (char *) malloc(size);

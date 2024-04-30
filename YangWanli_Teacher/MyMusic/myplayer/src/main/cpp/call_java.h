@@ -1,5 +1,5 @@
-#ifndef _CALLJAVA_H_
-#define _CALLJAVA_H_
+#ifndef MYPLAYER_CALLJAVA_H_
+#define MYPLAYER_CALLJAVA_H_
 
 #include "jni.h"
 #include "log/androidLog.h"
@@ -34,16 +34,20 @@ public:
 
     void onCallPcmToAAC(int type, void *buffer, int size);
 
-    bool onCallIsSupportVideo(int type, const char* ffcodecname);
+    bool onCallIsSupportVideo(int type, const char *ffcodecname);
 
-    void onCallinitMediaCodec(int type, const char *mime, int width, int height, int csd_size, uint8_t *csd);
+    void onCallinitMediaCodec(int type, const char *mime, int width, int height, int csd_size,
+                              uint8_t *csd);
 
-    void onCallRenderYUV(int type, int width, int linesize, int height, uint8_t *fy, uint8_t *fu, uint8_t *fv);
+    void onCallRenderYUV(int type, int width, int linesize, int height, uint8_t *fy, uint8_t *fu,
+                         uint8_t *fv);
 
-    void onCallDecodeVPacket(int type, int datasize, uint8_t* data);
+    void onCallDecodeVPacket(int type, int datasize, uint8_t *data);
 
 private:
-    void cutAndCopyYuv(uint8_t* tempP[], uint8_t *srcfy, uint8_t *srcfu, uint8_t *srcfv, int linesize, int width, int height);
+    void
+    cutAndCopyYuv(uint8_t *tempP[], uint8_t *srcfy, uint8_t *srcfu, uint8_t *srcfv, int linesize,
+                  int width, int height);
 
 private:
     JavaVM *javaVm = NULL;
@@ -64,7 +68,8 @@ private:
     jmethodID jmid_renderyuv;
     jmethodID jmid_decodeVPacket;
 
-    uint8_t* pData[3] = {NULL};
+    uint8_t *pData[3] = {NULL};
     bool bHasAllocate = false;
 };
-#endif
+
+#endif //MYPLAYER_CALLJAVA_H_

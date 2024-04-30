@@ -1,17 +1,17 @@
-#ifndef _WLAUDIO_H_
-#define _WLAUDIO_H_
+#ifndef MYPLAYER_WLAUDIO_H_
+#define MYPLAYER_WLAUDIO_H_
 
-#include "WLQueue.h"
-#include "WLPlayStatus.h"
+#include "wl_queue.h"
+#include "wl_play_status.h"
 #include <SLES/OpenSLES_Android.h>
 #include <SLES/OpenSLES.h>
-#include "CallJava.h"
+#include "call_java.h"
 #include "soundtouch/include/SoundTouch.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "WLBufferQueue.h"
-#include "WLPcmBean.h"
+#include "wl_buffer_queue.h"
+#include "wl_pcm_bean.h"
 
 using namespace soundtouch;
 
@@ -129,4 +129,5 @@ public:
 
     pthread_mutex_t codecMutex;
 };
-#endif
+
+#endif //MYPLAYER_WLAUDIO_H_

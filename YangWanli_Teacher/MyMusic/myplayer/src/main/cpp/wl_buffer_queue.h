@@ -1,15 +1,15 @@
-#ifndef _WLBUFFERQUEUE_H_
-#define _WLBUFFERQUEUE_H_
+#ifndef MYPLAYER_WLBUFFERQUEUE_H_
+#define MYPLAYER_WLBUFFERQUEUE_H_
 
 #include "log/androidLog.h"
 #include <deque>
-#include "WLPlayStatus.h"
-#include "WLPcmBean.h"
+#include "wl_play_status.h"
+#include "wl_pcm_bean.h"
 #include <pthread.h>
 
-/*
- * 存储PCM数据包的缓存队列类
- * */
+/**
+ * 用于存储PCM数据包的缓存队列类
+ */
 class WLBufferQueue {
 public:
     WLBufferQueue(WLPlayStatus *playStatus);
@@ -34,4 +34,5 @@ private:
     pthread_cond_t condBuffer;
     WLPlayStatus *wlPlayStatus = NULL;
 };
-#endif
+
+#endif //MYPLAYER_WLBUFFERQUEUE_H_

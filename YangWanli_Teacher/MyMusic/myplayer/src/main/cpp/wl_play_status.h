@@ -1,5 +1,5 @@
-#ifndef _WLPLAYSTATUS_H_
-#define _WLPLAYSTATUS_H_
+#ifndef MYPLAYER_WLPLAYSTATUS_H_
+#define MYPLAYER_WLPLAYSTATUS_H_
 
 /*
  * 记录播放状态
@@ -16,4 +16,5 @@ public:
     bool seek = false;
     bool pause = false;
 };
-#endif
+
+#endif //MYPLAYER_WLPLAYSTATUS_H_

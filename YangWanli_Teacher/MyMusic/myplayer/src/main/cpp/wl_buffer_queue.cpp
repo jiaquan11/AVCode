@@ -1,4 +1,4 @@
-#include "WLBufferQueue.h"
+#include "wl_buffer_queue.h"
 
 WLBufferQueue::WLBufferQueue(WLPlayStatus *playStatus) {
     wlPlayStatus = playStatus;

@@ -1,10 +1,10 @@
-#ifndef _WLFFMPEG_H_
-#define _WLFFMPEG_H_
+#ifndef MYPLAYER_WLFFMPEG_H_
+#define MYPLAYER_WLFFMPEG_H_
 
-#include "CallJava.h"
+#include "call_java.h"
 #include "pthread.h"
-#include "WLAudio.h"
-#include "WLVideo.h"
+#include "wl_audio.h"
+#include "wl_video.h"
 
 extern "C" {
 #include <libavformat/avformat.h>
@@ -69,4 +69,5 @@ public:
     int duration = 0;//媒体文件总时长
     bool supportMediaCodec = false;
 };
-#endif
+
+#endif //MYPLAYER_WLFFMPEG_H_
