@@ -18,38 +18,38 @@ public:
     ~WLFFmpeg();
 
 public:
-    void prepared();
+    void Prepared();
 
-    void start();
+    void Start();
 
-    void pause();
+    void Pause();
 
-    void resume();
+    void Resume();
 
-    void seek(int64_t secds);
+    void Seek(int64_t secds);
 
-    void release();
+    void Release();
 
-    void setVolume(int percent);
+    void SetVolume(int percent);
 
-    void setMute(int mute);
+    void SetMute(int mute);
 
-    void setPitch(float pitch);
+    void SetPitch(float pitch);
 
-    void setSpeed(float speed);
+    void SetSpeed(float speed);
 
-    int getSampleRate();
+    int GetSampleRate();
 
-    void startStopRecord(bool start);
+    void StartStopRecord(bool start);
 
-    bool cutAudioPlay(int start_time, int end_time, bool showPcm);
+    bool CutAudioPlay(int start_time, int end_time, bool showPcm);
 
-    void demuxFFmpegThread();
+    void DemuxFFmpegThread();
 
-    void startFFmpegThread();
+    void StartFFmpegThread();
 
 private:
-    int getCodecContext(AVCodecParameters *codecPar, AVCodecContext** avCodecContext);
+    int _GetCodecContext(AVCodecParameters *codecPar, AVCodecContext** avCodecContext);
 
 public:
     WLPlayStatus *playStatus = NULL;

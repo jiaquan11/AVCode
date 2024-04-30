@@ -1,7 +1,7 @@
 #ifndef MYPLAYER_WLQUEUE_H_
 #define MYPLAYER_WLQUEUE_H_
 
-#include "log/androidLog.h"
+#include "log/android_log.h"
 #include "queue"
 #include "pthread.h"
 #include "wl_play_status.h"

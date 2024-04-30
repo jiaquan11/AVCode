@@ -1,7 +1,7 @@
 #ifndef MYPLAYER_WLBUFFERQUEUE_H_
 #define MYPLAYER_WLBUFFERQUEUE_H_
 
-#include "log/androidLog.h"
+#include "log/android_log.h"
 #include <deque>
 #include "wl_play_status.h"
 #include "wl_pcm_bean.h"

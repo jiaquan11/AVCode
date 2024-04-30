@@ -2,7 +2,7 @@
 #define MYPLAYER_CALLJAVA_H_
 
 #include "jni.h"
-#include "log/androidLog.h"
+#include "log/android_log.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -16,38 +16,34 @@ public:
     ~CallJava();
 
 public:
-    void onCallPrepared(int type);
+    void OnCallPrepared(int type);
 
-    void onCallLoad(int type, bool load);
+    void OnCallLoad(int type, bool load);
 
-    void onCallTimeInfo(int type, int curr, int total);
+    void OnCallTimeInfo(int type, int curr, int total);
 
-    void onCallComplete(int type);
+    void OnCallComplete(int type);
 
-    void onCallError(int type, int code, char *msg);
+    void OnCallError(int type, int code, char *msg);
 
-    void onCallVolumeDB(int type, int db);
+    void OnCallVolumeDB(int type, int db);
 
-    void onCallPcmInfo(int type, void *buffer, int size);
+    void OnCallPcmInfo(int type, void *buffer, int size);
 
-    void onCallPcmRate(int type, int samplerate, int bit, int channels);
+    void OnCallPcmRate(int type, int samplerate, int bit, int channels);
 
-    void onCallPcmToAAC(int type, void *buffer, int size);
+    void OnCallPcmToAAC(int type, void *buffer, int size);
 
-    bool onCallIsSupportVideo(int type, const char *ffcodecname);
+    bool OnCallIsSupportVideo(int type, const char *ffcodecname);
 
-    void onCallinitMediaCodec(int type, const char *mime, int width, int height, int csd_size,
-                              uint8_t *csd);
+    void OnCallinitMediaCodec(int type, const char *mime, int width, int height, int csd_size, uint8_t *csd);
 
-    void onCallRenderYUV(int type, int width, int linesize, int height, uint8_t *fy, uint8_t *fu,
-                         uint8_t *fv);
+    void OnCallRenderYUV(int type, int width, int linesize, int height, uint8_t *fy, uint8_t *fu, uint8_t *fv);
 
-    void onCallDecodeVPacket(int type, int datasize, uint8_t *data);
+    void OnCallDecodeVPacket(int type, int datasize, uint8_t *data);
 
 private:
-    void
-    cutAndCopyYuv(uint8_t *tempP[], uint8_t *srcfy, uint8_t *srcfu, uint8_t *srcfv, int linesize,
-                  int width, int height);
+    void CutAndCopyYuv(uint8_t *tempP[], uint8_t *srcfy, uint8_t *srcfu, uint8_t *srcfv, int linesize, int width, int height);
 
 private:
     JavaVM *javaVm = NULL;

@@ -46,7 +46,7 @@ CallJava::~CallJava() {
     }
 }
 
-void CallJava::onCallPrepared(int type) {
+void CallJava::OnCallPrepared(int type) {
     if (type == MAIN_THREAD) {
         jniEnv->CallVoidMethod(jobj, jmid_prepared);
     } else if (type == CHILD_THREAD) {
@@ -62,7 +62,7 @@ void CallJava::onCallPrepared(int type) {
     }
 }
 
-void CallJava::onCallLoad(int type, bool load) {
+void CallJava::OnCallLoad(int type, bool load) {
     if (type == MAIN_THREAD) {
         jniEnv->CallVoidMethod(jobj, jmid_load, load);
     } else if (type == CHILD_THREAD) {
@@ -78,7 +78,7 @@ void CallJava::onCallLoad(int type, bool load) {
     }
 }
 
-void CallJava::onCallTimeInfo(int type, int curr, int total) {
+void CallJava::OnCallTimeInfo(int type, int curr, int total) {
     if (type == MAIN_THREAD) {
         jniEnv->CallVoidMethod(jobj, jmid_timeinfo, curr, total);
     } else if (type == CHILD_THREAD) {
@@ -94,7 +94,7 @@ void CallJava::onCallTimeInfo(int type, int curr, int total) {
     }
 }
 
-void CallJava::onCallComplete(int type) {
+void CallJava::OnCallComplete(int type) {
     if (type == MAIN_THREAD) {
         jniEnv->CallVoidMethod(jobj, jmid_complete);
     } else if (type == CHILD_THREAD) {
@@ -110,7 +110,7 @@ void CallJava::onCallComplete(int type) {
     }
 }
 
-void CallJava::onCallError(int type, int code, char *msg) {
+void CallJava::OnCallError(int type, int code, char *msg) {
     if (type == MAIN_THREAD) {
         jstring jmsg = jniEnv->NewStringUTF(msg);
         jniEnv->CallVoidMethod(jobj, jmid_error, code, jmsg);
@@ -130,7 +130,7 @@ void CallJava::onCallError(int type, int code, char *msg) {
     }
 }
 
-void CallJava::onCallVolumeDB(int type, int db) {
+void CallJava::OnCallVolumeDB(int type, int db) {
     if (type == MAIN_THREAD) {
         jniEnv->CallVoidMethod(jobj, jmid_volumeDB, db);
     } else if (type == CHILD_THREAD) {
@@ -146,7 +146,7 @@ void CallJava::onCallVolumeDB(int type, int db) {
     }
 }
 
-void CallJava::onCallPcmInfo(int type, void *buffer, int size) {
+void CallJava::OnCallPcmInfo(int type, void *buffer, int size) {
     if (type == MAIN_THREAD) {
         jbyteArray jbuffer = jniEnv->NewByteArray(size);
         jniEnv->SetByteArrayRegion(jbuffer, 0, size, static_cast<const jbyte *>(buffer));
@@ -169,7 +169,7 @@ void CallJava::onCallPcmInfo(int type, void *buffer, int size) {
     }
 }
 
-void CallJava::onCallPcmRate(int type, int samplerate, int bit, int channels) {
+void CallJava::OnCallPcmRate(int type, int samplerate, int bit, int channels) {
     if (type == MAIN_THREAD) {
         jniEnv->CallVoidMethod(jobj, jmid_pcmrate, samplerate, bit, channels);
     } else if (type == CHILD_THREAD) {
@@ -185,7 +185,7 @@ void CallJava::onCallPcmRate(int type, int samplerate, int bit, int channels) {
     }
 }
 
-void CallJava::onCallPcmToAAC(int type, void *buffer, int size) {
+void CallJava::OnCallPcmToAAC(int type, void *buffer, int size) {
     if (type == MAIN_THREAD) {
         jbyteArray jbuffer = jniEnv->NewByteArray(size);
         jniEnv->SetByteArrayRegion(jbuffer, 0, size, static_cast<const jbyte *>(buffer));
@@ -209,7 +209,7 @@ void CallJava::onCallPcmToAAC(int type, void *buffer, int size) {
     }
 }
 
-bool CallJava::onCallIsSupportVideo(int type, const char *ffcodecname) {
+bool CallJava::OnCallIsSupportVideo(int type, const char *ffcodecname) {
     bool support = false;
     if (type == MAIN_THREAD) {
         jstring type = jniEnv->NewStringUTF(ffcodecname);
@@ -233,7 +233,7 @@ bool CallJava::onCallIsSupportVideo(int type, const char *ffcodecname) {
     }
 }
 
-void CallJava::onCallinitMediaCodec(int type, const char *mime, int width, int height, int csd_size, uint8_t *csd) {
+void CallJava::OnCallinitMediaCodec(int type, const char *mime, int width, int height, int csd_size, uint8_t *csd) {
     if (type == MAIN_THREAD) {
         jstring typejstr = jniEnv->NewStringUTF(mime);
         jbyteArray csdArray = jniEnv->NewByteArray(csd_size);
@@ -261,7 +261,7 @@ void CallJava::onCallinitMediaCodec(int type, const char *mime, int width, int h
     }
 }
 
-void CallJava::onCallRenderYUV(int type, int width, int linesize, int height, uint8_t *fy, uint8_t *fu, uint8_t *fv) {
+void CallJava::OnCallRenderYUV(int type, int width, int linesize, int height, uint8_t *fy, uint8_t *fu, uint8_t *fv) {
     LOGI("onCallRenderYUV type:%d, width:%d, linesize:%d, height:%d", type, width, linesize, height);
     uint8_t* pFY = fy;
     uint8_t* pFU = fu;
@@ -276,7 +276,7 @@ void CallJava::onCallRenderYUV(int type, int width, int linesize, int height, ui
             bHasAllocate = true;
         }
 
-        cutAndCopyYuv(pData, fy, fu, fv, linesize, width, height);
+        CutAndCopyYuv(pData, fy, fu, fv, linesize, width, height);
 
         pFY = pData[0];
         pFU = pData[1];
@@ -325,7 +325,7 @@ void CallJava::onCallRenderYUV(int type, int width, int linesize, int height, ui
     }
 }
 
-void CallJava::onCallDecodeVPacket(int type, int datasize, uint8_t *packetdata) {
+void CallJava::OnCallDecodeVPacket(int type, int datasize, uint8_t *packetdata) {
     if (type == MAIN_THREAD) {
         jbyteArray data = jniEnv->NewByteArray(datasize);
         jniEnv->SetByteArrayRegion(data, 0, datasize, reinterpret_cast<const jbyte *>(packetdata));
@@ -348,8 +348,7 @@ void CallJava::onCallDecodeVPacket(int type, int datasize, uint8_t *packetdata) 
     }
 }
 
-//裁剪及拷贝yuv数据
-void CallJava::cutAndCopyYuv(uint8_t* pData[], uint8_t *srcfy, uint8_t *srcfu, uint8_t *srcfv, int linesize, int width, int height) {
+void CallJava::CutAndCopyYuv(uint8_t* pData[], uint8_t *srcfy, uint8_t *srcfu, uint8_t *srcfv, int linesize, int width, int height) {
     unsigned char *pDestY = pData[0];
     unsigned char *pDestU = pData[1];
     unsigned char *pDestV = pData[2];

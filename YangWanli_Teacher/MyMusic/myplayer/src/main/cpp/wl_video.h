@@ -10,10 +10,10 @@
 #define CODEC_MEDIACODEC 1
 
 extern "C" {
-#include <libswscale/swscale.h>
-#include "include/libavcodec/avcodec.h"
-#include <libavutil/time.h>
-#include <libavutil/imgutils.h>
+    #include <libswscale/swscale.h>
+    #include "include/libavcodec/avcodec.h"
+    #include <libavutil/time.h>
+    #include <libavutil/imgutils.h>
 };
 
 class WLVideo {

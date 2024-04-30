@@ -27,14 +27,14 @@ void *playVideo(void *data) {
         if (video->queue->getQueueSize() == 0) {//视频缓冲区中数据读取完，回调缓冲中，等待数据
             if (!video->playStatus->load) {
                 video->playStatus->load = true;
-                video->callJava->onCallLoad(CHILD_THREAD, true);
+                video->callJava->OnCallLoad(CHILD_THREAD, true);
             }
             av_usleep(1000 * 100);
             continue;
         } else {
             if (video->playStatus->load) {
                 video->playStatus->load = false;
-                video->callJava->onCallLoad(CHILD_THREAD, false);
+                video->callJava->OnCallLoad(CHILD_THREAD, false);
             }
         }
         AVPacket *avPacket = av_packet_alloc();
@@ -57,7 +57,7 @@ void *playVideo(void *data) {
                 double diff = video->getFrameDiffTime(NULL, avPacket);
                 av_usleep(video->getDelayTime(diff) * 1000000);
 
-                video->callJava->onCallDecodeVPacket(CHILD_THREAD, avPacket->size, avPacket->data);//调用Java层硬解
+                video->callJava->OnCallDecodeVPacket(CHILD_THREAD, avPacket->size, avPacket->data);//调用Java层硬解
                 av_packet_free(&avPacket);
                 av_free(avPacket);
                 continue;
@@ -94,7 +94,7 @@ void *playVideo(void *data) {
                 av_usleep(video->getDelayTime(diff) * 1000000);
 //            av_usleep(diff * 1000000);
                 //直接渲染
-                video->callJava->onCallRenderYUV(CHILD_THREAD,
+                video->callJava->OnCallRenderYUV(CHILD_THREAD,
                                                  avFrame->width,
                                                  avFrame->linesize[0],
                                                  avFrame->height,
@@ -143,7 +143,7 @@ void *playVideo(void *data) {
                 av_usleep(video->getDelayTime(diff) * 1000000);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
 
                 //渲染
-                video->callJava->onCallRenderYUV(CHILD_THREAD,
+                video->callJava->OnCallRenderYUV(CHILD_THREAD,
                                                  video->avCodecContext->width,
                                                  pFrameYUV420p->linesize[0],
                                                  video->avCodecContext->height,

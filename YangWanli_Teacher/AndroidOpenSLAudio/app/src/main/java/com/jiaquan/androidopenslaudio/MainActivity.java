@@ -8,7 +8,6 @@ import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-    //加载so
     static {
         System.loadLibrary("native-lib");
     }
@@ -29,9 +28,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void play(View view) {
         String path = "/sdcard/testziliao/the_girl.pcm";
-        playPcm(path);
+        _nativePlayPcm(path);
     }
 
     //native方法
-    public native void playPcm(String url);
+    private native void _nativePlayPcm(String url);
 }

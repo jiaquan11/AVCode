@@ -28,7 +28,7 @@ int avformat_callback(void *ctx) {
     return 0;
 }
 
-void WLFFmpeg::demuxFFmpegThread() {
+void WLFFmpeg::DemuxFFmpegThread() {
     pthread_mutex_lock(&init_mutex);
 
     av_register_all();
@@ -40,7 +40,7 @@ void WLFFmpeg::demuxFFmpegThread() {
     if (avformat_open_input(&pFormatCtx, url, NULL, NULL) != 0) {
         if (LOG_DEBUG) {
             LOGE("can not open url: %s", url);
-            callJava->onCallError(CHILD_THREAD, 1001, "can not open url");
+            callJava->OnCallError(CHILD_THREAD, 1001, "can not open url");
         }
         isExit = true;
         pthread_mutex_unlock(&init_mutex);
@@ -49,7 +49,7 @@ void WLFFmpeg::demuxFFmpegThread() {
     if (avformat_find_stream_info(pFormatCtx, NULL) < 0) {
         if (LOG_DEBUG) {
             LOGE("can not find streams from url: %s", url);
-            callJava->onCallError(CHILD_THREAD, 1002, "can not find streams from url");
+            callJava->OnCallError(CHILD_THREAD, 1002, "can not find streams from url");
         }
         isExit = true;
         pthread_mutex_unlock(&init_mutex);
@@ -66,7 +66,7 @@ void WLFFmpeg::demuxFFmpegThread() {
                 pWLAudio->time_base = pFormatCtx->streams[i]->time_base;
                 duration = pWLAudio->duration;
 
-                callJava->onCallPcmRate(CHILD_THREAD, pWLAudio->sample_Rate, 16, 2);//上报音频采样率，采样位宽，和声道数信息
+                callJava->OnCallPcmRate(CHILD_THREAD, pWLAudio->sample_Rate, 16, 2);//上报音频采样率，采样位宽，和声道数信息
             }
         } else if (pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             if (pWLVideo == NULL) {
@@ -88,17 +88,17 @@ void WLFFmpeg::demuxFFmpegThread() {
 
     //打开ffmpeg音频解码器
     if (pWLAudio != NULL) {
-        getCodecContext(pWLAudio->codecPar, &pWLAudio->avCodecContext);
+        _GetCodecContext(pWLAudio->codecPar, &pWLAudio->avCodecContext);
     }
 
     //打开ffmpeg视频解码器
     if (pWLVideo != NULL) {
-        getCodecContext(pWLVideo->codecPar, &pWLVideo->avCodecContext);
+        _GetCodecContext(pWLVideo->codecPar, &pWLVideo->avCodecContext);
     }
 
     if (callJava != NULL) {
         if ((playStatus != NULL) && !playStatus->isExit) {
-            callJava->onCallPrepared(CHILD_THREAD);//回调已准备好资源
+            callJava->OnCallPrepared(CHILD_THREAD);//回调已准备好资源
         } else {
             isExit = true;
         }
@@ -108,7 +108,7 @@ void WLFFmpeg::demuxFFmpegThread() {
 
 void *demuxFFmpeg(void *data) {
     WLFFmpeg *wlfFmpeg = (WLFFmpeg *) (data);
-    wlfFmpeg->demuxFFmpegThread();
+    wlfFmpeg->DemuxFFmpegThread();
 
     /*
      * 使用return语句退出线程比使用pthread_exit()函数更简单和直观。
@@ -120,15 +120,15 @@ void *demuxFFmpeg(void *data) {
     return 0;
 }
 
-void WLFFmpeg::prepared() {
+void WLFFmpeg::Prepared() {
     pthread_create(&demuxThread, NULL, demuxFFmpeg, this);
 }
 
-void WLFFmpeg::startFFmpegThread() {
+void WLFFmpeg::StartFFmpegThread() {
     if (pWLAudio == NULL) {
         if (LOG_DEBUG) {
             LOGE("audio is NULL");
-            callJava->onCallError(CHILD_THREAD, 1007, "audio is NULL");
+            callJava->OnCallError(CHILD_THREAD, 1007, "audio is NULL");
         }
         return;
     }
@@ -141,7 +141,7 @@ void WLFFmpeg::startFFmpegThread() {
     pWLVideo->audio = pWLAudio;//将音频播放对象设置到视频播放对象中，用于获取音频参数进行音视频时间戳同步操作
     const char *codecName = (pWLVideo->avCodecContext->codec)->name;
     LOGI("WLFFmpeg start codecName: %s", codecName);
-    if (supportMediaCodec = callJava->onCallIsSupportVideo(CHILD_THREAD, codecName)) {//回调Java函数，支持硬解，优先使用硬解
+    if (supportMediaCodec = callJava->OnCallIsSupportVideo(CHILD_THREAD, codecName)) {//回调Java函数，支持硬解，优先使用硬解
         LOGI("当前设备支持硬解码当前视频!!!");
         /*
          * 对于硬解视频，必须传入的码流头是annexb格式，所以需要转换数据，添加annexb格式头
@@ -201,7 +201,7 @@ void WLFFmpeg::startFFmpegThread() {
             LOGD("%s", buffer);
         }
 
-        pWLVideo->callJava->onCallinitMediaCodec(CHILD_THREAD,
+        pWLVideo->callJava->OnCallinitMediaCodec(CHILD_THREAD,
                                                  codecName,
                                                  pWLVideo->avCodecContext->width,
                                                  pWLVideo->avCodecContext->height,
@@ -268,7 +268,7 @@ void WLFFmpeg::startFFmpegThread() {
      按上面的逻辑，是以音频播放结束为准
      */
     if (callJava != NULL) {
-        callJava->onCallComplete(CHILD_THREAD);
+        callJava->OnCallComplete(CHILD_THREAD);
     }
 
     isExit = true;
@@ -279,7 +279,7 @@ void WLFFmpeg::startFFmpegThread() {
 
 void *startFFmpeg(void *data) {
     WLFFmpeg *wlfFmpeg = (WLFFmpeg *) (data);
-    wlfFmpeg->startFFmpegThread();
+    wlfFmpeg->StartFFmpegThread();
 
     /*
      * 使用return语句退出线程比使用pthread_exit()函数更简单和直观。
@@ -291,11 +291,11 @@ void *startFFmpeg(void *data) {
     return 0;
 }
 
-void WLFFmpeg::start() {
+void WLFFmpeg::Start() {
     pthread_create(&startThread, NULL, startFFmpeg, this);//开启一个子线程，用于读取流数据，并存放到缓存队列中
 }
 
-void WLFFmpeg::pause() {
+void WLFFmpeg::Pause() {
     if (playStatus != NULL) {
         playStatus->pause = true;
     }
@@ -305,7 +305,7 @@ void WLFFmpeg::pause() {
     }
 }
 
-void WLFFmpeg::resume() {
+void WLFFmpeg::Resume() {
     if (playStatus != NULL) {
         playStatus->pause = false;
     }
@@ -315,7 +315,7 @@ void WLFFmpeg::resume() {
     }
 }
 
-void WLFFmpeg::seek(int64_t secds) {
+void WLFFmpeg::Seek(int64_t secds) {
     LOGI("WLFFmpeg seek secds: %lld", secds);
     if (duration <= 0) {
         return;
@@ -349,7 +349,7 @@ void WLFFmpeg::seek(int64_t secds) {
     }
 }
 
-void WLFFmpeg::release() {
+void WLFFmpeg::Release() {
     LOGI("WLFFmpeg release in");
     playStatus->isExit = true;
 
@@ -400,62 +400,62 @@ void WLFFmpeg::release() {
     LOGI("WLFFmpeg release end");
 }
 
-void WLFFmpeg::setVolume(int percent) {
+void WLFFmpeg::SetVolume(int percent) {
     if (pWLAudio != NULL) {
         pWLAudio->setVolume(percent);
     }
 }
 
-void WLFFmpeg::setMute(int mute) {
+void WLFFmpeg::SetMute(int mute) {
     if (pWLAudio != NULL) {
         pWLAudio->setMute(mute);
     }
 }
 
-void WLFFmpeg::setPitch(float pitch) {
+void WLFFmpeg::SetPitch(float pitch) {
     if (pWLAudio != NULL) {
         pWLAudio->setPitch(pitch);
     }
 }
 
-void WLFFmpeg::setSpeed(float speed) {
+void WLFFmpeg::SetSpeed(float speed) {
     if (pWLAudio != NULL) {
         pWLAudio->setSpeed(speed);
     }
 }
 
-int WLFFmpeg::getSampleRate() {
+int WLFFmpeg::GetSampleRate() {
     if (pWLAudio != NULL) {
         return pWLAudio->avCodecContext->sample_rate;
     }
     return 0;
 }
 
-void WLFFmpeg::startStopRecord(bool start) {
+void WLFFmpeg::StartStopRecord(bool start) {
     if (pWLAudio != NULL) {
         pWLAudio->startStopRecord(start);
     }
 }
 
-bool WLFFmpeg::cutAudioPlay(int start_time, int end_time, bool showPcm) {
+bool WLFFmpeg::CutAudioPlay(int start_time, int end_time, bool showPcm) {
     if ((start_time >= 0) && (end_time <= duration) && (start_time < end_time)) {//符合裁剪条件
         pWLAudio->isCut = true;
         pWLAudio->end_time = end_time;
         pWLAudio->showPcm = showPcm;
 
-        seek(start_time);
+        Seek(start_time);
         return true;
     }
     return false;
 }
 
-int WLFFmpeg::getCodecContext(AVCodecParameters *codecPar, AVCodecContext **avCodecContext) {
+int WLFFmpeg::_GetCodecContext(AVCodecParameters *codecPar, AVCodecContext **avCodecContext) {
     AVCodec *avCodec = avcodec_find_decoder(codecPar->codec_id);
     if (!avCodec) {
         if (LOG_DEBUG) {
             LOGE("can not find deocder");
         }
-        callJava->onCallError(CHILD_THREAD, 1003, "can not find deocder");
+        callJava->OnCallError(CHILD_THREAD, 1003, "can not find deocder");
         isExit = true;
         pthread_mutex_unlock(&init_mutex);
         return -1;
@@ -466,7 +466,7 @@ int WLFFmpeg::getCodecContext(AVCodecParameters *codecPar, AVCodecContext **avCo
         if (LOG_DEBUG) {
             LOGE("can not alloc new decoderCtx");
         }
-        callJava->onCallError(CHILD_THREAD, 1004, "can not alloc new decoderCtx");
+        callJava->OnCallError(CHILD_THREAD, 1004, "can not alloc new decoderCtx");
         isExit = true;
         pthread_mutex_unlock(&init_mutex);
         return -1;
@@ -476,7 +476,7 @@ int WLFFmpeg::getCodecContext(AVCodecParameters *codecPar, AVCodecContext **avCo
         if (LOG_DEBUG) {
             LOGE("can not fill decoderCtx");
         }
-        callJava->onCallError(CHILD_THREAD, 1005, "can not fill decoderCtx");
+        callJava->OnCallError(CHILD_THREAD, 1005, "can not fill decoderCtx");
         isExit = true;
         pthread_mutex_unlock(&init_mutex);
         return -1;
@@ -486,7 +486,7 @@ int WLFFmpeg::getCodecContext(AVCodecParameters *codecPar, AVCodecContext **avCo
         if (LOG_DEBUG) {
             LOGE("can not open audio decoder");
         }
-        callJava->onCallError(CHILD_THREAD, 1006, "can not open audio decoder");
+        callJava->OnCallError(CHILD_THREAD, 1006, "can not open audio decoder");
         isExit = true;
         pthread_mutex_unlock(&init_mutex);
         return -1;

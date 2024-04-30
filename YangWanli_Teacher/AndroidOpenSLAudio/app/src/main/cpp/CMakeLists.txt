@@ -4,7 +4,7 @@ project("androidopenslaudio")
 
 add_library(native-lib
              SHARED
-             native-lib.cpp )
+        native_lib.cpp)
 
 find_library(log-lib
               log )

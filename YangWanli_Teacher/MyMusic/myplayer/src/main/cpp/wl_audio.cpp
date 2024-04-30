@@ -38,12 +38,12 @@ void pcmBufferCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
 //            LOGI("pcmBufferCallBack audio clock: %lf", wlAudio->clock);
             if (wlAudio->clock - wlAudio->last_time >= 0.1) {
                 wlAudio->last_time = wlAudio->clock;
-                wlAudio->callJava->onCallTimeInfo(CHILD_THREAD, wlAudio->clock, wlAudio->duration);//100毫秒上报一次当前的音频播放时间戳
+                wlAudio->callJava->OnCallTimeInfo(CHILD_THREAD, wlAudio->clock, wlAudio->duration);//100毫秒上报一次当前的音频播放时间戳
             }
 
             wlAudio->bufferQueue->putBuffer(wlAudio->sampleBuffer, bufferSize * 4);//将解码的Pcm数据放入缓冲区，用于另外一个线程获取用于上报
 
-            wlAudio->callJava->onCallVolumeDB(CHILD_THREAD, wlAudio->getPCMDB(reinterpret_cast<char *>(wlAudio->sampleBuffer), bufferSize * 4));//上报音频的分贝值
+            wlAudio->callJava->OnCallVolumeDB(CHILD_THREAD, wlAudio->getPCMDB(reinterpret_cast<char *>(wlAudio->sampleBuffer), bufferSize * 4));//上报音频的分贝值
 
             (*wlAudio->pcmBufferQueue)->Enqueue(wlAudio->pcmBufferQueue, wlAudio->sampleBuffer, bufferSize * 2 * 2);//将pcm数据丢入opensles队列进行播放
             if (wlAudio->isCut) {
@@ -147,10 +147,10 @@ void *pcmCallBack(void *data) {
         }
         if (pcmBean->buffsize <= wlAudio->defaultPcmSize) {//不用分包
             if (wlAudio->isRecordPcm) {
-                wlAudio->callJava->onCallPcmToAAC(CHILD_THREAD, pcmBean->buffer, pcmBean->buffsize);
+                wlAudio->callJava->OnCallPcmToAAC(CHILD_THREAD, pcmBean->buffer, pcmBean->buffsize);
             }
             if (wlAudio->showPcm) {
-                wlAudio->callJava->onCallPcmInfo(CHILD_THREAD, pcmBean->buffer, pcmBean->buffsize);
+                wlAudio->callJava->OnCallPcmInfo(CHILD_THREAD, pcmBean->buffer, pcmBean->buffsize);
             }
         } else {//分包上报
             int pack_num = pcmBean->buffsize / wlAudio->defaultPcmSize;
@@ -159,10 +159,10 @@ void *pcmCallBack(void *data) {
                 char *bf = (char *) malloc(wlAudio->defaultPcmSize);
                 memcpy(bf, pcmBean->buffer + i * wlAudio->defaultPcmSize, wlAudio->defaultPcmSize);
                 if (wlAudio->isRecordPcm) {
-                    wlAudio->callJava->onCallPcmToAAC(CHILD_THREAD, bf, wlAudio->defaultPcmSize);
+                    wlAudio->callJava->OnCallPcmToAAC(CHILD_THREAD, bf, wlAudio->defaultPcmSize);
                 }
                 if (wlAudio->showPcm) {
-                    wlAudio->callJava->onCallPcmInfo(CHILD_THREAD, bf, wlAudio->defaultPcmSize);
+                    wlAudio->callJava->OnCallPcmInfo(CHILD_THREAD, bf, wlAudio->defaultPcmSize);
                 }
                 free(bf);
                 bf = NULL;
@@ -172,10 +172,10 @@ void *pcmCallBack(void *data) {
                 char *bf = (char *) malloc(pack_sub);
                 memcpy(bf, pcmBean->buffer + pack_num * wlAudio->defaultPcmSize, pack_sub);
                 if (wlAudio->isRecordPcm) {
-                    wlAudio->callJava->onCallPcmToAAC(CHILD_THREAD, bf, pack_sub);
+                    wlAudio->callJava->OnCallPcmToAAC(CHILD_THREAD, bf, pack_sub);
                 }
                 if (wlAudio->showPcm) {
-                    wlAudio->callJava->onCallPcmInfo(CHILD_THREAD, bf, pack_sub);
+                    wlAudio->callJava->OnCallPcmInfo(CHILD_THREAD, bf, pack_sub);
                 }
                 free(bf);
                 bf = NULL;
@@ -419,14 +419,14 @@ int WLAudio::resampleAudio(void **pcmbuf) {
         if (queue->getQueueSize() == 0) {//加载中
             if (!playStatus->load) {
                 playStatus->load = true;
-                callJava->onCallLoad(CHILD_THREAD, true);
+                callJava->OnCallLoad(CHILD_THREAD, true);
             }
             av_usleep(100 * 1000);//100毫秒
             continue;
         } else {//缓冲区中有数据，结束加载
             if (playStatus->load) {
                 playStatus->load = false;
-                callJava->onCallLoad(CHILD_THREAD, false);
+                callJava->OnCallLoad(CHILD_THREAD, false);
             }
         }
 
