@@ -7,29 +7,29 @@
 
 static const char *const kClassPathName = "com/jiaquan/jnithread/ThreadDemo";
 
-pthread_t thread;
+pthread_t g_thread;
 
-void *normalCallBack(void *data) {
+void *NormalCallBack(void *data) {
     LOGI("create normal thread from C++");
-    pthread_exit(&thread);
+    pthread_exit(&g_thread);
 }
 
 JNIEXPORT void JNICALL NormalThread(JNIEnv *env, jobject thiz) {
-    pthread_create(&thread, NULL, normalCallBack, NULL);
+    pthread_create(&g_thread, NULL, NormalCallBack, NULL);
 }
 
 #include "queue"
 #include "unistd.h"
 #include "java_listener.h"
 
-pthread_t g_product;
-pthread_t g_customer;
+pthread_t g_product_thread;
+pthread_t g_customer_thread;
 pthread_mutex_t g_mutex;
 pthread_cond_t g_cond;
 std::queue<int> g_queue;
 
 //生产者线程 函数
-void *productCallBack(void *data) {
+void *ProductCallBack(void *data) {
     while (true) {
         pthread_mutex_lock(&g_mutex);
         g_queue.push(1);
@@ -39,11 +39,11 @@ void *productCallBack(void *data) {
 
         sleep(5);
     }
-    pthread_exit(&g_product);
+    pthread_exit(&g_product_thread);
 }
 
 // 消费者线程函数
-void *customerCallBack(void *data) {
+void *CustomerCallBack(void *data) {
     while (true) {
         pthread_mutex_lock(&g_mutex);
         if (g_queue.size() > 0) {
@@ -56,7 +56,7 @@ void *customerCallBack(void *data) {
         pthread_mutex_unlock(&g_mutex);
         usleep(1000 * 500);
     }
-    pthread_exit(&g_customer);
+    pthread_exit(&g_customer_thread);
 }
 
 // 创建生产者和消费者两个子线程
@@ -65,29 +65,29 @@ JNIEXPORT void JNICALL MutexThread(JNIEnv *env, jobject thiz) {
         g_queue.push(i);//队列中插入10个数：0-9
     }
 
-    pthread_mutex_init(&g_mutex, NULL);
-    pthread_cond_init(&g_cond, NULL);
+    pthread_mutex_init(&g_mutex, NULL);//初始化互斥锁
+    pthread_cond_init(&g_cond, NULL);//初始化条件变量
 
-    pthread_create(&g_product, NULL, productCallBack, NULL);//创建生产者子线程
-    pthread_create(&g_customer, NULL, customerCallBack, NULL);//创建消费者子线程
+    pthread_create(&g_product_thread, NULL, ProductCallBack, NULL);//创建生产者子线程
+    pthread_create(&g_customer_thread, NULL, CustomerCallBack, NULL);//创建消费者子线程
 }
 
-JavaVM *g_JavaVm;
-java_listener *g_JavaListener;
-pthread_t g_ChildThread;
+JavaVM *g_java_vm;
+java_listener *g_java_listener;
+pthread_t g_child_thread;
 
-void *childCallback(void *data) {
+void *ChildCallback(void *data) {
     java_listener *listener = (java_listener *) (data);
     listener->OnError(0, 101, "C++ call java method from child thread");
     delete listener;
-    pthread_exit(&g_ChildThread);
+    pthread_exit(&g_child_thread);
 }
 
 JNIEXPORT void JNICALL CallBackFromC(JNIEnv *env, jobject thiz) {
-    g_JavaListener = new java_listener(g_JavaVm, env, env->NewGlobalRef(thiz));// NewGlobalRef 全局引用
-//    javaListener->onError(1, 100, "C++ call java method from main thread"); // 主线程中回调Java方法
+    g_java_listener = new java_listener(g_java_vm, env, env->NewGlobalRef(thiz));// NewGlobalRef 全局引用
+    g_java_listener->OnError(1, 100, "C++ call java method from main thread"); // 主线程中回调Java方法
 
-    pthread_create(&g_ChildThread, NULL, childCallback, g_JavaListener);// 子线程中回调Java方法
+    pthread_create(&g_child_thread, NULL, ChildCallback, g_java_listener);// 子线程中回调Java方法
 }
 
 static JNINativeMethod gMethods[] = {
@@ -98,8 +98,8 @@ static JNINativeMethod gMethods[] = {
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *env;
-    g_JavaVm = vm;
-    if (g_JavaVm->GetEnv((void **) (&env), JNI_VERSION_1_6) != JNI_OK) {
+    g_java_vm = vm;
+    if (g_java_vm->GetEnv((void **) (&env), JNI_VERSION_1_6) != JNI_OK) {
         LOGE("JNI_OnLoad GetEnv failed!");
         return -1;
     }

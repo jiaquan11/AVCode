@@ -14,7 +14,7 @@ java_listener::java_listener(JavaVM *vm, JNIEnv *env, jobject obj) {
 
 java_listener::~java_listener() {
     if (m_jobj_ != nullptr) {
-        m_jniEnv_->DeleteGlobalRef(m_jobj_);
+        m_jniEnv_->DeleteGlobalRef(m_jobj_);//释放全局引用
         m_jobj_ = nullptr;
     }
 }

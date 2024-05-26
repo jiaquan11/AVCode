@@ -5,36 +5,35 @@
 1、JniThread项目
 JNI多线程的创建和使用
 
-2、NativeOpenGLDemo项目(Android C++ OpenGL 教程)
-掌握Android中OpenGL的原理,学会Android中NDK开发流程,能用OpenGL渲染视频画面,学会OpenGL 中矩阵操作、投影等
-用纯C++实现Android的OpenGL渲染功能，包括EGL环境创建、EGL线程创建、OpenGL生命周期管理等，会结合SurfaceView和TextureView实现OpenGL的渲染，
-最终我们会实现一个YUV播放器实例，为音视频开发打下坚实的基础。
+2、AndroidOpenSLESAudio项目
+读取PCM裸数据并调用Android OpenSLES接口进行播放
 
 3、MyMusic项目
 FFmpeg打造Android万能音频播放器视频教程，移植FFmpeg到Android平台，利用FFmpeg解码音频数据并用OpenSL ES来播放，打造Android万能播放器。
 
-4、AndroidOpenSLESAudio项目
-读取PCM裸数据并调用Android OpenSLES接口进行播放
+4、NativeOpenGLDemo项目(Android C++ OpenGL 教程)
+掌握Android中OpenGL的原理,学会Android中NDK开发流程,能用OpenGL渲染视频画面,学会OpenGL 中矩阵操作、投影等
+用纯C++实现Android的OpenGL渲染功能，包括EGL环境创建、EGL线程创建、OpenGL生命周期管理等，会结合SurfaceView和TextureView实现OpenGL的渲染，
+最终我们会实现一个YUV播放器实例，为音视频开发打下坚实的基础。
 
-5、MyMusic项目(在此项目中增加了视频播放的功能)
-FFmpeg+OpenGL ES+OpenSL ES打造Android视频播放器教程，该课程基于C++语言，用FFmpeg、OpenGL ES、OpenSL ES和MediaCodec打造Android视频播放器
-
-6、OpenGLDemo项目
+5、OpenGLDemo项目
 使用GLSurfaceView组件进行opengl绘制的demo
 
-7、OpenglESEGL项目
+6、OpenglESEGL项目
 学会自己搭建OpenGL ES的EGL环境和渲染线程控制，各种渲染功能实现（FBO、VBO），多个surface渲染同一个纹理，单个surface渲染多个纹理
 
-8、LivePusher项目
-摄像头画面方向纠正，摄像头画面编码为MP4视频
-摄像头画面和其他音乐合成新的视频，摄像头数据和麦克风音频数据推流到直播服务器实现直播功能
+7、MyMusic项目(在此项目中增加了视频播放的功能)
+FFmpeg+OpenGL ES+OpenSL ES打造Android视频播放器教程，该课程基于C++语言，用FFmpeg、OpenGL ES、OpenSL ES和MediaCodec打造Android视频播放器
 
-9、AudioRecord项目
+8、AudioRecord项目
 在Java层调用Android系统接口实现音频录音的测试代码
 
-10、OpenSLESRecord项目
+9、OpenSLESRecord项目
 在c++层调用OpenSLES的库接口实现音频录音的测试代码
 
+10、LivePusher项目
+摄像头画面方向纠正，摄像头画面编码为MP4视频
+摄像头画面和其他音乐合成新的视频，摄像头数据和麦克风音频数据推流到直播服务器实现直播功能
 ---------------------------------------------------------------------------------
 夏曹俊老师课程相关项目
 1、testFFmpeg项目

@@ -32,8 +32,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class WLPlayer {
-    private final String TAG = WLPlayer.class.getSimpleName();
-
     static {
         System.loadLibrary("native-lib");
         System.loadLibrary("avcodec");
