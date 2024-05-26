@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.10.2)
 
-project("androidopenslaudio")
+project("AndroidOpenSLAudio")
 
 add_library(native-lib
-             SHARED
-        native_lib.cpp)
+            SHARED
+            native_lib.cpp)
 
 find_library(log-lib
               log )

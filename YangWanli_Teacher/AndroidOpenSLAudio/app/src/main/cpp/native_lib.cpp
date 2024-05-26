@@ -24,49 +24,52 @@ SLVolumeItf g_PcmPlayerVolume = NULL;
 //缓冲器队列接口
 SLAndroidSimpleBufferQueueItf g_PcmBufferQueue = NULL;
 
-FILE *pcmFile = NULL;
-void *buffer = NULL;
-uint8_t *out_buffer = NULL;
+FILE *g_pcm_file = NULL;
+void *g_buffer = NULL;
+uint8_t *g_out_buffer = NULL;
 
 int getPcmData(void **pcm) {
     int size = 0;
-    while (!feof(pcmFile)) {
-        size = fread(out_buffer, 1, 44100 * 2 * 2, pcmFile);
+    while (!feof(g_pcm_file)) {
+        size = fread(g_out_buffer, 1, 44100 * 2 * 2, g_pcm_file);
         if (size == 0) {
             LOGE("Read end");
+            fclose(g_pcm_file);
+            g_pcm_file = NULL;
             break;
         } else {
             LOGI("reading");
         }
-        *pcm = out_buffer;
+        *pcm = g_out_buffer;
         break;
     }
     return size;
 }
 
 //给到OpenSLES注册的回调函数，会由OpenSLES主动调用，直接将pcm数据放入OpenSLES中的缓冲队列中进行播放
-void pcmBufferCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
-    int size = getPcmData(&buffer);
+void PcmBufferCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
+    int size = getPcmData(&g_buffer);
     LOGI("size is: %d", size);
-    if (buffer != NULL) {
-        SLresult result = (*g_PcmBufferQueue)->Enqueue(g_PcmBufferQueue, buffer, size);
+    if (g_buffer != NULL) {
+        SLresult result = (*g_PcmBufferQueue)->Enqueue(g_PcmBufferQueue, g_buffer, size);
     }
 }
 
 JNIEXPORT void JNICALL PlayPcm(JNIEnv *env, jobject thiz, jstring url_str) {
     const char *url = env->GetStringUTFChars(url_str, 0);
-    pcmFile = fopen(url, "r");//打开pcm文件
-    if (pcmFile == NULL) {
+    g_pcm_file = fopen(url, "r");
+    if (g_pcm_file == NULL) {
+        LOGE("open file error");
         return;
     }
 
-    out_buffer = (uint8_t *) malloc(44100 * 2 * 2);//分配了1s的音频数据内存
+    g_out_buffer = (uint8_t *) malloc(44100 * 2 * 2);//分配了1s的音频数据内存
 
     SLresult result;
     //1.创建接口对象(根据engineObject接口类对象来创建引擎对象,后面的操作都根据这个引擎对象创建相应的操作接口)
-    slCreateEngine(&g_EngineObject, 0, 0, 0, 0, 0);
-    (*g_EngineObject)->Realize(g_EngineObject, SL_BOOLEAN_FALSE);
-    (*g_EngineObject)->GetInterface(g_EngineObject, SL_IID_ENGINE, &g_EngineEngine);
+    slCreateEngine(&g_EngineObject, 0, 0, 0, 0, 0);//创建引擎对象
+    (*g_EngineObject)->Realize(g_EngineObject, SL_BOOLEAN_FALSE);//实现引擎对象
+    (*g_EngineObject)->GetInterface(g_EngineObject, SL_IID_ENGINE, &g_EngineEngine);//通过引擎对象获取引擎接口
 
     //2.设置混音器
     const SLInterfaceID mids[1] = {SL_IID_ENVIRONMENTALREVERB};//混响音效类型
@@ -88,13 +91,13 @@ JNIEXPORT void JNICALL PlayPcm(JNIEnv *env, jobject thiz, jstring url_str) {
     SLDataLocator_AndroidSimpleBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,
                                                             2};//指定了两个buffer队列
     SLDataFormat_PCM pcm = {
-            SL_DATAFORMAT_PCM,
-            2,
-            SL_SAMPLINGRATE_44_1,
-            SL_PCMSAMPLEFORMAT_FIXED_16,
-            SL_PCMSAMPLEFORMAT_FIXED_16,
-            SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT,
-            SL_BYTEORDER_LITTLEENDIAN};
+                SL_DATAFORMAT_PCM,
+               2,
+              SL_SAMPLINGRATE_44_1,
+              SL_PCMSAMPLEFORMAT_FIXED_16,
+               SL_PCMSAMPLEFORMAT_FIXED_16,
+               SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT,
+                 SL_BYTEORDER_LITTLEENDIAN};
     SLDataSource slDataSource = {&android_queue, &pcm};
     SLDataLocator_OutputMix outputMix = {SL_DATALOCATOR_OUTPUTMIX, g_OutputMixObject};
     SLDataSink audioSink = {&outputMix, NULL};
@@ -112,9 +115,8 @@ JNIEXPORT void JNICALL PlayPcm(JNIEnv *env, jobject thiz, jstring url_str) {
                                        &g_PcmPlayerPlay);//根据音频播放器实例获取到音频播放接口
 
     //4.设置缓存队列和回调函数
-    (*g_PcmPlayerObject)->GetInterface(g_PcmPlayerObject, SL_IID_BUFFERQUEUE,
-                                       &g_PcmBufferQueue);//根据音频播放器实例获取到音频缓存队列的接口
-    (*g_PcmBufferQueue)->RegisterCallback(g_PcmBufferQueue, pcmBufferCallBack, NULL);//注册回调函数
+    (*g_PcmPlayerObject)->GetInterface(g_PcmPlayerObject, SL_IID_BUFFERQUEUE, &g_PcmBufferQueue);
+    (*g_PcmBufferQueue)->RegisterCallback(g_PcmBufferQueue, PcmBufferCallBack, NULL);
 
     //获取音量接口
     (*g_PcmPlayerObject)->GetInterface(g_PcmPlayerObject, SL_IID_VOLUME, &g_PcmPlayerVolume);
@@ -123,7 +125,7 @@ JNIEXPORT void JNICALL PlayPcm(JNIEnv *env, jobject thiz, jstring url_str) {
     (*g_PcmPlayerPlay)->SetPlayState(g_PcmPlayerPlay, SL_PLAYSTATE_PLAYING);
 
     //6.启动回调函数
-    pcmBufferCallBack(g_PcmBufferQueue, NULL);
+    PcmBufferCallBack(g_PcmBufferQueue, NULL);
 
     env->ReleaseStringUTFChars(url_str, url);
 }
