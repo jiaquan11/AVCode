@@ -174,13 +174,11 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
      * */
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        if (onRenderListener != null) {
-//            MyLog.i("onFrameAvailable in");
-            onRenderListener.onRender();
-//            MyLog.i("onFrameAvailable out");
-        }
-
         setMatrix(mScreenWidth, mScreenHeight, mPicWdith, mPicHeight);
+
+        if (onRenderListener != null) {
+            onRenderListener.onRender();
+        }
     }
 
     public void setRenderType(int renderType) {
@@ -302,8 +300,17 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         surfaceTexture.updateTexImage();//将缓存数据刷到前台更新
 
         GLES20.glUseProgram(program_mediacodec);
+        int error = GLES20.glGetError();
+        if (error != GLES20.GL_NO_ERROR) {
+            throw new RuntimeException("OpenGL use program error: " + error);
+        }
 
         GLES20.glUniformMatrix4fv(u_matrix_mediacodec, 1, false, matrixBuffer);//给矩阵变量赋值
+        error = GLES20.glGetError();
+        if (error != GLES20.GL_NO_ERROR) {
+            MyLog.e("OpenGL matrix error: " + error);
+            throw new RuntimeException("OpenGL matrix error: " + error);
+        }
 
         GLES20.glEnableVertexAttribArray(avPosition_mediacodec);
         GLES20.glVertexAttribPointer(avPosition_mediacodec, 2, GLES20.GL_FLOAT, false, 8, vertexBuffer);

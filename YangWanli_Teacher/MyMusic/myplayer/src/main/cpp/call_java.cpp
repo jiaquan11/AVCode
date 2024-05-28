@@ -13,8 +13,8 @@ CallJava::CallJava(JavaVM *vm, JNIEnv *env, jobject obj) {
     }
 
     //获取Java类的WLPlayer方法ID,用于底层回调Java方法
-    m_jmid_prepared_ = env->GetMethodID(clz, "onCallPrepared", "()V");
     m_jmid_load_ = env->GetMethodID(clz, "onCallLoad", "(Z)V");
+    m_jmid_prepared_ = env->GetMethodID(clz, "onCallPrepared", "()V");
     m_jmid_timeinfo_ = env->GetMethodID(clz, "onCallTimeInfo", "(II)V");
     m_jmid_complete_ = env->GetMethodID(clz, "onCallComplete", "()V");
     m_jmid_error_ = env->GetMethodID(clz, "onCallError", "(ILjava/lang/String;)V");
@@ -23,7 +23,7 @@ CallJava::CallJava(JavaVM *vm, JNIEnv *env, jobject obj) {
     m_jmid_pcmrate_ = env->GetMethodID(clz, "onCallPcmRate", "(III)V");
     m_jmid_pcmtoaac_ = env->GetMethodID(clz, "encodePcmToAAC", "([BI)V");
     m_jmid_support_video_ = env->GetMethodID(clz, "onCallIsSupportMediaCodec", "(Ljava/lang/String;)Z");
-    m_jmid_init_mediacodec_ = env->GetMethodID(clz, "onCallinitMediaCodec", "(Ljava/lang/String;II[B)V");
+    m_jmid_init_mediacodec_ = env->GetMethodID(clz, "onCallInitMediaCodec", "(Ljava/lang/String;II[B)V");
     m_jmid_render_yuv_ = env->GetMethodID(clz, "onCallRenderYUV", "(II[B[B[B)V");
     m_jmid_decode_vpacket_ = env->GetMethodID(clz, "onCallDecodeVPacket", "(I[B)V");
 }
@@ -233,7 +233,7 @@ bool CallJava::OnCallIsSupportVideo(int type, const char *ffcodecname) {
     }
 }
 
-void CallJava::OnCallinitMediaCodec(int type, const char *mime, int width, int height, int csd_size, uint8_t *csd) {
+void CallJava::OnCallInitMediaCodec(int type, const char *mime, int width, int height, int csd_size, uint8_t *csd) {
     if (type == MAIN_THREAD) {
         jstring typejstr = m_jni_env_->NewStringUTF(mime);
         jbyteArray csdArray = m_jni_env_->NewByteArray(csd_size);

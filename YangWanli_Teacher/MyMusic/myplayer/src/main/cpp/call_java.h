@@ -36,7 +36,7 @@ public:
 
     bool OnCallIsSupportVideo(int type, const char *ffcodecname);
 
-    void OnCallinitMediaCodec(int type, const char *mime, int width, int height, int csd_size, uint8_t *csd);
+    void OnCallInitMediaCodec(int type, const char *mime, int width, int height, int csd_size, uint8_t *csd);
 
     void OnCallRenderYUV(int type, int width, int linesize, int height, uint8_t *fy, uint8_t *fu, uint8_t *fv);
 

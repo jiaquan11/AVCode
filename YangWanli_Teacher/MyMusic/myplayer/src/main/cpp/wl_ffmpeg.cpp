@@ -183,7 +183,7 @@ void WLFFmpeg::StartFFmpegThread() {
 //        for (int i = 0;i < pWLVideo->avCodecContext->extradata_size; i++) {
 //            LOGI("%02X", pWLVideo->avCodecContext->extradata[i]);
 //        }
-        LOGI("native onCallinitMediaCodec extradata size: %d", pWLVideo->avCodecContext->extradata_size);
+        LOGI("native onCallInitMediaCodec extradata size: %d", pWLVideo->avCodecContext->extradata_size);
         int size = pWLVideo->avCodecContext->extradata_size;
         char output[4];
         char buffer[1024] = {0};
@@ -201,7 +201,7 @@ void WLFFmpeg::StartFFmpegThread() {
             LOGD("%s", buffer);
         }
 
-        pWLVideo->callJava->OnCallinitMediaCodec(CHILD_THREAD,codecName,
+        pWLVideo->callJava->OnCallInitMediaCodec(CHILD_THREAD,codecName,
                                                         pWLVideo->avCodecContext->width, pWLVideo->avCodecContext->height,
                                                  pWLVideo->avCodecContext->extradata_size,pWLVideo->avCodecContext->extradata);
     }

@@ -14,33 +14,38 @@ import com.jiaquan.myplayer.log.MyLog;
 import com.jiaquan.myplayer.player.WLPlayer;
 
 public class CutActivity extends AppCompatActivity {
-    private WLPlayer wlPlayer = null;
+    private WLPlayer mWlPlayer_ = null;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cutaudio);
 
-        wlPlayer = new WLPlayer();
-        //设置相关的监听回调
-        //资源准备好监听
-        wlPlayer.setOnPreparedListener(new OnPreparedListener() {
+        mWlPlayer_ = new WLPlayer();
+        /**
+         * 设置准备监听
+         */
+        mWlPlayer_.setOnPreparedListener(new OnPreparedListener() {
             @Override
             public void onPrepared() {
-                wlPlayer.cutAudioPlay(20, 40, true);//开始裁剪，并回调pcm数据
+                mWlPlayer_.cutAudioPlay(20, 40, true);
             }
         });
 
-        //播放时间戳信息监听
-        wlPlayer.setOnTimeInfoListener(new OnTimeInfoListener() {
+        /**
+         * 设置时间信息监听
+         */
+        mWlPlayer_.setOnTimeInfoListener(new OnTimeInfoListener() {
             @Override
             public void onTimeInfo(TimeInfoBean timeInfoBean) {
                 MyLog.i(timeInfoBean.toString());
             }
         });
 
-        //音频解码pcm数据监听
-        wlPlayer.setOnPcmInfoListener(new OnPcmInfoListener() {
+        /**
+         * 设置pcm数据监听
+         */
+        mWlPlayer_.setOnPcmInfoListener(new OnPcmInfoListener() {
             @Override
             public void onPcmInfo(byte[] buffer, int buffersize) {
                 MyLog.i("PcmInfo bufferSize: " + buffersize);
@@ -58,7 +63,8 @@ public class CutActivity extends AppCompatActivity {
      * @param view
      */
     public void cutAudio(View view) {
-//        wlPlayer.prepared("/sdcard/testziliao/first-love-wangxinling.ape");
-        wlPlayer.prepared("/sdcard/testziliao/mydream.m4a");
+//        mWlPlayer_.prepared("/sdcard/testziliao/first-love-wangxinling.ape");
+//        mWlPlayer_.prepared("/sdcard/testziliao/mydream.m4a");
+        mWlPlayer_.prepared("/sdcard/testziliao/the_girl.m4a");
     }
 }
