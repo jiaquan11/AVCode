@@ -201,12 +201,9 @@ void WLFFmpeg::StartFFmpegThread() {
             LOGD("%s", buffer);
         }
 
-        pWLVideo->callJava->OnCallinitMediaCodec(CHILD_THREAD,
-                                                 codecName,
-                                                 pWLVideo->avCodecContext->width,
-                                                 pWLVideo->avCodecContext->height,
-                                                 pWLVideo->avCodecContext->extradata_size,
-                                                 pWLVideo->avCodecContext->extradata);
+        pWLVideo->callJava->OnCallinitMediaCodec(CHILD_THREAD,codecName,
+                                                        pWLVideo->avCodecContext->width, pWLVideo->avCodecContext->height,
+                                                 pWLVideo->avCodecContext->extradata_size,pWLVideo->avCodecContext->extradata);
     }
 
     pWLAudio->play();//开启音频播放，内部创建子线程用于获取缓冲区的pacekt，解码为pcm并给到opengles播放
@@ -215,8 +212,8 @@ void WLFFmpeg::StartFFmpegThread() {
     LOGI("WLFFmpeg is start");
     int count = 0;
     while ((playStatus != NULL) && !playStatus->isExit) {
-        if (playStatus->seek) {//seek状态时，不往下读取
-            av_usleep(100 * 1000);//100毫秒
+        if (playStatus->seek) {
+            av_usleep(100 * 1000);
             LOGI("now is seek continue");
             continue;
         }
@@ -228,9 +225,9 @@ void WLFFmpeg::StartFFmpegThread() {
             continue;
         }
 
-        AVPacket *avPacket = av_packet_alloc();//分配packet内存
+        AVPacket *avPacket = av_packet_alloc();
         pthread_mutex_lock(&seek_mutex);
-        int ret = av_read_frame(pFormatCtx, avPacket);//读取媒体文件的packet
+        int ret = av_read_frame(pFormatCtx, avPacket);
         pthread_mutex_unlock(&seek_mutex);
         if (ret == 0) {
             if (avPacket->stream_index == pWLAudio->streamIndex) {

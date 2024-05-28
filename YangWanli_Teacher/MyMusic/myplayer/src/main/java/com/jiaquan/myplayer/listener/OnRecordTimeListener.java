@@ -1,5 +1,6 @@
 package com.jiaquan.myplayer.listener;
 
 public interface OnRecordTimeListener {
-    void onRecordTime(int recordTime);
+    void onAudioRecordTime(int recordTime);
+    void onVideoRecordTime(int recordTime);
 }

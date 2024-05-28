@@ -53,10 +53,12 @@ public class CutActivity extends AppCompatActivity {
         });
     }
 
-    //按钮响应函数：裁剪音频文件
+    /**
+     * 音频裁剪
+     * @param view
+     */
     public void cutAudio(View view) {
-//        wlPlayer.setSource("/sdcard/testziliao/first-love-wangxinling.ape");
-        wlPlayer.setSource("/sdcard/testziliao/mydream.m4a");
-        wlPlayer.prepared();
+//        wlPlayer.prepared("/sdcard/testziliao/first-love-wangxinling.ape");
+        wlPlayer.prepared("/sdcard/testziliao/mydream.m4a");
     }
 }

@@ -1,8 +1,8 @@
 package com.jiaquan.myplayer.muteenum;
 
-/*
-* 声道控制枚举类
-* */
+/**
+ * 声道枚举:右声道、左声道、立体声
+ */
 public enum MuteEnum {
     MUTE_RIGHT("RIGHT", 0),
     MUTE_LEFT("LEFT", 1),

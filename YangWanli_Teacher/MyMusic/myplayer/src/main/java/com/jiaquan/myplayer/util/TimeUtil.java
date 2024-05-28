@@ -1,7 +1,7 @@
 package com.jiaquan.myplayer.util;
 
 /**
- * 时间工具类
+ * 时间工具类：将秒转换为时分秒格式
  */
 public class TimeUtil {
     public static String secdsToDateFormat(int secds, int totalsecds) {//传入时间的单位为秒

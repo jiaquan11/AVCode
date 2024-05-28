@@ -1,10 +1,10 @@
 #include "call_java.h"
 
 CallJava::CallJava(JavaVM *vm, JNIEnv *env, jobject obj) {
-    javaVm = vm;
-    jniEnv = env;
-    jobj = env->NewGlobalRef(obj);
-    jclass clz = jniEnv->GetObjectClass(jobj);
+    m_java_vm_ = vm;
+    m_jni_env_ = env;
+    m_jobj_ = env->NewGlobalRef(obj);
+    jclass clz = m_jni_env_->GetObjectClass(m_jobj_);
     if (!clz) {
         if (LOG_DEBUG) {
             LOGE("CallJava get jclass wrong");
@@ -13,188 +13,188 @@ CallJava::CallJava(JavaVM *vm, JNIEnv *env, jobject obj) {
     }
 
     //获取Java类的WLPlayer方法ID,用于底层回调Java方法
-    jmid_prepared = env->GetMethodID(clz, "onCallPrepared", "()V");
-    jmid_load = env->GetMethodID(clz, "onCallLoad", "(Z)V");
-    jmid_timeinfo = env->GetMethodID(clz, "onCallTimeInfo", "(II)V");
-    jmid_complete = env->GetMethodID(clz, "onCallComplete", "()V");
-    jmid_error = env->GetMethodID(clz, "onCallError", "(ILjava/lang/String;)V");
-    jmid_volumeDB = env->GetMethodID(clz, "onCallVolumeDB", "(I)V");
-    jmid_pcminfo = env->GetMethodID(clz, "onCallPcmInfo", "([BI)V");
-    jmid_pcmrate = env->GetMethodID(clz, "onCallPcmRate", "(III)V");
-    jmid_pcmtoaac = env->GetMethodID(clz, "encodePcmToAAC", "([BI)V");
-    jmid_supportvideo = env->GetMethodID(clz, "onCallIsSupportMediaCodec", "(Ljava/lang/String;)Z");
-    jmid_initmediacodec = env->GetMethodID(clz, "onCallinitMediaCodec", "(Ljava/lang/String;II[B)V");
-    jmid_renderyuv = env->GetMethodID(clz, "onCallRenderYUV", "(II[B[B[B)V");
-    jmid_decodeVPacket = env->GetMethodID(clz, "onCallDecodeVPacket", "(I[B)V");
+    m_jmid_prepared_ = env->GetMethodID(clz, "onCallPrepared", "()V");
+    m_jmid_load_ = env->GetMethodID(clz, "onCallLoad", "(Z)V");
+    m_jmid_timeinfo_ = env->GetMethodID(clz, "onCallTimeInfo", "(II)V");
+    m_jmid_complete_ = env->GetMethodID(clz, "onCallComplete", "()V");
+    m_jmid_error_ = env->GetMethodID(clz, "onCallError", "(ILjava/lang/String;)V");
+    m_jmid_volumedb_ = env->GetMethodID(clz, "onCallVolumeDB", "(I)V");
+    m_jmid_pcminfo_ = env->GetMethodID(clz, "onCallPcmInfo", "([BI)V");
+    m_jmid_pcmrate_ = env->GetMethodID(clz, "onCallPcmRate", "(III)V");
+    m_jmid_pcmtoaac_ = env->GetMethodID(clz, "encodePcmToAAC", "([BI)V");
+    m_jmid_support_video_ = env->GetMethodID(clz, "onCallIsSupportMediaCodec", "(Ljava/lang/String;)Z");
+    m_jmid_init_mediacodec_ = env->GetMethodID(clz, "onCallinitMediaCodec", "(Ljava/lang/String;II[B)V");
+    m_jmid_render_yuv_ = env->GetMethodID(clz, "onCallRenderYUV", "(II[B[B[B)V");
+    m_jmid_decode_vpacket_ = env->GetMethodID(clz, "onCallDecodeVPacket", "(I[B)V");
 }
 
 CallJava::~CallJava() {
-    if (bHasAllocate) {
-        if (pData[0] != NULL) {
-            free(pData[0]);
-            pData[0] = NULL;
+    if (m_has_allocate_) {
+        if (m_data_[0] != NULL) {
+            free(m_data_[0]);
+            m_data_[0] = NULL;
         }
-        if (pData[1] != NULL) {
-            free(pData[1]);
-            pData[1] = NULL;
+        if (m_data_[1] != NULL) {
+            free(m_data_[1]);
+            m_data_[1] = NULL;
         }
-        if (pData[2] != NULL) {
-            free(pData[2]);
-            pData[2] = NULL;
+        if (m_data_[2] != NULL) {
+            free(m_data_[2]);
+            m_data_[2] = NULL;
         }
-        bHasAllocate = false;
+        m_has_allocate_ = false;
     }
 }
 
 void CallJava::OnCallPrepared(int type) {
     if (type == MAIN_THREAD) {
-        jniEnv->CallVoidMethod(jobj, jmid_prepared);
+        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_prepared_);
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
-        if (javaVm->AttachCurrentThread(&env, 0) != JNI_OK) {
+        if (m_java_vm_->AttachCurrentThread(&env, 0) != JNI_OK) {
             if (LOG_DEBUG) {
                 LOGE("get child thread jnienv wrong");
                 return;
             }
         }
-        env->CallVoidMethod(jobj, jmid_prepared);
-        javaVm->DetachCurrentThread();
+        env->CallVoidMethod(m_jobj_, m_jmid_prepared_);
+        m_java_vm_->DetachCurrentThread();
     }
 }
 
 void CallJava::OnCallLoad(int type, bool load) {
     if (type == MAIN_THREAD) {
-        jniEnv->CallVoidMethod(jobj, jmid_load, load);
+        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_load_, load);
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
-        if (javaVm->AttachCurrentThread(&env, 0) != JNI_OK) {
+        if (m_java_vm_->AttachCurrentThread(&env, 0) != JNI_OK) {
             if (LOG_DEBUG) {
                 LOGE("get child thread jnienv wrong");
                 return;
             }
         }
-        env->CallVoidMethod(jobj, jmid_load, load);
-        javaVm->DetachCurrentThread();
+        env->CallVoidMethod(m_jobj_, m_jmid_load_, load);
+        m_java_vm_->DetachCurrentThread();
     }
 }
 
 void CallJava::OnCallTimeInfo(int type, int curr, int total) {
     if (type == MAIN_THREAD) {
-        jniEnv->CallVoidMethod(jobj, jmid_timeinfo, curr, total);
+        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_timeinfo_, curr, total);
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
-        if (javaVm->AttachCurrentThread(&env, 0) != JNI_OK) {
+        if (m_java_vm_->AttachCurrentThread(&env, 0) != JNI_OK) {
             if (LOG_DEBUG) {
                 LOGE("get child thread jnienv wrong");
                 return;
             }
         }
-        env->CallVoidMethod(jobj, jmid_timeinfo, curr, total);
-        javaVm->DetachCurrentThread();
+        env->CallVoidMethod(m_jobj_, m_jmid_timeinfo_, curr, total);
+        m_java_vm_->DetachCurrentThread();
     }
 }
 
 void CallJava::OnCallComplete(int type) {
     if (type == MAIN_THREAD) {
-        jniEnv->CallVoidMethod(jobj, jmid_complete);
+        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_complete_);
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
-        if (javaVm->AttachCurrentThread(&env, 0) != JNI_OK) {
+        if (m_java_vm_->AttachCurrentThread(&env, 0) != JNI_OK) {
             if (LOG_DEBUG) {
                 LOGE("get child thread jnienv wrong");
                 return;
             }
         }
-        env->CallVoidMethod(jobj, jmid_complete);
-        javaVm->DetachCurrentThread();
+        env->CallVoidMethod(m_jobj_, m_jmid_complete_);
+        m_java_vm_->DetachCurrentThread();
     }
 }
 
 void CallJava::OnCallError(int type, int code, char *msg) {
     if (type == MAIN_THREAD) {
-        jstring jmsg = jniEnv->NewStringUTF(msg);
-        jniEnv->CallVoidMethod(jobj, jmid_error, code, jmsg);
-        jniEnv->DeleteLocalRef(jmsg);
+        jstring jmsg = m_jni_env_->NewStringUTF(msg);
+        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_error_, code, jmsg);
+        m_jni_env_->DeleteLocalRef(jmsg);
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
-        if (javaVm->AttachCurrentThread(&env, 0) != JNI_OK) {
+        if (m_java_vm_->AttachCurrentThread(&env, 0) != JNI_OK) {
             if (LOG_DEBUG) {
                 LOGE("get child thread jnienv wrong");
                 return;
             }
         }
         jstring jmsg = env->NewStringUTF(msg);
-        env->CallVoidMethod(jobj, jmid_error, code, jmsg);
+        env->CallVoidMethod(m_jobj_, m_jmid_error_, code, jmsg);
         env->DeleteLocalRef(jmsg);
-        javaVm->DetachCurrentThread();
+        m_java_vm_->DetachCurrentThread();
     }
 }
 
 void CallJava::OnCallVolumeDB(int type, int db) {
     if (type == MAIN_THREAD) {
-        jniEnv->CallVoidMethod(jobj, jmid_volumeDB, db);
+        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_volumedb_, db);
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
-        if (javaVm->AttachCurrentThread(&env, 0) != JNI_OK) {
+        if (m_java_vm_->AttachCurrentThread(&env, 0) != JNI_OK) {
             if (LOG_DEBUG) {
                 LOGE("get child thread jnienv wrong");
                 return;
             }
         }
-        env->CallVoidMethod(jobj, jmid_volumeDB, db);
-        javaVm->DetachCurrentThread();
+        env->CallVoidMethod(m_jobj_, m_jmid_volumedb_, db);
+        m_java_vm_->DetachCurrentThread();
     }
 }
 
 void CallJava::OnCallPcmInfo(int type, void *buffer, int size) {
     if (type == MAIN_THREAD) {
-        jbyteArray jbuffer = jniEnv->NewByteArray(size);
-        jniEnv->SetByteArrayRegion(jbuffer, 0, size, static_cast<const jbyte *>(buffer));
-        jniEnv->CallVoidMethod(jobj, jmid_pcminfo, jbuffer, size);
-        jniEnv->DeleteLocalRef(jbuffer);
+        jbyteArray jbyte_array = m_jni_env_->NewByteArray(size);
+        m_jni_env_->SetByteArrayRegion(jbyte_array, 0, size, static_cast<const jbyte *>(buffer));
+        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_pcminfo_, jbyte_array, size);
+        m_jni_env_->DeleteLocalRef(jbyte_array);
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
-        if (javaVm->AttachCurrentThread(&env, 0) != JNI_OK) {
+        if (m_java_vm_->AttachCurrentThread(&env, 0) != JNI_OK) {
             if (LOG_DEBUG) {
                 LOGE("get child thread jnienv wrong");
                 return;
             }
         }
 
-        jbyteArray jbuffer = env->NewByteArray(size);
-        env->SetByteArrayRegion(jbuffer, 0, size, static_cast<const jbyte *>(buffer));
-        env->CallVoidMethod(jobj, jmid_pcminfo, jbuffer, size);
-        env->DeleteLocalRef(jbuffer);
-        javaVm->DetachCurrentThread();
+        jbyteArray jbyte_array = env->NewByteArray(size);
+        env->SetByteArrayRegion(jbyte_array, 0, size, static_cast<const jbyte *>(buffer));
+        env->CallVoidMethod(m_jobj_, m_jmid_pcminfo_, jbyte_array, size);
+        env->DeleteLocalRef(jbyte_array);
+        m_java_vm_->DetachCurrentThread();
     }
 }
 
 void CallJava::OnCallPcmRate(int type, int samplerate, int bit, int channels) {
     if (type == MAIN_THREAD) {
-        jniEnv->CallVoidMethod(jobj, jmid_pcmrate, samplerate, bit, channels);
+        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_pcmrate_, samplerate, bit, channels);
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
-        if (javaVm->AttachCurrentThread(&env, 0) != JNI_OK) {
+        if (m_java_vm_->AttachCurrentThread(&env, 0) != JNI_OK) {
             if (LOG_DEBUG) {
                 LOGE("get child thread jnienv wrong");
                 return;
             }
         }
-        env->CallVoidMethod(jobj, jmid_pcmrate, samplerate, bit, channels);
-        javaVm->DetachCurrentThread();
+        env->CallVoidMethod(m_jobj_, m_jmid_pcmrate_, samplerate, bit, channels);
+        m_java_vm_->DetachCurrentThread();
     }
 }
 
 void CallJava::OnCallPcmToAAC(int type, void *buffer, int size) {
     if (type == MAIN_THREAD) {
-        jbyteArray jbuffer = jniEnv->NewByteArray(size);
-        jniEnv->SetByteArrayRegion(jbuffer, 0, size, static_cast<const jbyte *>(buffer));
+        jbyteArray jbuffer = m_jni_env_->NewByteArray(size);
+        m_jni_env_->SetByteArrayRegion(jbuffer, 0, size, static_cast<const jbyte *>(buffer));
 
-        jniEnv->CallVoidMethod(jobj, jmid_pcmtoaac, jbuffer, size);
-        jniEnv->DeleteLocalRef(jbuffer);
+        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_pcmtoaac_, jbuffer, size);
+        m_jni_env_->DeleteLocalRef(jbuffer);
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
-        if (javaVm->AttachCurrentThread(&env, 0) != JNI_OK) {
+        if (m_java_vm_->AttachCurrentThread(&env, 0) != JNI_OK) {
             if (LOG_DEBUG) {
                 LOGE("get child thread jnienv wrong");
                 return;
@@ -203,48 +203,48 @@ void CallJava::OnCallPcmToAAC(int type, void *buffer, int size) {
 
         jbyteArray jbuffer = env->NewByteArray(size);
         env->SetByteArrayRegion(jbuffer, 0, size, static_cast<const jbyte *>(buffer));
-        env->CallVoidMethod(jobj, jmid_pcmtoaac, jbuffer, size);
+        env->CallVoidMethod(m_jobj_, m_jmid_pcmtoaac_, jbuffer, size);
         env->DeleteLocalRef(jbuffer);
-        javaVm->DetachCurrentThread();
+        m_java_vm_->DetachCurrentThread();
     }
 }
 
 bool CallJava::OnCallIsSupportVideo(int type, const char *ffcodecname) {
-    bool support = false;
+    bool is_support = false;
     if (type == MAIN_THREAD) {
-        jstring type = jniEnv->NewStringUTF(ffcodecname);
-        support = jniEnv->CallBooleanMethod(jobj, jmid_supportvideo, type);
-        jniEnv->DeleteLocalRef(type);
-        return support;
+        jstring type = m_jni_env_->NewStringUTF(ffcodecname);
+        is_support = m_jni_env_->CallBooleanMethod(m_jobj_, m_jmid_support_video_, type);
+        m_jni_env_->DeleteLocalRef(type);
+        return is_support;
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
-        if (javaVm->AttachCurrentThread(&env, 0) != JNI_OK) {
+        if (m_java_vm_->AttachCurrentThread(&env, 0) != JNI_OK) {
             if (LOG_DEBUG) {
                 LOGE("get child thread jnienv wrong");
-                return support;
+                return is_support;
             }
         }
 
         jstring type = env->NewStringUTF(ffcodecname);
-        support = env->CallBooleanMethod(jobj, jmid_supportvideo, type);
+        is_support = env->CallBooleanMethod(m_jobj_, m_jmid_support_video_, type);
         env->DeleteLocalRef(type);
-        javaVm->DetachCurrentThread();
-        return support;
+        m_java_vm_->DetachCurrentThread();
+        return is_support;
     }
 }
 
 void CallJava::OnCallinitMediaCodec(int type, const char *mime, int width, int height, int csd_size, uint8_t *csd) {
     if (type == MAIN_THREAD) {
-        jstring typejstr = jniEnv->NewStringUTF(mime);
-        jbyteArray csdArray = jniEnv->NewByteArray(csd_size);
-        jniEnv->SetByteArrayRegion(csdArray, 0, csd_size, reinterpret_cast<const jbyte *>(csd));
+        jstring typejstr = m_jni_env_->NewStringUTF(mime);
+        jbyteArray csdArray = m_jni_env_->NewByteArray(csd_size);
+        m_jni_env_->SetByteArrayRegion(csdArray, 0, csd_size, reinterpret_cast<const jbyte *>(csd));
 
-        jniEnv->CallVoidMethod(jobj, jmid_initmediacodec, typejstr, width, height, csdArray);
-        jniEnv->DeleteLocalRef(csdArray);
-        jniEnv->DeleteLocalRef(typejstr);
+        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_init_mediacodec_, typejstr, width, height, csdArray);
+        m_jni_env_->DeleteLocalRef(csdArray);
+        m_jni_env_->DeleteLocalRef(typejstr);
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
-        if (javaVm->AttachCurrentThread(&env, 0) != JNI_OK) {
+        if (m_java_vm_->AttachCurrentThread(&env, 0) != JNI_OK) {
             if (LOG_DEBUG) {
                 LOGE("get child thread jnienv wrong");
                 return;
@@ -254,10 +254,10 @@ void CallJava::OnCallinitMediaCodec(int type, const char *mime, int width, int h
         jstring typejstr = env->NewStringUTF(mime);
         jbyteArray csdArray = env->NewByteArray(csd_size);
         env->SetByteArrayRegion(csdArray, 0, csd_size, reinterpret_cast<const jbyte *>(csd));
-        env->CallVoidMethod(jobj, jmid_initmediacodec, typejstr, width, height, csdArray);
+        env->CallVoidMethod(m_jobj_, m_jmid_init_mediacodec_, typejstr, width, height, csdArray);
         env->DeleteLocalRef(csdArray);
         env->DeleteLocalRef(typejstr);
-        javaVm->DetachCurrentThread();
+        m_java_vm_->DetachCurrentThread();
     }
 }
 
@@ -269,38 +269,38 @@ void CallJava::OnCallRenderYUV(int type, int width, int linesize, int height, ui
     if (width != linesize) {//对于linesize多余的部分需要进行裁剪
         int ysize = width * height;
         int uvsize = ysize / 4;
-        if (!bHasAllocate) {
-            pData[0] = static_cast<uint8_t *>(malloc(ysize * sizeof(uint8_t)));
-            pData[1] = static_cast<uint8_t *>(malloc(uvsize * sizeof(uint8_t)));
-            pData[2] = static_cast<uint8_t *>(malloc(uvsize * sizeof(uint8_t)));
-            bHasAllocate = true;
+        if (!m_has_allocate_) {
+            m_data_[0] = static_cast<uint8_t *>(malloc(ysize * sizeof(uint8_t)));
+            m_data_[1] = static_cast<uint8_t *>(malloc(uvsize * sizeof(uint8_t)));
+            m_data_[2] = static_cast<uint8_t *>(malloc(uvsize * sizeof(uint8_t)));
+            m_has_allocate_ = true;
         }
 
-        CutAndCopyYuv(pData, fy, fu, fv, linesize, width, height);
+        _CutAndCopyYuv(m_data_, fy, fu, fv, linesize, width, height);
 
-        pFY = pData[0];
-        pFU = pData[1];
-        pFV = pData[2];
+        pFY = m_data_[0];
+        pFU = m_data_[1];
+        pFV = m_data_[2];
     }
 
     if (type == MAIN_THREAD) {
-        jbyteArray y = jniEnv->NewByteArray(width * height);
-        jniEnv->SetByteArrayRegion(y, 0, width * height, reinterpret_cast<const jbyte *>(pFY));
+        jbyteArray y = m_jni_env_->NewByteArray(width * height);
+        m_jni_env_->SetByteArrayRegion(y, 0, width * height, reinterpret_cast<const jbyte *>(pFY));
 
-        jbyteArray u = jniEnv->NewByteArray(width * height / 4);
-        jniEnv->SetByteArrayRegion(u, 0, width * height / 4, reinterpret_cast<const jbyte *>(pFU));
+        jbyteArray u = m_jni_env_->NewByteArray(width * height / 4);
+        m_jni_env_->SetByteArrayRegion(u, 0, width * height / 4, reinterpret_cast<const jbyte *>(pFU));
 
-        jbyteArray v = jniEnv->NewByteArray(width * height / 4);
-        jniEnv->SetByteArrayRegion(v, 0, width * height / 4, reinterpret_cast<const jbyte *>(pFV));
+        jbyteArray v = m_jni_env_->NewByteArray(width * height / 4);
+        m_jni_env_->SetByteArrayRegion(v, 0, width * height / 4, reinterpret_cast<const jbyte *>(pFV));
 
-        jniEnv->CallVoidMethod(jobj, jmid_renderyuv, width, height, y, u, v);
+        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_render_yuv_, width, height, y, u, v);
 
-        jniEnv->DeleteLocalRef(y);
-        jniEnv->DeleteLocalRef(u);
-        jniEnv->DeleteLocalRef(v);
+        m_jni_env_->DeleteLocalRef(y);
+        m_jni_env_->DeleteLocalRef(u);
+        m_jni_env_->DeleteLocalRef(v);
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
-        if (javaVm->AttachCurrentThread(&env, 0) != JNI_OK) {
+        if (m_java_vm_->AttachCurrentThread(&env, 0) != JNI_OK) {
             if (LOG_DEBUG) {
                 LOGE("get child thread jnienv wrong");
                 return;
@@ -316,24 +316,24 @@ void CallJava::OnCallRenderYUV(int type, int width, int linesize, int height, ui
         jbyteArray v = env->NewByteArray(width * height / 4);
         env->SetByteArrayRegion(v, 0, width * height / 4, reinterpret_cast<const jbyte *>(pFV));
 
-        env->CallVoidMethod(jobj, jmid_renderyuv, width, height, y, u, v);
+        env->CallVoidMethod(m_jobj_, m_jmid_render_yuv_, width, height, y, u, v);
 
         env->DeleteLocalRef(y);
         env->DeleteLocalRef(u);
         env->DeleteLocalRef(v);
-        javaVm->DetachCurrentThread();
+        m_java_vm_->DetachCurrentThread();
     }
 }
 
 void CallJava::OnCallDecodeVPacket(int type, int datasize, uint8_t *packetdata) {
     if (type == MAIN_THREAD) {
-        jbyteArray data = jniEnv->NewByteArray(datasize);
-        jniEnv->SetByteArrayRegion(data, 0, datasize, reinterpret_cast<const jbyte *>(packetdata));
-        jniEnv->CallVoidMethod(jobj, jmid_decodeVPacket, datasize, data);
-        jniEnv->DeleteLocalRef(data);
+        jbyteArray data = m_jni_env_->NewByteArray(datasize);
+        m_jni_env_->SetByteArrayRegion(data, 0, datasize, reinterpret_cast<const jbyte *>(packetdata));
+        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_decode_vpacket_, datasize, data);
+        m_jni_env_->DeleteLocalRef(data);
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
-        if (javaVm->AttachCurrentThread(&env, 0) != JNI_OK) {
+        if (m_java_vm_->AttachCurrentThread(&env, 0) != JNI_OK) {
             if (LOG_DEBUG) {
                 LOGE("get child thread jnienv wrong");
                 return;
@@ -342,16 +342,16 @@ void CallJava::OnCallDecodeVPacket(int type, int datasize, uint8_t *packetdata) 
 
         jbyteArray data = env->NewByteArray(datasize);
         env->SetByteArrayRegion(data, 0, datasize, reinterpret_cast<const jbyte *>(packetdata));
-        env->CallVoidMethod(jobj, jmid_decodeVPacket, datasize, data);
+        env->CallVoidMethod(m_jobj_, m_jmid_decode_vpacket_, datasize, data);
         env->DeleteLocalRef(data);
-        javaVm->DetachCurrentThread();
+        m_java_vm_->DetachCurrentThread();
     }
 }
 
-void CallJava::CutAndCopyYuv(uint8_t* pData[], uint8_t *srcfy, uint8_t *srcfu, uint8_t *srcfv, int linesize, int width, int height) {
-    unsigned char *pDestY = pData[0];
-    unsigned char *pDestU = pData[1];
-    unsigned char *pDestV = pData[2];
+void CallJava::_CutAndCopyYuv(uint8_t* data[], uint8_t *srcfy, uint8_t *srcfu, uint8_t *srcfv, int linesize, int width, int height) {
+    unsigned char *pDestY = data[0];
+    unsigned char *pDestU = data[1];
+    unsigned char *pDestV = data[2];
     unsigned char *pDataY = srcfy;
     if ((pDestY != NULL) && (pDestU != NULL) && (pDestV != NULL)) {
         for (int i = 0; i < height; i++) {

@@ -8,9 +8,9 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-/*
-* opengl Shader操作类
-* */
+/**
+ * Opengl Shader操作类
+ */
 public class WLShaderUtil {
     public static String readRawTxt(Context context, int rawId) {
         InputStream inputStream = context.getResources().openRawResource(rawId);

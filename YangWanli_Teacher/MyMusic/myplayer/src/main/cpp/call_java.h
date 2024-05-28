@@ -43,29 +43,29 @@ public:
     void OnCallDecodeVPacket(int type, int datasize, uint8_t *data);
 
 private:
-    void CutAndCopyYuv(uint8_t *tempP[], uint8_t *srcfy, uint8_t *srcfu, uint8_t *srcfv, int linesize, int width, int height);
+    void _CutAndCopyYuv(uint8_t* data[], uint8_t *srcfy, uint8_t *srcfu, uint8_t *srcfv, int linesize, int width, int height);
 
 private:
-    JavaVM *javaVm = NULL;
-    JNIEnv *jniEnv = NULL;
-    jobject jobj = NULL;
+    JavaVM *m_java_vm_ = NULL;
+    JNIEnv *m_jni_env_ = NULL;
+    jobject m_jobj_ = NULL;
 
-    jmethodID jmid_prepared;
-    jmethodID jmid_load;
-    jmethodID jmid_timeinfo;
-    jmethodID jmid_complete;
-    jmethodID jmid_error;
-    jmethodID jmid_volumeDB;
-    jmethodID jmid_pcminfo;
-    jmethodID jmid_pcmrate;
-    jmethodID jmid_pcmtoaac;
-    jmethodID jmid_supportvideo;
-    jmethodID jmid_initmediacodec;
-    jmethodID jmid_renderyuv;
-    jmethodID jmid_decodeVPacket;
+    jmethodID m_jmid_prepared_;
+    jmethodID m_jmid_load_;
+    jmethodID m_jmid_timeinfo_;
+    jmethodID m_jmid_complete_;
+    jmethodID m_jmid_error_;
+    jmethodID m_jmid_volumedb_;
+    jmethodID m_jmid_pcminfo_;
+    jmethodID m_jmid_pcmrate_;
+    jmethodID m_jmid_pcmtoaac_;
+    jmethodID m_jmid_support_video_;
+    jmethodID m_jmid_init_mediacodec_;
+    jmethodID m_jmid_render_yuv_;
+    jmethodID m_jmid_decode_vpacket_;
 
-    uint8_t *pData[3] = {NULL};
-    bool bHasAllocate = false;
+    uint8_t *m_data_[3] = {NULL};
+    bool m_has_allocate_ = false;
 };
 
 #endif //MYPLAYER_CALLJAVA_H_

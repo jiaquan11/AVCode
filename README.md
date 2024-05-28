@@ -10,6 +10,7 @@ JNI多线程的创建和使用
 
 3、MyMusic项目
 FFmpeg打造Android万能音频播放器视频教程，移植FFmpeg到Android平台，利用FFmpeg解码音频数据并用OpenSL ES来播放，打造Android万能播放器。
+FFmpeg+OpenGL ES+OpenSL ES打造Android视频播放器教程，该课程基于C++语言，用FFmpeg、OpenGL ES、OpenSL ES和MediaCodec打造Android视频播放器
 
 4、NativeOpenGLDemo项目(Android C++ OpenGL 教程)
 掌握Android中OpenGL的原理,学会Android中NDK开发流程,能用OpenGL渲染视频画面,学会OpenGL 中矩阵操作、投影等
@@ -22,19 +23,17 @@ FFmpeg打造Android万能音频播放器视频教程，移植FFmpeg到Android平
 6、OpenglESEGL项目
 学会自己搭建OpenGL ES的EGL环境和渲染线程控制，各种渲染功能实现（FBO、VBO），多个surface渲染同一个纹理，单个surface渲染多个纹理
 
-7、MyMusic项目(在此项目中增加了视频播放的功能)
-FFmpeg+OpenGL ES+OpenSL ES打造Android视频播放器教程，该课程基于C++语言，用FFmpeg、OpenGL ES、OpenSL ES和MediaCodec打造Android视频播放器
-
-8、AudioRecord项目
+7、AudioRecord项目
 在Java层调用Android系统接口实现音频录音的测试代码
 
-9、OpenSLESRecord项目
+8、OpenSLESRecord项目
 在c++层调用OpenSLES的库接口实现音频录音的测试代码
 
-10、LivePusher项目
+9、LivePusher项目
 摄像头画面方向纠正，摄像头画面编码为MP4视频
 摄像头画面和其他音乐合成新的视频，摄像头数据和麦克风音频数据推流到直播服务器实现直播功能
 ---------------------------------------------------------------------------------
+
 夏曹俊老师课程相关项目
 1、testFFmpeg项目
 这个是在Android上集成3.4版本ffmpeg的so进行开发测试的Cmake编译的工程项目，调用ffmpeg的基本接口进行打开

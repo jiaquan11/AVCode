@@ -81,7 +81,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     private int avPosition_mediacodec = -1;
     private int afPosition_mediacodec = -1;
     private int samplerOES_mediacodec = -1;
-    private int textureId_mediacodec = -1;
+    private int m_TextureOESId_ = -1;
     private SurfaceTexture surfaceTexture = null;
     private Surface surface = null;
 
@@ -136,11 +136,10 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         MyLog.i("WLRender onSurfaceCreated in");
-        //不管哪种渲染方式，都先做好初始化
-        //初始化渲染YUV
+        //初始化YUV格式绘制
         initRenderYUV();
 
-        //初始化硬解渲染画面
+        //初始化硬解Surface图像绘制
         initRenderMediaCodec();
         MyLog.i("WLRender onSurfaceCreated end");
     }
@@ -152,9 +151,6 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         mScreenHeight = height;
     }
 
-    /*
-     * GLSurfaceView自己内部封装了渲染操作，当在onDrawFrame中 opengl绘制完成之后，就自动渲染画面出来了
-     * */
     @Override
     public void onDrawFrame(GL10 gl) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -280,17 +276,18 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         afPosition_mediacodec = GLES20.glGetAttribLocation(program_mediacodec, "af_Position");
         samplerOES_mediacodec = GLES20.glGetUniformLocation(program_mediacodec, "sTexture");
 
+        //创建一个OES纹理
         int[] textrueids = new int[1];
         GLES20.glGenTextures(1, textrueids, 0);
-        textureId_mediacodec = textrueids[0];
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId_mediacodec);
+        m_TextureOESId_ = textrueids[0];
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, m_TextureOESId_);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_REPEAT);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_REPEAT);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
 
-        surfaceTexture = new SurfaceTexture(textureId_mediacodec);
+        surfaceTexture = new SurfaceTexture(m_TextureOESId_);
         surface = new Surface(surfaceTexture);
         surfaceTexture.setOnFrameAvailableListener(this);
 
@@ -302,8 +299,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
 
     private void renderMediaCodec() {
         MyLog.i("renderMediaCodec in");
-        //先更新surfaceTexture缓存数据，然后下面进行opengl绘制，最后由GLSurfaceView内部的EGL环境(swapBuffe方法)进行交换输出显示出来
-        surfaceTexture.updateTexImage();
+        surfaceTexture.updateTexImage();//将缓存数据刷到前台更新
 
         GLES20.glUseProgram(program_mediacodec);
 
@@ -316,10 +312,9 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         GLES20.glVertexAttribPointer(afPosition_mediacodec, 2, GLES20.GL_FLOAT, false, 8, textureBuffer);
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId_mediacodec);
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, m_TextureOESId_);
 
         GLES20.glUniform1i(samplerOES_mediacodec, 0);
-//        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
         MyLog.i("renderMediaCodec out");
     }
 
