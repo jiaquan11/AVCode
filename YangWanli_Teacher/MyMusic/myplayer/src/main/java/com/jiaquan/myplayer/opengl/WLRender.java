@@ -81,7 +81,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     private int avPosition_mediacodec = -1;
     private int afPosition_mediacodec = -1;
     private int samplerOES_mediacodec = -1;
-    private int m_TextureOESId_ = -1;
+    private int mTextureOESId_ = -1;
     private SurfaceTexture surfaceTexture = null;
     private Surface surface = null;
 
@@ -277,15 +277,15 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         //创建一个OES纹理
         int[] textrueids = new int[1];
         GLES20.glGenTextures(1, textrueids, 0);
-        m_TextureOESId_ = textrueids[0];
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, m_TextureOESId_);
+        mTextureOESId_ = textrueids[0];
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mTextureOESId_);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_REPEAT);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_REPEAT);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
 
-        surfaceTexture = new SurfaceTexture(m_TextureOESId_);
+        surfaceTexture = new SurfaceTexture(mTextureOESId_);
         surface = new Surface(surfaceTexture);
         surfaceTexture.setOnFrameAvailableListener(this);
 
@@ -319,7 +319,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         GLES20.glVertexAttribPointer(afPosition_mediacodec, 2, GLES20.GL_FLOAT, false, 8, textureBuffer);
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, m_TextureOESId_);
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mTextureOESId_);
 
         GLES20.glUniform1i(samplerOES_mediacodec, 0);
         MyLog.i("renderMediaCodec out");

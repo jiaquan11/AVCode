@@ -58,7 +58,7 @@ public class WLPlayer {
     private Surface mSurface_ = null;
     private MediaFormat mVDecMediaFormat_ = null;
     private MediaCodec mVDecMediaCodec_ = null;
-    private MediaCodec.BufferInfo mInfo_ = null;
+    private MediaCodec.BufferInfo mVBufferInfo_ = null;
     public long mTotalTime_ = 0;//记录硬解耗时
     public int mFrameCount_ = 0;//记录硬解播放的总帧数
     private long mStartMs_ = 0;//记录每次硬解解码前的系统时间
@@ -169,6 +169,8 @@ public class WLPlayer {
             return;
         }
 
+        stop();//先停止播放
+
         //开启一个线程，用于底层解析音视频文件
         new Thread(new Runnable() {
             @Override
@@ -220,20 +222,28 @@ public class WLPlayer {
      * 停止播放
      */
     public void stop() {
+        if ((mTotalTime_ > 0) && (mFrameCount_ > 0)) {
+            MyLog.i("All the Frames: " + mFrameCount_ + " Average decode time per frame: " + (mTotalTime_ / mFrameCount_) + "ms");
+        }
         mTimeInfoBean_ = null;
         mDuration_ = -1;
-
+        mTotalTime_ = 0;//记录硬解耗时
+        mFrameCount_ = 0;//记录硬解播放的总帧数
+        mStartMs_ = 0;//记录每次硬解解码前的系统时间
         /**
          * 开启一个线程，停止播放，释放底层ffmpeg的资源及释放硬解解码器的相关资源
          */
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                stopAudioRecord();
-                _nativeStop();
-                _releaseVMediaCodec();
-            }
-        }).start();
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                stopAudioRecord();
+//                _nativeStop();
+//                _releaseVMediaCodec();
+//            }
+//        }).start();
+        stopAudioRecord();
+        _nativeStop();
+        _releaseVMediaCodec();
     }
 
     /**
@@ -335,11 +345,9 @@ public class WLPlayer {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
             mVDecMediaCodec_ = null;
             mVDecMediaFormat_ = null;
-            mInfo_ = null;
-            MyLog.i("All the Frames: " + mFrameCount_ + " Average decode time per frame: " + (mTotalTime_ / mFrameCount_) + "ms");
+            mVBufferInfo_ = null;
         }
     }
 
@@ -372,7 +380,6 @@ public class WLPlayer {
     @CalledByNative
     private void onCallComplete() {
         stop();
-
         if (onCompleteListener != null) {
             onCompleteListener.onComplete();
         }
@@ -381,7 +388,6 @@ public class WLPlayer {
     @CalledByNative
     private void onCallError(int code, String msg) {
         stop();
-
         if (onErrorListener != null) {
             onErrorListener.onError(code, msg);
         }
@@ -463,7 +469,7 @@ public class WLPlayer {
                 MyLog.i(mVDecMediaFormat_.toString());
                 mVDecMediaCodec_ = MediaCodec.createDecoderByType(mime);
 
-                mInfo_ = new MediaCodec.BufferInfo();
+                mVBufferInfo_ = new MediaCodec.BufferInfo();
                 mVDecMediaCodec_.configure(mVDecMediaFormat_, mSurface_, null, 0);
                 mVDecMediaCodec_.start();
             } catch (Exception e) {
@@ -505,14 +511,14 @@ public class WLPlayer {
                     byteBuffer.put(data);
                     mVDecMediaCodec_.queueInputBuffer(inputBufferIndex, 0, datasize, 0, 0);//丢给mediaCodec解码输入队列
                 }
-                int outputBufferIndex = mVDecMediaCodec_.dequeueOutputBuffer(mInfo_, 10);//循环从硬解解码器的输出队列中获取解码数据进行渲染
+                int outputBufferIndex = mVDecMediaCodec_.dequeueOutputBuffer(mVBufferInfo_, 10);//循环从硬解解码器的输出队列中获取解码数据进行渲染
                 while (outputBufferIndex >= 0) {
                     long decodeTime = System.currentTimeMillis() - mStartMs_;
                     mStartMs_ = System.currentTimeMillis();
                     mFrameCount_++;
                     mTotalTime_ += decodeTime;
                     mVDecMediaCodec_.releaseOutputBuffer(outputBufferIndex, true);
-                    outputBufferIndex = mVDecMediaCodec_.dequeueOutputBuffer(mInfo_, 10);
+                    outputBufferIndex = mVDecMediaCodec_.dequeueOutputBuffer(mVBufferInfo_, 10);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -525,7 +531,7 @@ public class WLPlayer {
     private MediaCodec mAEncMediaCodec_ = null;
     private boolean mIsInitAMediaCodec_ = false;
     private FileOutputStream mFileOutputStream_ = null;
-    private MediaCodec.BufferInfo mBufferInfo_ = null;
+    private MediaCodec.BufferInfo mABufferInfo_ = null;
     private int mPerpcmSize_ = 0;
     private byte[] mOutByteBuffer_ = null;
     private int mAACSampleRateType_ = 4;
@@ -585,7 +591,7 @@ public class WLPlayer {
             mAEncMediaFormat_.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);//AAC profile
             mAEncMediaFormat_.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 4096);//输入编码的最大pcm数据大小
             mAEncMediaCodec_ = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC);//创建音频编码器
-            mBufferInfo_ = new MediaCodec.BufferInfo();
+            mABufferInfo_ = new MediaCodec.BufferInfo();
             if (mAEncMediaCodec_ == null) {
                 MyLog.e("create encoder wrong");
                 return;
@@ -681,7 +687,7 @@ public class WLPlayer {
                 mAEncMediaCodec_.release();
                 mAEncMediaCodec_ = null;
                 mAEncMediaFormat_ = null;
-                mBufferInfo_ = null;
+                mABufferInfo_ = null;
                 MyLog.i("录音完成....");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -707,25 +713,25 @@ public class WLPlayer {
                     mAEncMediaCodec_.queueInputBuffer(inputBufferIndex, 0, size, 0, 0);
                 }
 
-                int index = mAEncMediaCodec_.dequeueOutputBuffer(mBufferInfo_, 0);//获取编码器码流输出buffer的索引
+                int index = mAEncMediaCodec_.dequeueOutputBuffer(mABufferInfo_, 0);//获取编码器码流输出buffer的索引
                 while (index >= 0) {
                     try {
-                        mPerpcmSize_ = mBufferInfo_.size + 7;//AAC码流需要添加7字节的头
+                        mPerpcmSize_ = mABufferInfo_.size + 7;//AAC码流需要添加7字节的头
                         mOutByteBuffer_ = new byte[mPerpcmSize_];
 
                         ByteBuffer byteBuffer = mAEncMediaCodec_.getOutputBuffers()[index];//获取到编码器输出的码流buffer
-                        byteBuffer.position(mBufferInfo_.offset);
-                        byteBuffer.limit(mBufferInfo_.offset + mBufferInfo_.size);
+                        byteBuffer.position(mABufferInfo_.offset);
+                        byteBuffer.limit(mABufferInfo_.offset + mABufferInfo_.size);
 
                         _addADTSHeader(mOutByteBuffer_, mPerpcmSize_, mAACSampleRateType_);//mediacodec编码出来的aac码流没有aac头，增加AAC码流头
 
-                        byteBuffer.get(mOutByteBuffer_, 7, mBufferInfo_.size);//将编码码流数据放入AAC码流头后面存放
-                        byteBuffer.position(mBufferInfo_.offset);
+                        byteBuffer.get(mOutByteBuffer_, 7, mABufferInfo_.size);//将编码码流数据放入AAC码流头后面存放
+                        byteBuffer.position(mABufferInfo_.offset);
 
                         mFileOutputStream_.write(mOutByteBuffer_, 0, mPerpcmSize_);//将完整的一帧音频码流数据写入文件
 
                         mAEncMediaCodec_.releaseOutputBuffer(index, false);//取出码流数据后，释放这个buffer,返回给队列中循环使用
-                        index = mAEncMediaCodec_.dequeueOutputBuffer(mBufferInfo_, 0);
+                        index = mAEncMediaCodec_.dequeueOutputBuffer(mABufferInfo_, 0);
                         mOutByteBuffer_ = null;
                     } catch (IOException e) {
                         e.printStackTrace();
