@@ -1,7 +1,7 @@
 #include "wl_play_status.h"
 
 WLPlayStatus::WLPlayStatus() {
-    isExit = false;
+    m_is_exit = false;
 }
 
 WLPlayStatus::~WLPlayStatus() {
