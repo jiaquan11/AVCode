@@ -1,9 +1,9 @@
 #ifndef MYPLAYER_WLPLAYSTATUS_H_
 #define MYPLAYER_WLPLAYSTATUS_H_
 
-/**
- * 播放状态
- */
+/*
+ * 记录播放状态
+ * */
 class WLPlayStatus {
 public:
     WLPlayStatus();
@@ -11,10 +11,10 @@ public:
     ~WLPlayStatus();
 
 public:
-    bool m_is_exit = false;
-    bool m_load = true;
-    bool m_seek = false;
-    bool m_pause = false;
+    bool isExit = false;
+    bool load = true;//默认是加载状态
+    bool seek = false;
+    bool pause = false;
 };
 
 #endif //MYPLAYER_WLPLAYSTATUS_H_

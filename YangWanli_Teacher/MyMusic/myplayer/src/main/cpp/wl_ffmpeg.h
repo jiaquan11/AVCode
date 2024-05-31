@@ -1,15 +1,15 @@
 #ifndef MYPLAYER_WLFFMPEG_H_
 #define MYPLAYER_WLFFMPEG_H_
 
-#include "pthread.h"
-extern "C" {
-    #include <libavformat/avformat.h>
-    #include <libavutil/time.h>
-};
-
 #include "call_java.h"
+#include "pthread.h"
 #include "wl_audio.h"
 #include "wl_video.h"
+
+extern "C" {
+#include <libavformat/avformat.h>
+#include <libavutil/time.h>
+};
 
 class WLFFmpeg {
 public:
@@ -52,24 +52,22 @@ private:
     int _GetCodecContext(AVCodecParameters *codecPar, AVCodecContext** avCodecContext);
 
 public:
-    WLPlayStatus *m_play_status = NULL;
-    int m_duration = 0;
+    WLPlayStatus *playStatus = NULL;
+    CallJava *callJava = NULL;
+    char url[256] = {0};
 
-private:
-    CallJava *m_call_java_ = NULL;
-    char m_url_[256] = {0};
+    pthread_mutex_t init_mutex;
+    pthread_mutex_t seek_mutex;
+    pthread_t demuxThread;
+    pthread_t startThread;
 
-    pthread_mutex_t m_init_mutex_;
-    pthread_mutex_t m_seek_mutex_;
-    pthread_t m_demux_thread_;
-    pthread_t m_start_thread_;
+    AVFormatContext *pFormatCtx = NULL;
+    WLAudio *pWLAudio = NULL;
+    WLVideo* pWLVideo = NULL;
 
-    AVFormatContext *m_avformat_ctx_ = NULL;
-    WLAudio* m_wlaudio_ = NULL;
-    WLVideo* m_wlvideo_ = NULL;
-
-    bool m_is_exit_ = false;
-    bool m_support_mediacodec_ = false;
+    bool isExit = false;
+    int duration = 0;//媒体文件总时长
+    bool supportMediaCodec = false;
 };
 
 #endif //MYPLAYER_WLFFMPEG_H_

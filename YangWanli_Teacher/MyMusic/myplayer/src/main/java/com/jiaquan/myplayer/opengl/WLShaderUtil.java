@@ -12,12 +12,6 @@ import java.io.InputStreamReader;
  * Opengl Shader操作类
  */
 public class WLShaderUtil {
-    /**
-     * 从Raw中读取文本文件
-     * @param context 上下文
-     * @param rawId raw资源id
-     * @return String 文件内容
-     */
     public static String readRawTxt(Context context, int rawId) {
         InputStream inputStream = context.getResources().openRawResource(rawId);
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
@@ -35,12 +29,28 @@ public class WLShaderUtil {
         return sb.toString();
     }
 
+    public static int loadShader(int shaderType, String source) {
+        int shader = GLES20.glCreateShader(shaderType);
+        if (shader != 0) {
+            GLES20.glShaderSource(shader, source);
+            GLES20.glCompileShader(shader);
+            int[] compile = new int[1];
+            GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compile, 0);
+            if (compile[0] != GLES20.GL_TRUE) {
+                Log.e("OpenGLDemo", "shader compile error!");
+                GLES20.glDeleteShader(shader);
+                shader = 0;
+            }
+        }
+        return shader;
+    }
+
     public static int createProgram(String vertexSource, String fragmentSource) {
-        int vertexShader = _loadShader(GLES20.GL_VERTEX_SHADER, vertexSource);
+        int vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, vertexSource);
         if (vertexShader == 0) {
             return 0;
         }
-        int fragmentShader = _loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentSource);
+        int fragmentShader = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentSource);
         if (fragmentShader == 0) {
             return 0;
         }
@@ -59,21 +69,5 @@ public class WLShaderUtil {
             }
         }
         return program;
-    }
-
-    private static int _loadShader(int shaderType, String source) {
-        int shader = GLES20.glCreateShader(shaderType);
-        if (shader != 0) {
-            GLES20.glShaderSource(shader, source);
-            GLES20.glCompileShader(shader);
-            int[] compile = new int[1];
-            GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compile, 0);
-            if (compile[0] != GLES20.GL_TRUE) {
-                Log.e("OpenGLDemo", "shader compile error!");
-                GLES20.glDeleteShader(shader);
-                shader = 0;
-            }
-        }
-        return shader;
     }
 }

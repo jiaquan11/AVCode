@@ -6,10 +6,11 @@
 #include <stdlib.h>
 #include "soundtouch/include/SoundTouch.h"
 
-/**
- * PCM数据Bean
- */
 using namespace soundtouch;
+
+/*
+ * 存放PCM的数据封装类
+ * */
 class WLPcmBean {
 public:
     WLPcmBean(SAMPLETYPE *buffer, int size);
@@ -17,8 +18,8 @@ public:
     ~WLPcmBean();
 
 public:
-    char *m_buffer;
-    int m_buffsize;
+    char *buffer;
+    int buffsize;
 };
 
 #endif //MYPLAYER_WLPCMBEAN_H_

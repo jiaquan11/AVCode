@@ -29,6 +29,7 @@ JNIEXPORT void JNICALL Prepared(JNIEnv *env, jobject thiz, jstring source_jstr) 
         if (g_call_java == NULL) {
             g_call_java = new CallJava(g_java_vm, env, thiz);
         }
+
         g_call_java->OnCallLoad(MAIN_THREAD, true);//加载中
 
         g_play_status = new WLPlayStatus();
@@ -97,7 +98,7 @@ JNIEXPORT void JNICALL Seek(JNIEnv *env, jobject thiz, jint secds) {
 
 JNIEXPORT jint JNICALL Duration(JNIEnv *env, jobject thiz) {
     if (g_wl_ffmpeg != NULL) {
-        return g_wl_ffmpeg->m_duration;
+        return g_wl_ffmpeg->duration;
     }
     return 0;
 }

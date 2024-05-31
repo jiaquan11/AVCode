@@ -3,7 +3,7 @@ varying vec2 v_texPosition;
 uniform sampler2D sampler_y;
 uniform sampler2D sampler_u;
 uniform sampler2D sampler_v;
-void main() {
+void main(){
     float y, u, v;
     y = texture2D(sampler_y, v_texPosition).r;
     u = texture2D(sampler_u, v_texPosition).r - 0.5;

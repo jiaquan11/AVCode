@@ -41,14 +41,14 @@ void pcmBufferCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
                 wlAudio->callJava->OnCallTimeInfo(CHILD_THREAD, wlAudio->clock, wlAudio->duration);//100毫秒上报一次当前的音频播放时间戳
             }
 
-            wlAudio->bufferQueue->PutBuffer(wlAudio->sampleBuffer, bufferSize * 4);//将解码的Pcm数据放入缓冲区，用于另外一个线程获取用于上报
+            wlAudio->bufferQueue->putBuffer(wlAudio->sampleBuffer, bufferSize * 4);//将解码的Pcm数据放入缓冲区，用于另外一个线程获取用于上报
 
             wlAudio->callJava->OnCallVolumeDB(CHILD_THREAD, wlAudio->getPCMDB(reinterpret_cast<char *>(wlAudio->sampleBuffer), bufferSize * 4));//上报音频的分贝值
 
             (*wlAudio->pcmBufferQueue)->Enqueue(wlAudio->pcmBufferQueue, wlAudio->sampleBuffer, bufferSize * 2 * 2);//将pcm数据丢入opensles队列进行播放
             if (wlAudio->isCut) {
                 if (wlAudio->clock > wlAudio->end_time) {
-                    wlAudio->playStatus->m_is_exit = true;
+                    wlAudio->playStatus->isExit = true;
                     LOGI("裁剪退出...");
                 }
             }
@@ -139,25 +139,25 @@ void *decodePlay(void *data) {
 void *pcmCallBack(void *data) {
     WLAudio *wlAudio = (WLAudio *) data;
     wlAudio->bufferQueue = new WLBufferQueue(wlAudio->playStatus);
-    while ((wlAudio->playStatus != NULL) && !wlAudio->playStatus->m_is_exit) {
+    while ((wlAudio->playStatus != NULL) && !wlAudio->playStatus->isExit) {
         WLPcmBean *pcmBean = NULL;
-        wlAudio->bufferQueue->GetBuffer(&pcmBean);
+        wlAudio->bufferQueue->getBuffer(&pcmBean);
         if (pcmBean == NULL) {
             continue;
         }
-        if (pcmBean->m_buffsize <= wlAudio->defaultPcmSize) {//不用分包
+        if (pcmBean->buffsize <= wlAudio->defaultPcmSize) {//不用分包
             if (wlAudio->isRecordPcm) {
-                wlAudio->callJava->OnCallPcmToAAC(CHILD_THREAD, pcmBean->m_buffer, pcmBean->m_buffsize);
+                wlAudio->callJava->OnCallPcmToAAC(CHILD_THREAD, pcmBean->buffer, pcmBean->buffsize);
             }
             if (wlAudio->showPcm) {
-                wlAudio->callJava->OnCallPcmInfo(CHILD_THREAD, pcmBean->m_buffer, pcmBean->m_buffsize);
+                wlAudio->callJava->OnCallPcmInfo(CHILD_THREAD, pcmBean->buffer, pcmBean->buffsize);
             }
         } else {//分包上报
-            int pack_num = pcmBean->m_buffsize / wlAudio->defaultPcmSize;
-            int pack_sub = pcmBean->m_buffsize % wlAudio->defaultPcmSize;//剩余的size
+            int pack_num = pcmBean->buffsize / wlAudio->defaultPcmSize;
+            int pack_sub = pcmBean->buffsize % wlAudio->defaultPcmSize;//剩余的size
             for (int i = 0; i < pack_num; ++i) {
                 char *bf = (char *) malloc(wlAudio->defaultPcmSize);
-                memcpy(bf, pcmBean->m_buffer + i * wlAudio->defaultPcmSize, wlAudio->defaultPcmSize);
+                memcpy(bf, pcmBean->buffer + i * wlAudio->defaultPcmSize, wlAudio->defaultPcmSize);
                 if (wlAudio->isRecordPcm) {
                     wlAudio->callJava->OnCallPcmToAAC(CHILD_THREAD, bf, wlAudio->defaultPcmSize);
                 }
@@ -170,7 +170,7 @@ void *pcmCallBack(void *data) {
 
             if (pack_sub > 0) {
                 char *bf = (char *) malloc(pack_sub);
-                memcpy(bf, pcmBean->m_buffer + pack_num * wlAudio->defaultPcmSize, pack_sub);
+                memcpy(bf, pcmBean->buffer + pack_num * wlAudio->defaultPcmSize, pack_sub);
                 if (wlAudio->isRecordPcm) {
                     wlAudio->callJava->OnCallPcmToAAC(CHILD_THREAD, bf, pack_sub);
                 }
@@ -189,7 +189,7 @@ void *pcmCallBack(void *data) {
 }
 
 void WLAudio::play() {
-    if ((playStatus != NULL) && !playStatus->m_is_exit) {
+    if ((playStatus != NULL) && !playStatus->isExit) {
         pthread_create(&thread_play, NULL, decodePlay, this);//创建音频播放子线程，初始化opensles相关流程，并注册好播放回调
         pthread_create(&pcmCallBackThread, NULL, pcmCallBack, this);//创建pcm数据的回调子线程
     }
@@ -220,14 +220,14 @@ void WLAudio::release() {
     stop();
 
     if (bufferQueue != NULL) {
-        bufferQueue->NoticeThread();
+        bufferQueue->noticeThread();
         pthread_join(pcmCallBackThread, NULL);
         delete bufferQueue;
         bufferQueue = NULL;
     }
 
     if (queue != NULL) {
-        queue->NoticeQueue();
+        queue->noticeQueue();
         pthread_join(thread_play, NULL);
         delete queue;
         queue = NULL;
@@ -372,7 +372,7 @@ void WLAudio::startStopRecord(bool start) {
 }
 
 int WLAudio::getSoundTouchData() {
-    while ((playStatus != NULL) && !playStatus->m_is_exit) {
+    while ((playStatus != NULL) && !playStatus->isExit) {
         out_buffer = NULL;
         if (finished) {
             finished = false;
@@ -410,22 +410,22 @@ int WLAudio::getSoundTouchData() {
 //解码并重采样，得到一个音频包packet的解码pcm数据,一个音频包可能可以解码出来多个Frame
 int WLAudio::resampleAudio(void **pcmbuf) {
     data_size = 0;
-    while ((playStatus != NULL) && !playStatus->m_is_exit) {
-        if (playStatus->m_seek) {//seek状态，不进行下面的解码
+    while ((playStatus != NULL) && !playStatus->isExit) {
+        if (playStatus->seek) {//seek状态，不进行下面的解码
             av_usleep(100 * 1000);//100毫秒
             continue;
         }
 
-        if (queue->GetQueueSize() == 0) {//加载中
-            if (!playStatus->m_load) {
-                playStatus->m_load = true;
+        if (queue->getQueueSize() == 0) {//加载中
+            if (!playStatus->load) {
+                playStatus->load = true;
                 callJava->OnCallLoad(CHILD_THREAD, true);
             }
             av_usleep(100 * 1000);//100毫秒
             continue;
         } else {//缓冲区中有数据，结束加载
-            if (playStatus->m_load) {
-                playStatus->m_load = false;
+            if (playStatus->load) {
+                playStatus->load = false;
                 callJava->OnCallLoad(CHILD_THREAD, false);
             }
         }
@@ -433,7 +433,7 @@ int WLAudio::resampleAudio(void **pcmbuf) {
         //1.音频解码
         if (readFrameFinish) {
             avPacket = av_packet_alloc();
-            if (queue->GetAVPacket(avPacket) != 0) {
+            if (queue->getAVPacket(avPacket) != 0) {
                 av_packet_free(&avPacket);
                 av_free(avPacket);
                 avPacket = NULL;

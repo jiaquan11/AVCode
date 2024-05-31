@@ -1,26 +1,26 @@
 #ifndef MYPLAYER_WLAUDIO_H_
 #define MYPLAYER_WLAUDIO_H_
 
+#include "wl_queue.h"
+#include "wl_play_status.h"
+#include <SLES/OpenSLES_Android.h>
+#include <SLES/OpenSLES.h>
+#include "call_java.h"
+#include "soundtouch/include/SoundTouch.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-#include <SLES/OpenSLES_Android.h>
-#include <SLES/OpenSLES.h>
-#include "soundtouch/include/SoundTouch.h"
-extern "C" {
-    #include <libavcodec/avcodec.h>
-    #include <libswresample/swresample.h>
-    #include <libavutil/time.h>
-}
-
-#include "wl_queue.h"
-#include "wl_play_status.h"
-#include "call_java.h"
 #include "wl_buffer_queue.h"
 #include "wl_pcm_bean.h"
 
 using namespace soundtouch;
+
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libswresample/swresample.h>
+#include <libavutil/time.h>
+};
+
 class WLAudio {
 public:
     WLAudio(WLPlayStatus *playStatus, int sample_rate, CallJava *callJava);
