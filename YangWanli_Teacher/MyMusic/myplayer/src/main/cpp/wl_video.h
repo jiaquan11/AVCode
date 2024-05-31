@@ -1,20 +1,20 @@
 #ifndef MYPLAYER_WLVIDEO_H_
 #define MYPLAYER_WLVIDEO_H_
 
+#include <pthread.h>
+extern "C" {
+#include <libswscale/swscale.h>
+#include "include/libavcodec/avcodec.h"
+#include <libavutil/time.h>
+#include <libavutil/imgutils.h>
+};
+
 #include "wl_queue.h"
 #include "call_java.h"
-#include <pthread.h>
 #include "wl_audio.h"
 
 #define CODEC_YUV 0
 #define CODEC_MEDIACODEC 1
-
-extern "C" {
-    #include <libswscale/swscale.h>
-    #include "include/libavcodec/avcodec.h"
-    #include <libavutil/time.h>
-    #include <libavutil/imgutils.h>
-};
 
 class WLVideo {
 public:
@@ -23,33 +23,33 @@ public:
     ~WLVideo();
 
 public:
-    void play();
+    void Play();
 
-    void release();
+    void Release();
 
-    double getFrameDiffTime(AVFrame *avFrame, AVPacket *avPacket);
+    double GetFrameDiffTime(AVFrame *avFrame, AVPacket *avPacket);
 
-    double getDelayTime(double diff);
+    double GetDelayTime(double diff);
 
 public:
-    int streamIndex = -1;
-    AVCodecContext *avCodecContext = NULL;
-    AVCodecParameters *codecPar = NULL;
-    WLQueue *queue = NULL;
-    WLPlayStatus *playStatus = NULL;
-    CallJava *callJava = NULL;
-    AVRational time_base;
+    int m_streamIndex = -1;
+    AVCodecContext *m_avcodec_context = NULL;
+    AVCodecParameters *m_codec_par = NULL;
+    WLQueue *m_queue = NULL;
+    WLPlayStatus *m_play_status = NULL;
+    CallJava *m_call_java = NULL;
+    AVRational m_time_base;
 
-    pthread_mutex_t codecMutex;
-    pthread_t thread_play;
+    pthread_mutex_t m_codec_mutex;
+    pthread_t m_thread_play;
 
-    WLAudio *audio = NULL;
-    double clock = 0;
-    double delayTime = 0;
-    double defaultDelayTime = 0.04;
+    WLAudio *m_audio = NULL;
+    double m_clock = 0;
+    double m_delay_time = 0;
+    double m_default_delay_time = 0.04;
 
-    int codectype = CODEC_YUV;
-    AVBSFContext *abs_ctx = NULL;
+    int m_codec_type = CODEC_YUV;
+    AVBSFContext *m_abs_ctx = NULL;
 };
 
 #endif //MYPLAYER_WLVIDEO_H_

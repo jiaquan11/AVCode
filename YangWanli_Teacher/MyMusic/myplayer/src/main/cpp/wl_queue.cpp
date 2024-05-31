@@ -1,41 +1,41 @@
 #include "wl_queue.h"
 
-WLQueue::WLQueue(WLPlayStatus *playStatus) {
-    pthread_mutex_init(&mutexPacket, NULL);
-    pthread_cond_init(&condPacket, NULL);
-    this->playStatus = playStatus;
+WLQueue::WLQueue(WLPlayStatus *play_status) {
+    pthread_mutex_init(&m_mutex_packet_, NULL);
+    pthread_cond_init(&m_cond_packet_, NULL);
+    m_play_status_ = play_status;
 }
 
 WLQueue::~WLQueue() {
-    clearAvPacket();
+    ClearAvPacket();
 
-    pthread_mutex_destroy(&mutexPacket);
-    pthread_cond_destroy(&condPacket);
+    pthread_mutex_destroy(&m_mutex_packet_);
+    pthread_cond_destroy(&m_cond_packet_);
 }
 
-int WLQueue::putAVPacket(AVPacket *packet) {
-    pthread_mutex_lock(&mutexPacket);
-    queuePacket.push(packet);
+int WLQueue::PutAVPacket(AVPacket *packet) {
+    pthread_mutex_lock(&m_mutex_packet_);
+    m_queue_packet_.push(packet);
     if (LOG_DEBUG) {
-//        LOGI("put a packet into queue, the count: %d", queuePacket.size());
+//        LOGI("put a packet into queue, the count: %d", m_queue_packet_.size());
     }
 
-    noticeQueue();
-    pthread_mutex_unlock(&mutexPacket);
+    NoticeQueue();
+    pthread_mutex_unlock(&m_mutex_packet_);
     return 0;
 }
 
-int WLQueue::getAVPacket(AVPacket *packet) {
-    pthread_mutex_lock(&mutexPacket);
-    while ((playStatus != NULL) && !playStatus->isExit) {
-        if (queuePacket.size() > 0) {
-            AVPacket *avPacket = queuePacket.front();
+int WLQueue::GetAVPacket(AVPacket *packet) {
+    pthread_mutex_lock(&m_mutex_packet_);
+    while ((m_play_status_ != NULL) && !m_play_status_->m_is_exit) {
+        if (m_queue_packet_.size() > 0) {
+            AVPacket *avPacket = m_queue_packet_.front();
             /*
              * av_packet_ref将原packet的buf引用赋值给目标packet,建立一个新的引用
              * 其它字段全部进行拷贝
              * */
             if (av_packet_ref(packet, avPacket) == 0) {
-                queuePacket.pop();
+                m_queue_packet_.pop();
             }
             /*
              * av_packet_free
@@ -46,40 +46,40 @@ int WLQueue::getAVPacket(AVPacket *packet) {
             av_free(avPacket);
             avPacket = NULL;
             if (LOG_DEBUG) {
-//                LOGI("get a packet from the queue, the rest: %d", queuePacket.size());
+//                LOGI("get a packet from the queue, the rest: %d", m_queue_packet_.size());
             }
             break;
         } else {
-            pthread_cond_wait(&condPacket, &mutexPacket);//阻塞当前线程，其它线程可以继续操作
+            pthread_cond_wait(&m_cond_packet_, &m_mutex_packet_);//阻塞当前线程，其它线程可以继续操作
         }
     }
-    pthread_mutex_unlock(&mutexPacket);
+    pthread_mutex_unlock(&m_mutex_packet_);
     return 0;
 }
 
-int WLQueue::getQueueSize() {
+int WLQueue::GetQueueSize() {
     int size = 0;
-    pthread_mutex_lock(&mutexPacket);
-    size = queuePacket.size();
-    pthread_mutex_unlock(&mutexPacket);
+    pthread_mutex_lock(&m_mutex_packet_);
+    size = m_queue_packet_.size();
+    pthread_mutex_unlock(&m_mutex_packet_);
     return size;
 }
 
 //清除缓冲区队列
-void WLQueue::clearAvPacket() {
-    noticeQueue();
+void WLQueue::ClearAvPacket() {
+    NoticeQueue();
 
-    pthread_mutex_lock(&mutexPacket);
-    while (!queuePacket.empty()) {
-        AVPacket *packet = queuePacket.front();
-        queuePacket.pop();
+    pthread_mutex_lock(&m_mutex_packet_);
+    while (!m_queue_packet_.empty()) {
+        AVPacket *packet = m_queue_packet_.front();
+        m_queue_packet_.pop();
         av_packet_free(&packet);
         av_free(packet);
         packet = NULL;
     }
-    pthread_mutex_unlock(&mutexPacket);
+    pthread_mutex_unlock(&m_mutex_packet_);
 }
 
-void WLQueue::noticeQueue() {
-    pthread_cond_signal(&condPacket);
+void WLQueue::NoticeQueue() {
+    pthread_cond_signal(&m_cond_packet_);
 }
