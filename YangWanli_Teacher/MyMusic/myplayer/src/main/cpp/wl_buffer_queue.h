@@ -1,38 +1,39 @@
 #ifndef MYPLAYER_WLBUFFERQUEUE_H_
 #define MYPLAYER_WLBUFFERQUEUE_H_
 
-#include "log/android_log.h"
+#include <pthread.h>
 #include <deque>
+
+#include "log/android_log.h"
 #include "wl_play_status.h"
 #include "wl_pcm_bean.h"
-#include <pthread.h>
 
 /**
  * 用于存储PCM数据包的缓存队列类
  */
 class WLBufferQueue {
 public:
-    WLBufferQueue(WLPlayStatus *playStatus);
+    WLBufferQueue(WLPlayStatus *play_status);
 
     ~WLBufferQueue();
 
 public:
-    int putBuffer(SAMPLETYPE *buffer, int size);
+    int PutBuffer(SAMPLETYPE *buffer, int size);
 
-    int getBuffer(WLPcmBean **pcmBean);
+    int GetBuffer(WLPcmBean **pcmbean);
 
-    int getBufferSize();
+    int GetBufferSize();
 
-    int noticeThread();
-
-private:
-    int clearBuffer();
+    int NoticeThread();
 
 private:
-    std::deque<WLPcmBean *> queueBuffer;
-    pthread_mutex_t mutexBuffer;
-    pthread_cond_t condBuffer;
-    WLPlayStatus *wlPlayStatus = NULL;
+    int _ClearBuffer();
+
+private:
+    std::deque<WLPcmBean *> m_queue_buffer_;
+    pthread_mutex_t m_mutex_buffer_;
+    pthread_cond_t m_cond_buffer_;
+    WLPlayStatus *m_wlplay_status_ = NULL;
 };
 
 #endif //MYPLAYER_WLBUFFERQUEUE_H_
