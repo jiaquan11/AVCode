@@ -68,14 +68,14 @@ JNIEXPORT void JNICALL Stop(JNIEnv *env, jobject thiz) {
         delete g_wl_ffmpeg;
         g_wl_ffmpeg = NULL;
 
-        if (g_call_java != NULL) {
-            delete g_call_java;
-            g_call_java = NULL;
-        }
-
         if (g_play_status != NULL) {
             delete g_play_status;
             g_play_status = NULL;
+        }
+
+        if (g_call_java != NULL) {
+            delete g_call_java;
+            g_call_java = NULL;
         }
     }
     g_is_exit = false;
@@ -183,7 +183,36 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
         LOGE("RegisterNatives failed!");
         return -1;
     }
-
     DELETE_LOCAL_REF(env, clazz);
     return JNI_VERSION_1_6;
+}
+
+JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
+    LOGI("JNI_OnUnload in");
+    JNIEnv *env;
+    if (vm->GetEnv((void **) (&env), JNI_VERSION_1_6) != JNI_OK) {
+        LOGE("JNI_OnUnload GetEnv failed!");
+        return;
+    }
+    assert(env != NULL);
+
+    if (g_java_vm != NULL) {
+        g_java_vm = NULL;
+    }
+
+    if (g_call_java != NULL) {
+        delete g_call_java;
+        g_call_java = NULL;
+    }
+
+    if (g_wl_ffmpeg != NULL) {
+        delete g_wl_ffmpeg;
+        g_wl_ffmpeg = NULL;
+    }
+
+    if (g_play_status != NULL) {
+        delete g_play_status;
+        g_play_status = NULL;
+    }
+    LOGI("JNI_OnUnload out");
 }

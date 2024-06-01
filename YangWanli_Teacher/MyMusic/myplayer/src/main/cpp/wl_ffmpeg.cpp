@@ -139,17 +139,17 @@ void WLFFmpeg::StartFFmpegThread() {
 
     m_support_mediacodec_ = false;
     m_wlvideo_->m_audio = m_wlaudio_;//将音频播放对象设置到视频播放对象中，用于获取音频参数进行音视频时间戳同步操作
-    const char *codecName = (m_wlvideo_->m_avcodec_context->codec)->name;
-    LOGI("WLFFmpeg start codecName: %s", codecName);
-    if (m_support_mediacodec_ = m_call_java_->OnCallIsSupportVideo(CHILD_THREAD, codecName)) {//回调Java函数，支持硬解，优先使用硬解
+    const char *codec_tag = (m_wlvideo_->m_avcodec_context->codec)->name;
+    LOGI("WLFFmpeg start codecName: %s", codec_tag);
+    if (m_support_mediacodec_ = m_call_java_->OnCallIsSupportVideo(CHILD_THREAD, codec_tag)) {//回调Java函数，支持硬解，优先使用硬解
         LOGI("当前设备支持硬解码当前视频!!!");
         /*
          * 对于硬解视频，必须传入的码流头是annexb格式，所以需要转换数据，添加annexb格式头
          * */
         const AVBitStreamFilter * bsFilter = NULL;
-        if (strcasecmp(codecName, "h264") == 0) {
+        if (strcasecmp(codec_tag, "h264") == 0) {
             bsFilter = av_bsf_get_by_name("h264_mp4toannexb");
-        } else if (strcasecmp(codecName, "hevc") == 0) {
+        } else if (strcasecmp(codec_tag, "hevc") == 0) {
             bsFilter = av_bsf_get_by_name("hevc_mp4toannexb");
         }
         if (bsFilter == NULL) {
@@ -201,7 +201,7 @@ void WLFFmpeg::StartFFmpegThread() {
             LOGD("%s", buffer);
         }
 
-        m_wlvideo_->m_call_java->OnCallInitMediaCodec(CHILD_THREAD,codecName,
+        m_wlvideo_->m_call_java->OnCallInitMediaCodec(CHILD_THREAD,codec_tag,
                                                    m_wlvideo_->m_avcodec_context->width, m_wlvideo_->m_avcodec_context->height,
                                                    m_wlvideo_->m_avcodec_context->extradata_size,m_wlvideo_->m_avcodec_context->extradata);
     }

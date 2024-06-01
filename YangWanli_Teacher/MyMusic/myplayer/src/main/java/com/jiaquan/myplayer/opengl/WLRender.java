@@ -221,7 +221,13 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         if ((mYuvWidth_ > 0) && (mYuvHeight_ > 0) && (mYBuffer_ != null) && (mUBuffer_ != null) && (mVBuffer_ != null)) {
             GLES20.glUseProgram(mProgramYuv_);
 
+            mMatrixBuffer_.position(0);//每次重置position为0,解决概率崩溃问题(数组大小问题，原因未知)
             GLES20.glUniformMatrix4fv(mMatrixYuv_, 1, false, mMatrixBuffer_);//给矩阵变量赋值
+            int error = GLES20.glGetError();
+            if (error != GLES20.GL_NO_ERROR) {
+                MyLog.e("OpenGL matrix error: " + error);
+                throw new RuntimeException("OpenGL matrix error: " + error);
+            }
 
             GLES20.glEnableVertexAttribArray(mAvPositionYuv_);
             GLES20.glVertexAttribPointer(mAvPositionYuv_, 2, GLES20.GL_FLOAT, false, 8, mVertexBuffer_);
@@ -295,6 +301,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
             throw new RuntimeException("OpenGL use program error: " + error);
         }
 
+        mMatrixBuffer_.position(0);//每次重置position为0,解决概率崩溃问题(数组大小问题，原因未知)
         GLES20.glUniformMatrix4fv(mMatrixMediacodec_, 1, false, mMatrixBuffer_);//给矩阵变量赋值
         error = GLES20.glGetError();
         if (error != GLES20.GL_NO_ERROR) {
@@ -345,6 +352,9 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
             _orthoM(-1, 1, -r, r, mMatrix_);
         }
 
+        if(mMatrix_.length != 16) {
+            throw new IllegalArgumentException("Matrix must have 16 elements.");
+        }
         mMatrixBuffer_.put(mMatrix_);
         mMatrixBuffer_.position(0);
     }
