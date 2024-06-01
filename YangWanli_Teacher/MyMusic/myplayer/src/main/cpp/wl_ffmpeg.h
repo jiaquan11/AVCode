@@ -32,7 +32,7 @@ public:
 
     void SetVolume(int percent);
 
-    void SetMute(int mute);
+    void SetChannelType(int mute);
 
     void SetPitch(float pitch);
 

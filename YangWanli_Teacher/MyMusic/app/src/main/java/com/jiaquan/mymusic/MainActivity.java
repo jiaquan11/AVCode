@@ -12,6 +12,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.jiaquan.myplayer.muteenum.ChannelTypeEnum;
 import com.jiaquan.myplayer.util.TimeInfoBean;
 import com.jiaquan.myplayer.listener.OnCompleteListener;
 import com.jiaquan.myplayer.listener.OnErrorListener;
@@ -22,7 +23,6 @@ import com.jiaquan.myplayer.listener.OnRecordTimeListener;
 import com.jiaquan.myplayer.listener.OnTimeInfoListener;
 import com.jiaquan.myplayer.listener.OnVolumeDBListener;
 import com.jiaquan.myplayer.log.MyLog;
-import com.jiaquan.myplayer.muteenum.MuteEnum;
 import com.jiaquan.myplayer.opengl.WLGLSurfaceView;
 import com.jiaquan.myplayer.player.WLPlayer;
 import com.jiaquan.myplayer.util.TimeUtil;
@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
         mWlPlayer_.setVolume(80);//设置初始音量
         mTvVolume_.setText("音量: " + mWlPlayer_.getVolumePercent() + "%");//设置音量显示值
         mSeekBarVolume_.setProgress(mWlPlayer_.getVolumePercent());//设置音量进度条的初始值
-        mWlPlayer_.setMute(MuteEnum.MUTE_LEFT);//设置声道控制
+        mWlPlayer_.setChannelType(ChannelTypeEnum.MUTE_LEFT);//设置声道控制
         mWlPlayer_.setSpeed(1.0f);//设置音频播放速度值
         mWlPlayer_.setPitch(1.0f);//设置音调值
 
@@ -277,21 +277,21 @@ public class MainActivity extends AppCompatActivity {
      * 左声道
      */
     public void left(View view) {
-        mWlPlayer_.setMute(MuteEnum.MUTE_LEFT);
+        mWlPlayer_.setChannelType(ChannelTypeEnum.MUTE_LEFT);
     }
 
     /**
      * 右声道
      */
     public void right(View view) {
-        mWlPlayer_.setMute(MuteEnum.MUTE_RIGHT);
+        mWlPlayer_.setChannelType(ChannelTypeEnum.MUTE_RIGHT);
     }
 
     /**
      * 立体声
      */
     public void center(View view) {
-        mWlPlayer_.setMute(MuteEnum.MUTE_CENTER);
+        mWlPlayer_.setChannelType(ChannelTypeEnum.MUTE_CENTER);
     }
 
     /**

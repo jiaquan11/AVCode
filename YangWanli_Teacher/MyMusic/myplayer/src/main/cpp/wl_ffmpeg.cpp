@@ -403,9 +403,9 @@ void WLFFmpeg::SetVolume(int percent) {
     }
 }
 
-void WLFFmpeg::SetMute(int mute) {
+void WLFFmpeg::SetChannelType(int channel_type) {
     if (m_wlaudio_ != NULL) {
-        m_wlaudio_->setMute(mute);
+        m_wlaudio_->SetChannelType(channel_type);
     }
 }
 

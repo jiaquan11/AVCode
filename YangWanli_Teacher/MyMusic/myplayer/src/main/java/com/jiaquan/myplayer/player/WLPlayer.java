@@ -20,7 +20,7 @@ import com.jiaquan.myplayer.listener.OnRecordTimeListener;
 import com.jiaquan.myplayer.listener.OnTimeInfoListener;
 import com.jiaquan.myplayer.listener.OnVolumeDBListener;
 import com.jiaquan.myplayer.log.MyLog;
-import com.jiaquan.myplayer.muteenum.MuteEnum;
+import com.jiaquan.myplayer.muteenum.ChannelTypeEnum;
 import com.jiaquan.myplayer.opengl.WLGLSurfaceView;
 import com.jiaquan.myplayer.opengl.WLRender;
 import com.jiaquan.myplayer.util.CalledByNative;
@@ -52,7 +52,7 @@ public class WLPlayer {
     private boolean mPlayNext_ = false;
     private int mDuration_ = -1;
     private int mVolumePercent_ = 100;
-    private MuteEnum mMuteEnum_ = MuteEnum.MUTE_CENTER;
+    private ChannelTypeEnum mChannelType_ = ChannelTypeEnum.MUTE_CENTER;
     private float mSpeed_ = 1.0f;
     private float mPitch_ = 1.0f;
 
@@ -190,7 +190,7 @@ public class WLPlayer {
             @Override
             public void run() {
                 setVolume(mVolumePercent_);
-                setMute(mMuteEnum_);
+                setChannelType(mChannelType_);
                 setPitch(mPitch_);
                 setSpeed(mSpeed_);
 
@@ -298,11 +298,11 @@ public class WLPlayer {
 
     /**
      * 设置声道
-     * @param mute 声道类型
+     * @param channelType 声道类型
      */
-    public void setMute(MuteEnum mute) {
-        mMuteEnum_ = mute;
-        _nativeMute(mute.getValue());
+    public void setChannelType(ChannelTypeEnum channelType) {
+        mChannelType_ = channelType;
+        _nativeChannelType(mChannelType_.getValue());
     }
 
     /**
@@ -760,7 +760,7 @@ public class WLPlayer {
 
     private native void _nativeVolume(int percent);
 
-    private native void _nativeMute(int mute);
+    private native void _nativeChannelType(int mute);
 
     private native void _nativePitch(float pitch);
 

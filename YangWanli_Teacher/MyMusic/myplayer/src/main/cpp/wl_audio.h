@@ -42,7 +42,7 @@ public:
 
     void setVolume(int percent);
 
-    void setMute(int mute);
+    void SetChannelType(int mute);
 
     void setPitch(float pitch);
 
@@ -84,7 +84,7 @@ public:
     double last_time = 0;
 
     int volumePercent = 100;
-    int mute = 2;
+    int m_channel_type = 2;
 //    FILE* outFile = NULL;
 
     float pitch = 1.0f;

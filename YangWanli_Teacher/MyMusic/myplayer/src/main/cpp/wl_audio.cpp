@@ -115,7 +115,7 @@ void WLAudio::initOpenSLES() {
     (*pcmPlayerObject)->GetInterface(pcmPlayerObject, SL_IID_VOLUME, &pcmPlayerVolume);
     setVolume(volumePercent);
 
-    setMute(mute);
+    SetChannelType(m_channel_type);
 
     //获取声道接口
     (*pcmPlayerObject)->GetInterface(pcmPlayerObject, SL_IID_MUTESOLO, &pcmPlayerMute);
@@ -316,16 +316,16 @@ void WLAudio::setVolume(int percent) {
 }
 
 //控制音频左右声道的播放（opensl）
-void WLAudio::setMute(int mute) {
-    this->mute = mute;
+void WLAudio::SetChannelType(int channel_type) {
+    m_channel_type = channel_type;
     if (pcmPlayerMute != NULL) {
-        if (mute == 0) {//rigt 右声道
+        if (channel_type == 0) {//rigt 右声道
             (*pcmPlayerMute)->SetChannelMute(pcmPlayerMute, 1, false);//0右声道  1左声道  第三个参数表示是否关闭
             (*pcmPlayerMute)->SetChannelMute(pcmPlayerMute, 0, true);
-        } else if (mute == 1) {//left 左声道
+        } else if (channel_type == 1) {//left 左声道
             (*pcmPlayerMute)->SetChannelMute(pcmPlayerMute, 1, true);
             (*pcmPlayerMute)->SetChannelMute(pcmPlayerMute, 0, false);
-        } else if (mute == 2) {//center 立体声
+        } else if (channel_type == 2) {//center 立体声
             (*pcmPlayerMute)->SetChannelMute(pcmPlayerMute, 1, false);
             (*pcmPlayerMute)->SetChannelMute(pcmPlayerMute, 0, false);
         }

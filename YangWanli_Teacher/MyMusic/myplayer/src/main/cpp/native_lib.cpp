@@ -29,7 +29,7 @@ JNIEXPORT void JNICALL Prepared(JNIEnv *env, jobject thiz, jstring source_jstr) 
         if (g_call_java == NULL) {
             g_call_java = new CallJava(g_java_vm, env, thiz);
         }
-        g_call_java->OnCallLoad(MAIN_THREAD, true);//加载中
+        g_call_java->OnCallLoad(MAIN_THREAD, true);
 
         g_play_status = new WLPlayStatus();
         g_wl_ffmpeg = new WLFFmpeg(g_play_status, g_call_java, source);
@@ -108,9 +108,9 @@ JNIEXPORT void JNICALL Volume(JNIEnv *env, jobject thiz, jint percent) {
     }
 }
 
-JNIEXPORT void JNICALL Mute(JNIEnv *env, jobject thiz, jint mute) {
+JNIEXPORT void JNICALL ChannelType(JNIEnv *env, jobject thiz, jint channel_type) {
     if (g_wl_ffmpeg != NULL) {
-        g_wl_ffmpeg->SetMute(mute);
+        g_wl_ffmpeg->SetChannelType(channel_type);
     }
 }
 
@@ -148,20 +148,20 @@ CutAudioPlay(JNIEnv *env, jobject thiz, jint start_time, jint end_time, jboolean
 }
 
 static JNINativeMethod gMethods[] = {
-        {"_nativePrepared",        "(Ljava/lang/String;)V", (void *) Prepared},
-        {"_nativeStart",           "()V",                   (void *) Start},
-        {"_nativePause",           "()V",                   (void *) Pause},
-        {"_nativeResume",          "()V",                   (void *) Resume},
-        {"_nativeStop",            "()V",                   (void *) Stop},
-        {"_nativeSeek",            "(I)V",                  (void *) Seek},
-        {"_nativeDuration",        "()I",                   (void *) Duration},
-        {"_nativeVolume",          "(I)V",                  (void *) Volume},
-        {"_nativeMute",            "(I)V",                  (void *) Mute},
-        {"_nativePitch",           "(F)V",                  (void *) Pitch},
-        {"_nativeSpeed",           "(F)V",                 (void *) Speed},
-        {"_nativeSamplerate",      "()I",                  (void *) Samplerate},
-        {"_nativeStartstopRecord", "(Z)V",                 (void *) StartstopRecord},
-        {"_nativeCutAudioPlay",    "(IIZ)Z",               (void *) CutAudioPlay},
+         {"_nativePrepared",        "(Ljava/lang/String;)V", (void *) Prepared},
+         {"_nativeStart",           "()V",                   (void *) Start},
+         {"_nativePause",           "()V",                   (void *) Pause},
+         {"_nativeResume",          "()V",                   (void *) Resume},
+         {"_nativeStop",            "()V",                   (void *) Stop},
+         {"_nativeSeek",            "(I)V",                  (void *) Seek},
+         {"_nativeDuration",        "()I",                   (void *) Duration},
+         {"_nativeVolume",          "(I)V",                  (void *) Volume},
+         {"_nativeChannelType",     "(I)V",                  (void *) ChannelType},
+         {"_nativePitch",           "(F)V",                  (void *) Pitch},
+        {"_nativeSpeed",           "(F)V",                  (void *) Speed},
+        {"_nativeSamplerate",      "()I",                   (void *) Samplerate},
+        {"_nativeStartstopRecord", "(Z)V",                  (void *) StartstopRecord},
+        {"_nativeCutAudioPlay",    "(IIZ)Z",                (void *) CutAudioPlay},
 };
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
