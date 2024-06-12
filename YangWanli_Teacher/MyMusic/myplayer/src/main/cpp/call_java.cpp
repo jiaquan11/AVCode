@@ -3,7 +3,7 @@
 CallJava::CallJava(JavaVM *vm, JNIEnv *env, jobject obj) {
     m_java_vm_ = vm;
     m_jni_env_ = env;
-    m_jobj_ = env->NewGlobalRef(obj);
+    m_jobj_ = env->NewGlobalRef(obj);//创建全局引用,防止被回收,可以跨线程使用
     jclass clz = m_jni_env_->GetObjectClass(m_jobj_);
     if (!clz) {
         if (LOG_DEBUG) {
@@ -27,26 +27,7 @@ CallJava::CallJava(JavaVM *vm, JNIEnv *env, jobject obj) {
 }
 
 CallJava::~CallJava() {
-    if (m_jobj_ != NULL) {
-        JNIEnv* env = nullptr;
-        bool needDetach = false;
-        if (m_java_vm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
-            if (m_java_vm_->AttachCurrentThread(&env, nullptr) == JNI_OK) {
-                needDetach = true;
-            } else {
-                LOGE("CallJava::~CallJava: Failed to attach current thread");
-                return;
-            }
-        }
-        env->DeleteGlobalRef(m_jobj_);
-        m_jobj_ = NULL;
-        if (needDetach) {
-            m_java_vm_->DetachCurrentThread();
-        }
-    }
-    m_jni_env_ = NULL;
-    m_java_vm_ = NULL;
-
+    LOGI("CallJava::~CallJava in");
     if (m_has_allocate_) {
         if (m_data_[0] != NULL) {
             free(m_data_[0]);
@@ -62,7 +43,31 @@ CallJava::~CallJava() {
         }
         m_has_allocate_ = false;
     }
-    LOGI("CallJava::~CallJava 22");
+
+    if (m_jobj_ != NULL) {
+        JNIEnv* env = nullptr;
+        bool need_detach = false;
+        if (m_java_vm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
+            JavaVMAttachArgs args = {0};
+            args.version = JNI_VERSION_1_6;
+            if (m_java_vm_->AttachCurrentThread(&env, &args) == JNI_OK) {
+                need_detach = true;
+            } else {
+                LOGE("CallJava::~CallJava: Failed to attach current thread");
+                return;
+            }
+        } else {
+            LOGI("CallJava::~CallJava GetEnv is OK");
+        }
+        env->DeleteGlobalRef(m_jobj_);
+        m_jobj_ = NULL;
+        if (need_detach) {
+            m_java_vm_->DetachCurrentThread();
+        }
+    }
+    m_java_vm_ = NULL;
+    m_jni_env_ = NULL;
+    LOGI("CallJava::~CallJava out");
 }
 
 void CallJava::OnCallPrepared(int type) {
@@ -217,7 +222,6 @@ void CallJava::OnCallPcmToAAC(int type, void *buffer, int size) {
                 return;
             }
         }
-
         jbyteArray jbuffer = env->NewByteArray(size);
         env->SetByteArrayRegion(jbuffer, 0, size, static_cast<const jbyte *>(buffer));
         env->CallVoidMethod(m_jobj_, m_jmid_pcmtoaac_, jbuffer, size);
@@ -303,10 +307,8 @@ void CallJava::OnCallRenderYUV(int type, int width, int linesize, int height, ui
     if (type == MAIN_THREAD) {
         jbyteArray y_array = m_jni_env_->NewByteArray(width * height);
         m_jni_env_->SetByteArrayRegion(y_array, 0, width * height, reinterpret_cast<const jbyte *>(py));
-
         jbyteArray u_array = m_jni_env_->NewByteArray(width * height / 4);
         m_jni_env_->SetByteArrayRegion(u_array, 0, width * height / 4, reinterpret_cast<const jbyte *>(pu));
-
         jbyteArray v_array = m_jni_env_->NewByteArray(width * height / 4);
         m_jni_env_->SetByteArrayRegion(v_array, 0, width * height / 4, reinterpret_cast<const jbyte *>(pv));
 

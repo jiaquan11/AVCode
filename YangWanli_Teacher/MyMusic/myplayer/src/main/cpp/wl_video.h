@@ -32,8 +32,8 @@ public:
     double GetDelayTime(double diff);
 
 public:
-    int m_streamIndex = -1;
-    AVCodecContext *m_avcodec_context = NULL;
+    int m_stream_index = -1;
+    AVCodecContext *m_avcodec_ctx = NULL;
     AVCodecParameters *m_codec_par = NULL;
     WLQueue *m_queue = NULL;
     WLPlayStatus *m_play_status = NULL;

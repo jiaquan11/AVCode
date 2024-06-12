@@ -292,7 +292,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     }
 
     private void _renderMediaCodec() {
-        MyLog.i("renderMediaCodec in");
+        //MyLog.i("renderMediaCodec in");
         mSurfaceTexture_.updateTexImage();//将缓存数据刷到前台更新
 
         GLES20.glUseProgram(mProgramMediacodec_);
@@ -319,7 +319,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mTextureOESId_);
 
         GLES20.glUniform1i(mSamplerOESMediacodec_, 0);
-        MyLog.i("renderMediaCodec out");
+        //MyLog.i("renderMediaCodec out");
     }
 
     //初始化单位矩阵

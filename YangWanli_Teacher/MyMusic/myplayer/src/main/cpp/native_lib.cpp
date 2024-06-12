@@ -23,7 +23,7 @@ WLPlayStatus *g_play_status = NULL;
 bool g_is_exit = false;
 
 JNIEXPORT void JNICALL Prepared(JNIEnv *env, jobject thiz, jstring source_jstr) {
-    LOGI("call jni prepared!");
+    LOGI("native jni prepared in, g_wl_ffmpeg: %p", g_wl_ffmpeg);
     const char *source = env->GetStringUTFChars(source_jstr, 0);
     if (g_wl_ffmpeg == NULL) {
         if (g_call_java == NULL) {
@@ -36,6 +36,7 @@ JNIEXPORT void JNICALL Prepared(JNIEnv *env, jobject thiz, jstring source_jstr) 
         g_wl_ffmpeg->Prepared();
     }
     env->ReleaseStringUTFChars(source_jstr, source);
+    LOGI("native jni prepared out!");
 }
 
 JNIEXPORT void JNICALL Start(JNIEnv *env, jobject thiz) {
@@ -57,36 +58,33 @@ JNIEXPORT void JNICALL Resume(JNIEnv *env, jobject thiz) {
 }
 
 JNIEXPORT void JNICALL Stop(JNIEnv *env, jobject thiz) {
+    LOGI("native Stop in g_is_exit %d", g_is_exit);
     if (g_is_exit) {//正在资源销毁的过程中，直接退出，不允许调用stop操作
+        LOGE("native Stop is exiting, can not call stop again,");
         return;
     }
 
     g_is_exit = true;
     if (g_wl_ffmpeg != NULL) {
+        LOGI("release g_wl_ffmpeg before");
         g_wl_ffmpeg->Release();
-
         delete g_wl_ffmpeg;
         g_wl_ffmpeg = NULL;
-
+        LOGI("release g_wl_ffmpeg over");
         if (g_play_status != NULL) {
             delete g_play_status;
             g_play_status = NULL;
+            LOGI("release g_play_status over");
         }
 
         if (g_call_java != NULL) {
             delete g_call_java;
             g_call_java = NULL;
+            LOGI("release g_call_java over");
         }
     }
     g_is_exit = false;
-
-    /**
-     * 正常播放结束，或者停止播放，或者播放过程中点击了Next按钮，都会先执行stop操作
-     * 然后回调onCallNext,onCallNext函数中会先检查是否有下一个播放资源，如果有，则会调用prepared函数，开始新的播放
-     */
-    jclass jcz = env->GetObjectClass(thiz);
-    jmethodID jmid_next = env->GetMethodID(jcz, "onCallNext", "()V");
-    env->CallVoidMethod(thiz, jmid_next);
+    LOGI("native Stop out");
 }
 
 JNIEXPORT void JNICALL Seek(JNIEnv *env, jobject thiz, jint secds) {

@@ -5,6 +5,8 @@ import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.os.Build;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.text.TextUtils;
 import android.view.Surface;
 
@@ -48,8 +50,6 @@ public class WLPlayer {
     }
 
     private WLGLSurfaceView mWlglSurfaceView_ = null;
-    private String mPlayPath_ = null;
-    private boolean mPlayNext_ = false;
     private int mDuration_ = -1;
     private int mVolumePercent_ = 100;
     private ChannelTypeEnum mChannelType_ = ChannelTypeEnum.MUTE_CENTER;
@@ -64,6 +64,9 @@ public class WLPlayer {
     public int mFrameCount_ = 0;//记录硬解播放的总帧数
     private long mStartMs_ = 0;//记录每次硬解解码前的系统时间
     private static TimeInfoBean mTimeInfoBean_ = null;
+    private final Object mVLock_ = new Object(); // 用于同步的锁对象
+    private Handler mMultiVideoHandler_ = null;
+    private HandlerThread mMultiVideoHandlerThread_ = null;
 
     public void setWlglSurfaceView(WLGLSurfaceView wlglSurfaceView) {
         this.mWlglSurfaceView_ = wlglSurfaceView;
@@ -159,44 +162,56 @@ public class WLPlayer {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             _getSupportedCodec();
         }
+
+        mMultiVideoHandlerThread_ = new HandlerThread("MultiVideoHandlerThread");
+        mMultiVideoHandlerThread_.start();
+        mMultiVideoHandler_ = new Handler(mMultiVideoHandlerThread_.getLooper());
     }
 
     /**
      * 准备播放源
      */
     public void prepared(String playSource) {
+        MyLog.i("prepared in source: " + playSource);
         if (TextUtils.isEmpty(playSource)) {
             MyLog.i("source must not be empty");
             return;
         }
 
+        MyLog.i("prepared before stop");
         stop();//先停止播放
+        MyLog.i("prepared after stop");
 
-        //开启一个线程，用于底层解析音视频文件
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                _nativePrepared(playSource);
-            }
-        }).start();
+        if (mMultiVideoHandler_ != null) {
+            mMultiVideoHandler_.post(new Runnable() {
+                @Override
+                public void run() {
+                    MyLog.i("prepared in thread start");
+                    _nativePrepared(playSource);
+                    MyLog.i("prepared in thread end");
+                }
+            });
+        }
+        MyLog.i("prepared out");
     }
 
     /**
      * 开始播放
      */
     public void start() {
-        //开启线程，读取各个流数据packet并放入到缓存队列中
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                setVolume(mVolumePercent_);
-                setChannelType(mChannelType_);
-                setPitch(mPitch_);
-                setSpeed(mSpeed_);
+        if (mMultiVideoHandler_ != null) {
+            mMultiVideoHandler_.post(new Runnable() {
+                @Override
+                public void run() {
+                    setVolume(mVolumePercent_);
+                    setChannelType(mChannelType_);
+                    setPitch(mPitch_);
+                    setSpeed(mSpeed_);
 
-                _nativeStart();
-            }
-        }).start();
+                    _nativeStart();
+                }
+            });
+        }
     }
 
     /**
@@ -223,29 +238,29 @@ public class WLPlayer {
      * 停止播放
      */
     public void stop() {
+        MyLog.i("stop in mTotalTime_: " + mTotalTime_ + " mFrameCount_: " + mFrameCount_);
         if ((mTotalTime_ > 0) && (mFrameCount_ > 0)) {
             MyLog.i("All the Frames: " + mFrameCount_ + " Average decode time per frame: " + (mTotalTime_ / mFrameCount_) + "ms");
         }
-        mTimeInfoBean_ = null;
-        mDuration_ = -1;
-        mTotalTime_ = 0;//记录硬解耗时
-        mFrameCount_ = 0;//记录硬解播放的总帧数
-        mStartMs_ = 0;//记录每次硬解解码前的系统时间
-        /**
-         * 开启一个线程，停止播放，释放底层ffmpeg的资源及释放硬解解码器的相关资源
-         */
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                stopAudioRecord();
-//                _nativeStop();
-//                _releaseVMediaCodec();
-//            }
-//        }).start();
-        //同步方式停止播放，释放底层ffmpeg的资源及释放硬解解码器的相关资源
-        stopAudioRecord();
-        _nativeStop();
-        _releaseVMediaCodec();
+        if (mMultiVideoHandler_ != null) {
+            mMultiVideoHandler_.post(new Runnable() {
+                @Override
+                public void run() {
+                    MyLog.i("stop in thread start");
+                    stopAudioRecord();
+                    _nativeStop();
+                    _releaseVMediaCodec();
+
+                    mTimeInfoBean_ = null;
+                    mDuration_ = -1;
+                    mTotalTime_ = 0;//记录硬解耗时
+                    mFrameCount_ = 0;//记录硬解播放的总帧数
+                    mStartMs_ = 0;//记录每次硬解解码前的系统时间
+                    MyLog.i("stop in thread end");
+                }
+            });
+        }
+        MyLog.i("stop out");
     }
 
     /**
@@ -261,9 +276,8 @@ public class WLPlayer {
      * @param url 下一个视频地址
      */
     public void playNext(String url) {
-        mPlayPath_ = url;
-        mPlayNext_ = true;
-        stop();
+        MyLog.i("playNext in url: " + url);
+        prepared(url);
     }
 
     /**
@@ -339,17 +353,21 @@ public class WLPlayer {
     }
 
     private void _releaseVMediaCodec() {
-        if (mVDecMediaCodec_ != null) {
-            try {
-                mVDecMediaCodec_.flush();
-                mVDecMediaCodec_.stop();
-                mVDecMediaCodec_.release();
-            } catch (Exception e) {
-                e.printStackTrace();
+        synchronized (mVLock_) {
+            MyLog.i("releaseVMediaCodec in: " + mVDecMediaCodec_);
+            if (mVDecMediaCodec_ != null) {
+                try {
+                    mVDecMediaCodec_.flush();
+                    mVDecMediaCodec_.stop();
+                    mVDecMediaCodec_.release();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                mVDecMediaCodec_ = null;
+                mVDecMediaFormat_ = null;
+                mVBufferInfo_ = null;
+                MyLog.i("releaseVMediaCodec out");
             }
-            mVDecMediaCodec_ = null;
-            mVDecMediaFormat_ = null;
-            mVBufferInfo_ = null;
         }
     }
 
@@ -395,10 +413,12 @@ public class WLPlayer {
 
     @CalledByNative
     private void onCallComplete() {
+        MyLog.i("onCallComplete start");
         stop();
         if (onCompleteListener != null) {
             onCompleteListener.onComplete();
         }
+        MyLog.i("onCallComplete end");
     }
 
     @CalledByNative
@@ -406,15 +426,6 @@ public class WLPlayer {
         stop();
         if (onErrorListener != null) {
             onErrorListener.onError(code, msg);
-        }
-    }
-
-    @CalledByNative
-    private void onCallNext() {
-        MyLog.i("onCallNext playNext: " + mPlayNext_);
-        if (mPlayNext_) {
-            mPlayNext_ = false;
-            prepared(mPlayPath_);
         }
     }
 
@@ -453,48 +464,50 @@ public class WLPlayer {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @CalledByNative
     private void onCallInitMediaCodec(String codecTag, int width, int height, byte[] csd) {
-        if (mSurface_ != null) {
-            try {
-                mWlglSurfaceView_.getWlRender().setRenderType(WLRender.RENDER_MEDIACODEC);
-                mWlglSurfaceView_.getWlRender().setVideoSize(width, height);
+        synchronized (mVLock_) {
+            if (mSurface_ != null) {
+                try {
+                    mWlglSurfaceView_.getWlRender().setRenderType(WLRender.RENDER_MEDIACODEC);
+                    mWlglSurfaceView_.getWlRender().setVideoSize(width, height);
 
-                String mimeType = WLVideoSupportUtil.findVideoCodecType(codecTag);
-                MyLog.i("onCallinitMediaCodec mime is " + mimeType + " width is " + width + " height is " + height);
-                mVDecMediaFormat_ = MediaFormat.createVideoFormat(mimeType, width, height);
-                mVDecMediaFormat_.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
-                /**
-                 * 这里三个字段都是设置为ffmpeg提取的extradata数据，目前硬件解码是没问题的，
-                 * 理论上是需要分别提取SPS和PPS数据填充设置,H265需要设置VPS，SPS，PPS三个字段.
-                 * 应该MediaCodec针对直接传递的extradata数据在内部进行了提取VPS,SPS,PPS,比较强大
-                 */
+                    String mimeType = WLVideoSupportUtil.findVideoCodecType(codecTag);
+                    MyLog.i("onCallinitMediaCodec mime is " + mimeType + " width is " + width + " height is " + height);
+                    mVDecMediaFormat_ = MediaFormat.createVideoFormat(mimeType, width, height);
+                    mVDecMediaFormat_.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
+                    /**
+                     * 这里三个字段都是设置为ffmpeg提取的extradata数据，目前硬件解码是没问题的，
+                     * 理论上是需要分别提取SPS和PPS数据填充设置,H265需要设置VPS，SPS，PPS三个字段.
+                     * 应该MediaCodec针对直接传递的extradata数据在内部进行了提取VPS,SPS,PPS,比较强大
+                     */
 //                MyLog.i("java onCallinitMediaCodec csd size: " + csd.length);
 //                printBytesInLines(csd, csd.length);
 
-                mVDecMediaFormat_.setByteBuffer("csd-0", ByteBuffer.wrap(csd));
-                mVDecMediaFormat_.setByteBuffer("csd-1", ByteBuffer.wrap(csd));
-                if (mimeType.equals("video/hevc")) {
-                    mVDecMediaFormat_.setByteBuffer("csd-2", ByteBuffer.wrap(csd));
+                    mVDecMediaFormat_.setByteBuffer("csd-0", ByteBuffer.wrap(csd));
+                    mVDecMediaFormat_.setByteBuffer("csd-1", ByteBuffer.wrap(csd));
+                    if (mimeType.equals("video/hevc")) {
+                        mVDecMediaFormat_.setByteBuffer("csd-2", ByteBuffer.wrap(csd));
+                    }
+                    MyLog.i(mVDecMediaFormat_.toString());
+                    mVBufferInfo_ = new MediaCodec.BufferInfo();
+                    mVDecMediaCodec_ = MediaCodec.createByCodecName(WLVideoSupportUtil.getHardwareDecoderName(codecTag));
+                    mVDecMediaCodec_.configure(mVDecMediaFormat_, mSurface_, null, 0);
+                    mVDecMediaCodec_.start();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                MyLog.i(mVDecMediaFormat_.toString());
-                mVBufferInfo_ = new MediaCodec.BufferInfo();
-                mVDecMediaCodec_ = MediaCodec.createByCodecName(WLVideoSupportUtil.getHardwareDecoderName(codecTag));
-                mVDecMediaCodec_.configure(mVDecMediaFormat_, mSurface_, null, 0);
-                mVDecMediaCodec_.start();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            mStartMs_ = System.currentTimeMillis();
-            MyLog.i("onCallinitMediaCodec end");
-        } else {
-            if (onErrorListener != null) {
-                onErrorListener.onError(2001, "surface is null");
+                mStartMs_ = System.currentTimeMillis();
+                MyLog.i("onCallinitMediaCodec end");
+            } else {
+                if (onErrorListener != null) {
+                    onErrorListener.onError(2001, "surface is null");
+                }
             }
         }
     }
 
     @CalledByNative
     private void onCallRenderYUV(int width, int height, byte[] y, byte[] u, byte[] v) {
-        MyLog.i("onCallRenderYUV width: " + width + " height: " + height);
+        //MyLog.i("onCallRenderYUV width: " + width + " height: " + height);
         if (mWlglSurfaceView_ != null) {
             mWlglSurfaceView_.getWlRender().setRenderType(WLRender.RENDER_YUV);
             mWlglSurfaceView_.setYUVData(width, height, y, u, v);
@@ -509,28 +522,30 @@ public class WLPlayer {
          */
 //        MyLog.i("data size: " + data.length);
 //        _printBytesInLines(data, 1000);
-        if ((mSurface_ != null) && (datasize > 0) && (data != null) && (mVDecMediaCodec_ != null)) {
-            try {
-                int inputBufferIndex = mVDecMediaCodec_.dequeueInputBuffer(10);
-                if (inputBufferIndex >= 0) {
-                    ByteBuffer byteBuffer = mVDecMediaCodec_.getInputBuffers()[inputBufferIndex];
-                    byteBuffer.clear();
-                    byteBuffer.put(data);
-                    mVDecMediaCodec_.queueInputBuffer(inputBufferIndex, 0, datasize, 0, 0);//丢给mediaCodec解码输入队列
-                }
-                int outputBufferIndex = mVDecMediaCodec_.dequeueOutputBuffer(mVBufferInfo_, 10);
-                while (outputBufferIndex >= 0) {//循环从硬解解码器的输出队列中获取解码数据进行渲染
-                    long decodeTime = System.currentTimeMillis() - mStartMs_;
-                    mStartMs_ = System.currentTimeMillis();
-                    mFrameCount_++;
-                    mTotalTime_ += decodeTime;
-                    mVDecMediaCodec_.releaseOutputBuffer(outputBufferIndex, true);
-                    outputBufferIndex = mVDecMediaCodec_.dequeueOutputBuffer(mVBufferInfo_, 10);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+         synchronized (mVLock_) {
+             if ((mSurface_ != null) && (datasize > 0) && (data != null) && (mVDecMediaCodec_ != null)) {
+                 try {
+                     int inputBufferIndex = mVDecMediaCodec_.dequeueInputBuffer(10);
+                     if (inputBufferIndex >= 0) {
+                         ByteBuffer byteBuffer = mVDecMediaCodec_.getInputBuffers()[inputBufferIndex];
+                         byteBuffer.clear();
+                         byteBuffer.put(data);
+                         mVDecMediaCodec_.queueInputBuffer(inputBufferIndex, 0, datasize, 0, 0);//丢给mediaCodec解码输入队列
+                     }
+                     int outputBufferIndex = mVDecMediaCodec_.dequeueOutputBuffer(mVBufferInfo_, 10);
+                     while (outputBufferIndex >= 0) {//循环从硬解解码器的输出队列中获取解码数据进行渲染
+                         long decodeTime = System.currentTimeMillis() - mStartMs_;
+                         mStartMs_ = System.currentTimeMillis();
+                         mFrameCount_++;
+                         mTotalTime_ += decodeTime;
+                         mVDecMediaCodec_.releaseOutputBuffer(outputBufferIndex, true);
+                         outputBufferIndex = mVDecMediaCodec_.dequeueOutputBuffer(mVBufferInfo_, 10);
+                     }
+                 } catch (Exception e) {
+                     e.printStackTrace();
+                 }
+             }
+         }
     }
 
     //录音操作
@@ -542,7 +557,7 @@ public class WLPlayer {
     private byte[] mOutByteBuffer_ = new byte[4096 * 3];
     private double mRecordTime_ = 0;
     private int mAudioSamplerate_ = 0;
-    private final Object mLock_ = new Object(); // 用于同步的锁对象
+    private final Object mALock_ = new Object(); // 用于同步的锁对象
     /**
      * 开始录音
      * @param outfile 录音文件
@@ -591,7 +606,7 @@ public class WLPlayer {
     public void stopAudioRecord() {
         if (mIsInitAMediaCodec_) {
             _nativeStartstopRecord(false);
-            synchronized (mLock_) {
+            synchronized (mALock_) {
                 _releaseAMediaCodec();
                 try {
                     mFileOutputStream_.close();
@@ -703,7 +718,7 @@ public class WLPlayer {
     @CalledByNative
     private void encodePcmToAAC(byte[] pcmBuffer, int size) {
 //        MyLog.i("encodePcmToAAC buffer size: " + size);
-        synchronized (mLock_) {
+        synchronized (mALock_) {
             if ((pcmBuffer != null) && (size > 0) && (mAEncMediaCodec_ != null)) {
                 mRecordTime_ += size * 1.0 / (mAudioSamplerate_ * 2 * 2);//计算当前包的时长，并累加
                 if (onRecordTimeListener != null) {

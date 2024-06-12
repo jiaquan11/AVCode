@@ -13,12 +13,16 @@ extern "C" {
 
 class WLFFmpeg {
 public:
-    WLFFmpeg(WLPlayStatus *playStatus, CallJava *calljava, const char *url);
+    WLFFmpeg(WLPlayStatus *play_status, CallJava *calljava, const char *url);
 
     ~WLFFmpeg();
 
 public:
+    void DemuxFFmpegThread();
+
     void Prepared();
+
+    void StartFFmpegThread();
 
     void Start();
 
@@ -32,7 +36,7 @@ public:
 
     void SetVolume(int percent);
 
-    void SetChannelType(int mute);
+    void SetChannelType(int channel_type);
 
     void SetPitch(float pitch);
 
@@ -40,16 +44,12 @@ public:
 
     int GetSampleRate();
 
-    void StartStopRecord(bool start);
+    void StartStopRecord(bool flag);
 
-    bool CutAudioPlay(int start_time, int end_time, bool showPcm);
-
-    void DemuxFFmpegThread();
-
-    void StartFFmpegThread();
+    bool CutAudioPlay(int start_time, int end_time, bool show_pcm);
 
 private:
-    int _GetCodecContext(AVCodecParameters *codecPar, AVCodecContext** avCodecContext);
+    int _GetCodecContext(AVCodecParameters *codecPar, AVCodecContext** av_codec_ctx);
 
 public:
     WLPlayStatus *m_play_status = NULL;
@@ -70,6 +70,7 @@ private:
 
     bool m_is_exit_ = false;
     bool m_support_mediacodec_ = false;
+    bool m_is_play_end_ = false;
 };
 
 #endif //MYPLAYER_WLFFMPEG_H_

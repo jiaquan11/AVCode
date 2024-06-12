@@ -23,111 +23,107 @@ extern "C" {
 using namespace soundtouch;
 class WLAudio {
 public:
-    WLAudio(WLPlayStatus *playStatus, int sample_rate, CallJava *callJava);
+    WLAudio(int sample_rate, WLPlayStatus *play_status, CallJava *call_java);
 
     ~WLAudio();
 
 public:
-    void play();
+    void InitOpenSLES();
 
-    void initOpenSLES();
+    void Play();
 
-    void pause();
+    void Pause();
 
-    void resume();
+    void Resume();
 
-    void stop();
+    void Stop();
 
-    void release();
+    void Release();
 
-    void setVolume(int percent);
+    void SetVolume(int percent);
 
     void SetChannelType(int mute);
 
-    void setPitch(float pitch);
+    void SetPitch(float pitch);
 
-    void setSpeed(float speed);
+    void SetSpeed(float speed);
 
-    int getPCMDB(char *pcmdata, size_t pcmsize);
+    int GetPCMDB(char *pcmdata, size_t pcmsize);
 
-    void startStopRecord(bool start);
+    int GetSoundTouchData();
 
-    int getSoundTouchData();
+    void StartStopRecord(bool start);
 
 private:
-    int resampleAudio(void **pcmbuf);
+    int _ResampleAudio(void **pcmbuf);
 
-    SLuint32 getCurrentSampleRateForOpenSLES(int sample_rate);
+    SLuint32 _GetCurrentSampleRateForOpenSLES(int sample_rate);
 
 public:
-    int streamIndex = -1;
-    AVCodecParameters *codecPar = NULL;
-    AVCodecContext *avCodecContext = NULL;
+    CallJava *m_call_java = NULL;
+    WLPlayStatus *m_play_status = NULL;
 
-    WLQueue *queue = NULL;
-    WLPlayStatus *playStatus = NULL;
-    CallJava *callJava = NULL;
+    int m_stream_index = -1;
+    AVCodecParameters *m_codec_par = NULL;
+    AVCodecContext *m_avcodec_ctx = NULL;
 
-    pthread_t thread_play;
-    AVPacket *avPacket = NULL;
-    AVFrame *avFrame = NULL;
-    int ret = -1;
-    uint8_t *buffer = NULL;
-    int data_size = 0;
+    int m_sample_rate = 0;
 
-    int sample_Rate = 0;
-
-    int duration = 0;
+    int m_duration = 0;
     AVRational time_base;
     double now_time = 0;
     double clock = 0;
     double last_time = 0;
-
-    int volumePercent = 100;
-    int m_channel_type = 2;
-//    FILE* outFile = NULL;
 
     float pitch = 1.0f;
     float speed = 1.0f;
 
     bool readFrameFinish = true;
 
-    bool isCut = false;
+    bool m_is_cut = false;
     int end_time = 0;
     bool showPcm = false;
 
-    pthread_t pcmCallBackThread;
-    WLBufferQueue *bufferQueue;
-    int defaultPcmSize = 4096;
+    WLQueue *m_queue = NULL;
+    WLBufferQueue *m_buffer_queue;
+    int m_default_pcm_size = 4096;
 
-// 引擎接口
-    SLObjectItf engineObject = NULL;
-    SLEngineItf engineEngine = NULL;
-
-//混音器
-    SLObjectItf outputMixObject = NULL;
-    SLEnvironmentalReverbItf outputMixEnvironmentalReverb = NULL;
-    SLEnvironmentalReverbSettings reverbSettings = SL_I3DL2_ENVIRONMENT_PRESET_STONECORRIDOR;//走廊环境音混响
-
-    SLObjectItf pcmPlayerObject = NULL;
-    SLPlayItf pcmPlayerPlay = NULL;
-    SLVolumeItf pcmPlayerVolume = NULL;
-    SLMuteSoloItf pcmPlayerMute = NULL;//声道操作
-
-//缓冲器队列接口
+    SAMPLETYPE *sampleBuffer = NULL;
     SLAndroidSimpleBufferQueueItf pcmBufferQueue = NULL;
 
-    //SoundTouch
-    SoundTouch *soundTouch = NULL;
-    SAMPLETYPE *sampleBuffer = NULL;
-    bool finished = true;
-    uint8_t *out_buffer = NULL;
-    int nb = 0;
-    int num = 0;
+    bool m_is_record_pcm = false;
+    pthread_mutex_t m_codec_mutex;
 
-    bool isRecordPcm = false;
+private:
+    pthread_t m_play_thread_;
+    pthread_t m_pcm_callback_thread_;
 
-    pthread_mutex_t codecMutex;
+    // 引擎接口
+    SLObjectItf m_engine_object_ = NULL;
+    SLEngineItf m_engine_engine_ = NULL;
+    //混音器
+    SLObjectItf m_output_mix_object_ = NULL;
+    SLEnvironmentalReverbItf m_output_mix_environmental_reverb_ = NULL;
+    SLEnvironmentalReverbSettings m_reverbsettings_ = SL_I3DL2_ENVIRONMENT_PRESET_STONECORRIDOR;//走廊环境音混响
+
+    SLObjectItf m_pcm_player_object_ = NULL;
+    SLPlayItf m_pcm_player_play_ = NULL;
+    SLVolumeItf m_pcm_player_volume_ = NULL;
+    SLMuteSoloItf m_pcm_player_mute_ = NULL;//声道操作
+
+    int m_volume_percent_ = 100;
+    int m_channel_type_ = 2;
+
+    AVPacket *m_avpacket_ = NULL;
+    AVFrame *m_avframe_ = NULL;
+
+    uint8_t *m_buffer_ = NULL;
+    int m_data_size_ = 0;
+    bool m_finished_ = true;
+    uint8_t *m_out_buffer_ = NULL;
+    int m_nb_ = 0;
+    int m_num_ = 0;
+    SoundTouch *m_soundtouch_ = NULL;
 };
 
 #endif //MYPLAYER_WLAUDIO_H_

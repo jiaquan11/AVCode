@@ -37,60 +37,59 @@ void *playVideo(void *data) {
                 video->m_call_java->OnCallLoad(CHILD_THREAD, false);
             }
         }
-        AVPacket *avPacket = av_packet_alloc();
-        if (video->m_queue->GetAVPacket(avPacket) != 0) {
-            av_packet_free(&avPacket);
-            av_free(avPacket);
-            avPacket = NULL;
+        AVPacket *av_packet = av_packet_alloc();
+        if (video->m_queue->GetAVPacket(av_packet) != 0) {
+            av_packet_free(&av_packet);
+            av_free(av_packet);
+            av_packet = NULL;
             continue;
         }
 
         if (video->m_codec_type == CODEC_MEDIACODEC) {
-            LOGI("硬解码视频");
-            if (av_bsf_send_packet(video->m_abs_ctx, avPacket) != 0){
-                av_packet_free(&avPacket);
-                av_free(avPacket);
-                avPacket = NULL;
+            //LOGI("硬解码视频");
+            if (av_bsf_send_packet(video->m_abs_ctx, av_packet) != 0){
+                av_packet_free(&av_packet);
+                av_free(av_packet);
+                av_packet = NULL;
                 continue;
             }
-            while (av_bsf_receive_packet(video->m_abs_ctx, avPacket) == 0){
-                double diff = video->GetFrameDiffTime(NULL, avPacket);
+            while (av_bsf_receive_packet(video->m_abs_ctx, av_packet) == 0){
+                double diff = video->GetFrameDiffTime(NULL, av_packet);
                 av_usleep(video->GetDelayTime(diff) * 1000000);
 
-                video->m_call_java->OnCallDecodeVPacket(CHILD_THREAD, avPacket->size, avPacket->data);//调用Java层硬解
-                av_packet_free(&avPacket);
-                av_free(avPacket);
+                video->m_call_java->OnCallDecodeVPacket(CHILD_THREAD, av_packet->size, av_packet->data);//调用Java层硬解
+                av_packet_free(&av_packet);
+                av_free(av_packet);
                 continue;
             }
-            avPacket = NULL;
+            av_packet = NULL;
         } else if (video->m_codec_type == CODEC_YUV) {
-            LOGI("软解码视频");
+            //LOGI("软解码视频");
             pthread_mutex_lock(&video->m_codec_mutex);
-            if (avcodec_send_packet(video->m_avcodec_context, avPacket) != 0) {
-                av_packet_free(&avPacket);
-                av_free(avPacket);
-                avPacket = NULL;
+            if (avcodec_send_packet(video->m_avcodec_ctx, av_packet) != 0) {
+                av_packet_free(&av_packet);
+                av_free(av_packet);
+                av_packet = NULL;
                 pthread_mutex_unlock(&video->m_codec_mutex);
                 continue;
             }
 
             AVFrame *avFrame = av_frame_alloc();
-            if (avcodec_receive_frame(video->m_avcodec_context, avFrame) != 0) {
+            if (avcodec_receive_frame(video->m_avcodec_ctx, avFrame) != 0) {
                 av_frame_free(&avFrame);
                 av_free(avFrame);
                 avFrame = NULL;
-                av_packet_free(&avPacket);
-                av_free(avPacket);
-                avPacket = NULL;
+                av_packet_free(&av_packet);
+                av_free(av_packet);
+                av_packet = NULL;
                 pthread_mutex_unlock(&video->m_codec_mutex);
                 continue;
             }
 
-            LOGI("子线程解码一个AVFrame成功!");
+            //LOGI("子线程解码一个AVFrame成功!");
             if (avFrame->format == AV_PIX_FMT_YUV420P) {
-                LOGI("当前视频是YUV420P格式!");
+                //LOGI("当前视频是YUV420P格式!");
                 double diff = video->GetFrameDiffTime(avFrame, NULL);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
-                LOGI("diff is %lf", diff);
                 av_usleep(video->GetDelayTime(diff) * 1000000);
 //            av_usleep(diff * 1000000);
                 //直接渲染
@@ -104,22 +103,22 @@ void *playVideo(void *data) {
             } else {
                 LOGI("当前视频不是YUV420P格式，需转换!");
                 AVFrame *pFrameYUV420p = av_frame_alloc();//分配一个Frame内存空间
-                int size = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, video->m_avcodec_context->width, video->m_avcodec_context->height, 1);//获取指定尺寸的YUV420P的内存大小
+                int size = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, video->m_avcodec_ctx->width, video->m_avcodec_ctx->height, 1);//获取指定尺寸的YUV420P的内存大小
                 uint8_t *buffer = static_cast<uint8_t *>(av_malloc(size * sizeof(uint8_t)));//分配对应的YUV420P大小的内存
                 av_image_fill_arrays(pFrameYUV420p->data,
                                      pFrameYUV420p->linesize,
                                      buffer,
                                      AV_PIX_FMT_YUV420P,
-                                     video->m_avcodec_context->width,
-                                     video->m_avcodec_context->height,
+                                     video->m_avcodec_ctx->width,
+                                     video->m_avcodec_ctx->height,
                                      1);//填充内存和大小到pFrameYUV420p结构中
 
                 SwsContext *sws_ctx = sws_getContext(
-                        video->m_avcodec_context->width,
-                        video->m_avcodec_context->height,
-                        video->m_avcodec_context->pix_fmt,
-                        video->m_avcodec_context->width,
-                        video->m_avcodec_context->height,
+                        video->m_avcodec_ctx->width,
+                        video->m_avcodec_ctx->height,
+                        video->m_avcodec_ctx->pix_fmt,
+                        video->m_avcodec_ctx->width,
+                        video->m_avcodec_ctx->height,
                         AV_PIX_FMT_YUV420P,
                         SWS_BICUBIC, NULL, NULL, NULL);//只是进行格式转换,非YUV420P格式转换为YUV420P格式
                 if (!sws_ctx) {
@@ -139,14 +138,13 @@ void *playVideo(void *data) {
                           pFrameYUV420p->linesize);//格式转换
 
                 double diff = video->GetFrameDiffTime(pFrameYUV420p, NULL);
-                LOGI("diff2222 is %lf", diff);
                 av_usleep(video->GetDelayTime(diff) * 1000000);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
 
                 //渲染
                 video->m_call_java->OnCallRenderYUV(CHILD_THREAD,
-                                                 video->m_avcodec_context->width,
+                                                 video->m_avcodec_ctx->width,
                                                  pFrameYUV420p->linesize[0],
-                                                 video->m_avcodec_context->height,
+                                                 video->m_avcodec_ctx->height,
                                                  pFrameYUV420p->data[0],
                                                  pFrameYUV420p->data[1],
                                                  pFrameYUV420p->data[2]);
@@ -160,9 +158,9 @@ void *playVideo(void *data) {
             av_frame_free(&avFrame);
             av_free(avFrame);
             avFrame = NULL;
-            av_packet_free(&avPacket);
-            av_free(avPacket);
-            avPacket = NULL;
+            av_packet_free(&av_packet);
+            av_free(av_packet);
+            av_packet = NULL;
             pthread_mutex_unlock(&video->m_codec_mutex);
         }
     }
@@ -193,18 +191,16 @@ void WLVideo::Release() {
         m_abs_ctx = NULL;
     }
 
-    if (m_avcodec_context != NULL) {
+    if (m_avcodec_ctx != NULL) {
         pthread_mutex_lock(&m_codec_mutex);
-        avcodec_close(m_avcodec_context);
-        avcodec_free_context(&m_avcodec_context);
-        m_avcodec_context = NULL;
+        avcodec_close(m_avcodec_ctx);
+        avcodec_free_context(&m_avcodec_ctx);
+        m_avcodec_ctx = NULL;
         pthread_mutex_unlock(&m_codec_mutex);
     }
-
     if (m_play_status != NULL) {
         m_play_status = NULL;
     }
-
     if (m_call_java != NULL) {
         m_call_java = NULL;
     }
@@ -227,7 +223,7 @@ double WLVideo::GetFrameDiffTime(AVFrame *avFrame, AVPacket* avPacket) {
         m_clock = pts;
     }
     double diff = m_audio->clock - m_clock;//音频-视频，得到差值，这里的audio clock是音频的当前pcm播放时间戳
-    LOGI("audio->clock: %lf, video clock: %lf, diff: %lf", m_audio->clock, m_clock, diff);
+    //LOGI("audio->clock: %lf, video clock: %lf, diff: %lf", m_audio->clock, m_clock, diff);
     return diff;
 }
 
@@ -260,6 +256,6 @@ double WLVideo::GetDelayTime(double diff) {
     if (fabs(diff) >= 10) {//相差很大，基本可以确定没有音频，则视频按照帧率进行播放
         m_delay_time = m_default_delay_time;
     }
-    LOGI("m_delay_time is %lf", m_delay_time);
+    //LOGI("m_delay_time is %lf", m_delay_time);
     return m_delay_time;
 }
