@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
             requestPermissions(permissions, 321);
         }
 
-        mWlglSurfaceView_ = findViewById(R.id.wlglsurfaceview);//播放GLSurfaceView控件
+        mWlglSurfaceView_ = findViewById(R.id.wlglsurfaceview);//实例化GLSurfaceView控件
         mTvTime_ = findViewById(R.id.tv_time);//显示当前播放时间戳及播放总时长
         mSeekBarSeek_ = findViewById(R.id.seekbar_seek);//播放seek进度条
         mTvVolume_ = findViewById(R.id.tv_volume);//显示音量值
@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
             public void handleMessage(@NonNull Message msg) {
                 super.handleMessage(msg);
                 if (msg.what == 1) {
-                    if (!mIsSeekBar_) {//播放seek完成，更新seek进度条的位置及播放时间戳显示
+                    if (!mIsSeekBar_) {//非seek状态，更新seek进度条的位置及播放时间戳显示
                         TimeInfoBean timeInfoBean = (TimeInfoBean) msg.obj;
                         mTvTime_.setText(TimeUtil.secdsToDateFormat(timeInfoBean.getTotalTime(), timeInfoBean.getTotalTime()) + "/" +
                                          TimeUtil.secdsToDateFormat(timeInfoBean.getCurrentTime(), timeInfoBean.getTotalTime()));
@@ -176,6 +176,16 @@ public class MainActivity extends AppCompatActivity {
         });
 
         /**
+         * 设置音频分贝值监听
+         */
+        mWlPlayer_.setOnVolumeDBListener(new OnVolumeDBListener() {
+            @Override
+            public void onDBValue(int db) {
+//                MyLog.i("db is " + db);
+            }
+        });
+
+        /**
          * 设置播放完成监听
          */
         mWlPlayer_.setOnCompleteListener(new OnCompleteListener() {
@@ -196,16 +206,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         /**
-         * 设置音频分贝值监听
-         */
-        mWlPlayer_.setOnVolumeDBListener(new OnVolumeDBListener() {
-            @Override
-            public void onDBValue(int db) {
-//                MyLog.i("db is " + db);
-            }
-        });
-
-        /**
          * 设置音频录制时间监听
          */
         mWlPlayer_.setOnRecordTimeListener(new OnRecordTimeListener() {
@@ -222,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * 开始播放
      */
-    public void start(View view) {
+    public void prepare(View view) {
 //        mWlPlayer_.prepared("http://mpge.5nd.com/2015/2015-11-26/69708/1.mp3");
 //        mWlPlayer_.prepared("/sdcard/testziliao/mydream.m4a");
 //        mWlPlayer_.prepared("/sdcard/testziliao/fcrs.1080p.mp4");
@@ -232,7 +232,7 @@ public class MainActivity extends AppCompatActivity {
 //        mWlPlayer_.prepared("/sdcard/testziliao/first-love-wangxinling.ape");
 //        mWlPlayer_.prepared("http://ngcdn004.cnr.cn/live/dszs/index.m3u8");
 //        mWlPlayer_.prepared("/sdcard/testziliao/yongqi-liangjingru.m4a");
-        mWlPlayer_.prepared("/sdcard/testziliao/hanleiVideo.mp4");
+        mWlPlayer_.prepare("/sdcard/testziliao/hanleiVideo.mp4");
     }
 
     /**

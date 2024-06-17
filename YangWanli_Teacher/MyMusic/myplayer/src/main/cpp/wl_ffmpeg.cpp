@@ -123,7 +123,7 @@ void *_DemuxFFmpeg(void *data) {
     return 0;
 }
 
-void WLFFmpeg::Prepared() {
+void WLFFmpeg::Prepare() {
     pthread_create(&m_demux_thread_, NULL, _DemuxFFmpeg, this);
 }
 
@@ -485,7 +485,6 @@ bool WLFFmpeg::CutAudioPlay(int start_time, int end_time, bool show_pcm) {
         m_wlaudio_->m_is_cut = true;
         m_wlaudio_->end_time = end_time;
         m_wlaudio_->showPcm = show_pcm;
-
         Seek(start_time);
         return true;
     }

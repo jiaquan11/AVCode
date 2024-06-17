@@ -22,7 +22,7 @@ WLFFmpeg *g_wl_ffmpeg = NULL;
 WLPlayStatus *g_play_status = NULL;
 bool g_is_exit = false;
 
-JNIEXPORT void JNICALL Prepared(JNIEnv *env, jobject thiz, jstring source_jstr) {
+JNIEXPORT void JNICALL Prepare(JNIEnv *env, jobject thiz, jstring source_jstr) {
     LOGI("native jni prepared in, g_wl_ffmpeg: %p", g_wl_ffmpeg);
     const char *source = env->GetStringUTFChars(source_jstr, 0);
     if (g_wl_ffmpeg == NULL) {
@@ -33,7 +33,7 @@ JNIEXPORT void JNICALL Prepared(JNIEnv *env, jobject thiz, jstring source_jstr) 
 
         g_play_status = new WLPlayStatus();
         g_wl_ffmpeg = new WLFFmpeg(g_play_status, g_call_java, source);
-        g_wl_ffmpeg->Prepared();
+        g_wl_ffmpeg->Prepare();
     }
     env->ReleaseStringUTFChars(source_jstr, source);
     LOGI("native jni prepared out!");
@@ -137,8 +137,7 @@ JNIEXPORT void JNICALL StartstopRecord(JNIEnv *env, jobject thiz, jboolean start
     }
 }
 
-JNIEXPORT jboolean JNICALL
-CutAudioPlay(JNIEnv *env, jobject thiz, jint start_time, jint end_time, jboolean show_pcm) {
+JNIEXPORT jboolean JNICALL CutAudioPlay(JNIEnv *env, jobject thiz, jint start_time, jint end_time, jboolean show_pcm) {
     if (g_wl_ffmpeg != NULL) {
         return g_wl_ffmpeg->CutAudioPlay(start_time, end_time, show_pcm);
     }
@@ -146,7 +145,7 @@ CutAudioPlay(JNIEnv *env, jobject thiz, jint start_time, jint end_time, jboolean
 }
 
 static JNINativeMethod gMethods[] = {
-         {"_nativePrepared",        "(Ljava/lang/String;)V", (void *) Prepared},
+         {"_nativePrepare",        "(Ljava/lang/String;)V", (void *) Prepare},
          {"_nativeStart",           "()V",                   (void *) Start},
          {"_nativePause",           "()V",                   (void *) Pause},
          {"_nativeResume",          "()V",                   (void *) Resume},
@@ -176,7 +175,6 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
         LOGE("class not found. %s", kClassPathName);
         return -1;
     }
-
     if (env->RegisterNatives(clazz, gMethods, sizeof(gMethods) / sizeof(gMethods[0])) < 0) {
         LOGE("RegisterNatives failed!");
         return -1;
@@ -197,17 +195,14 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
     if (g_java_vm != NULL) {
         g_java_vm = NULL;
     }
-
     if (g_call_java != NULL) {
         delete g_call_java;
         g_call_java = NULL;
     }
-
     if (g_wl_ffmpeg != NULL) {
         delete g_wl_ffmpeg;
         g_wl_ffmpeg = NULL;
     }
-
     if (g_play_status != NULL) {
         delete g_play_status;
         g_play_status = NULL;

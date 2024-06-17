@@ -97,10 +97,10 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         mOnSurfaceCreateListener_ = onSurfaceCreateListener;
     }
 
-    private OnRenderListener mOnRenderListener_ = null;
     public interface OnRenderListener {
         void onRender();
     }
+    private OnRenderListener mOnRenderListener_ = null;
     public void setOnRenderListener(OnRenderListener onRenderListener) {
         mOnRenderListener_ = onRenderListener;
     }
@@ -169,7 +169,6 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
      * */
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        _setMatrix(mScreenWidth_, mScreenHeight_, mPicWdith_, mPicHeight_);
         if (mOnRenderListener_ != null) {
             mOnRenderListener_.onRender();
         }
@@ -190,7 +189,6 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         mYBuffer_ = ByteBuffer.wrap(y);
         mUBuffer_ = ByteBuffer.wrap(u);
         mVBuffer_ = ByteBuffer.wrap(v);
-        _setMatrix(mScreenWidth_, mScreenHeight_, mYuvWidth_, mYuvHeight_);
     }
 
     private void _initRenderYUV() {
@@ -221,8 +219,8 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         if ((mYuvWidth_ > 0) && (mYuvHeight_ > 0) && (mYBuffer_ != null) && (mUBuffer_ != null) && (mVBuffer_ != null)) {
             GLES20.glUseProgram(mProgramYuv_);
 
-            mMatrixBuffer_.position(0);//每次重置position为0,解决概率崩溃问题(数组大小问题，原因未知)
-            GLES20.glUniformMatrix4fv(mMatrixYuv_, 1, false, mMatrixBuffer_);//给矩阵变量赋值
+            _setMatrix(mScreenWidth_, mScreenHeight_, mYuvWidth_, mYuvHeight_);
+            GLES20.glUniformMatrix4fv(mMatrixYuv_, 1, false, mMatrixBuffer_);
             int error = GLES20.glGetError();
             if (error != GLES20.GL_NO_ERROR) {
                 MyLog.e("OpenGL matrix error: " + error);
@@ -280,11 +278,9 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
-
         mSurfaceTexture_ = new SurfaceTexture(mTextureOESId_);
         mSurface_ = new Surface(mSurfaceTexture_);
         mSurfaceTexture_.setOnFrameAvailableListener(this);
-
         if (mOnSurfaceCreateListener_ != null) {//只有硬解才会需要回调surface
             mOnSurfaceCreateListener_.onSurfaceCreate(mSurface_);
         }
@@ -292,7 +288,6 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     }
 
     private void _renderMediaCodec() {
-        //MyLog.i("renderMediaCodec in");
         mSurfaceTexture_.updateTexImage();//将缓存数据刷到前台更新
 
         GLES20.glUseProgram(mProgramMediacodec_);
@@ -301,7 +296,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
             throw new RuntimeException("OpenGL use program error: " + error);
         }
 
-        mMatrixBuffer_.position(0);//每次重置position为0,解决概率崩溃问题(数组大小问题，原因未知)
+        _setMatrix(mScreenWidth_, mScreenHeight_, mPicWdith_, mPicHeight_);
         GLES20.glUniformMatrix4fv(mMatrixMediacodec_, 1, false, mMatrixBuffer_);//给矩阵变量赋值
         error = GLES20.glGetError();
         if (error != GLES20.GL_NO_ERROR) {
@@ -319,7 +314,6 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mTextureOESId_);
 
         GLES20.glUniform1i(mSamplerOESMediacodec_, 0);
-        //MyLog.i("renderMediaCodec out");
     }
 
     //初始化单位矩阵

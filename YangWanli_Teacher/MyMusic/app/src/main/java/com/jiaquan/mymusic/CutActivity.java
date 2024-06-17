@@ -6,13 +6,16 @@ import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.jiaquan.myplayer.util.TimeInfoBean;
 import com.jiaquan.myplayer.listener.OnPcmInfoListener;
 import com.jiaquan.myplayer.listener.OnPreparedListener;
 import com.jiaquan.myplayer.listener.OnTimeInfoListener;
 import com.jiaquan.myplayer.log.MyLog;
 import com.jiaquan.myplayer.player.WLPlayer;
+import com.jiaquan.myplayer.util.TimeInfoBean;
 
+/**
+ * 音频裁剪播放(设置开始时间和结束时间)
+ */
 public class CutActivity extends AppCompatActivity {
     private WLPlayer mWlPlayer_ = null;
 
@@ -47,24 +50,24 @@ public class CutActivity extends AppCompatActivity {
          */
         mWlPlayer_.setOnPcmInfoListener(new OnPcmInfoListener() {
             @Override
-            public void onPcmInfo(byte[] buffer, int buffersize) {
-                MyLog.i("PcmInfo bufferSize: " + buffersize);
+            public void onPcmRate(int samplerate, int bit, int channels) {
+                MyLog.i("PcmInfo samplerate: " + samplerate + " bit:" + bit + " channels:" + channels);
             }
 
             @Override
-            public void onPcmRate(int samplerate, int bit, int channels) {
-                MyLog.i("PcmInfo samplerate: " + samplerate + " bit:" + bit + " channels:" + channels);
+            public void onPcmInfo(byte[] buffer, int buffersize) {
+                MyLog.i("PcmInfo bufferSize: " + buffersize);
             }
         });
     }
 
     /**
-     * 音频裁剪
+     * 音频裁剪播放
      * @param view
      */
     public void cutAudio(View view) {
 //        mWlPlayer_.prepared("/sdcard/testziliao/first-love-wangxinling.ape");
 //        mWlPlayer_.prepared("/sdcard/testziliao/mydream.m4a");
-        mWlPlayer_.prepared("/sdcard/testziliao/the_girl.m4a");
+        mWlPlayer_.prepare("/sdcard/testziliao/the_girl.m4a");
     }
 }

@@ -20,7 +20,7 @@ public:
 public:
     void DemuxFFmpegThread();
 
-    void Prepared();
+    void Prepare();
 
     void StartFFmpegThread();
 

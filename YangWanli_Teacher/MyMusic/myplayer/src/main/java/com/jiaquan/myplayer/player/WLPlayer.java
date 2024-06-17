@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class WLPlayer {
-    // 加载动态库
     static {
         System.loadLibrary("native-lib");
         System.loadLibrary("avcodec");
@@ -50,26 +49,23 @@ public class WLPlayer {
     }
 
     private WLGLSurfaceView mWlglSurfaceView_ = null;
-    private int mDuration_ = -1;
+    private Surface mSurface_ = null;
+    private MediaCodec mVDecMediaCodec_ = null;
+    private MediaCodec.BufferInfo mVBufferInfo_ = null;
+    private static TimeInfoBean mTimeInfoBean_ = null;
+    private long mStartMs_ = 0;//记录每次硬解解码前的系统时间
+    public int mFrameCount_ = 0;//记录硬解播放的总帧数
+    public long mTotalTime_ = 0;//记录硬解耗时
     private int mVolumePercent_ = 100;
     private ChannelTypeEnum mChannelType_ = ChannelTypeEnum.MUTE_CENTER;
     private float mSpeed_ = 1.0f;
     private float mPitch_ = 1.0f;
-
-    private Surface mSurface_ = null;
-    private MediaFormat mVDecMediaFormat_ = null;
-    private MediaCodec mVDecMediaCodec_ = null;
-    private MediaCodec.BufferInfo mVBufferInfo_ = null;
-    public long mTotalTime_ = 0;//记录硬解耗时
-    public int mFrameCount_ = 0;//记录硬解播放的总帧数
-    private long mStartMs_ = 0;//记录每次硬解解码前的系统时间
-    private static TimeInfoBean mTimeInfoBean_ = null;
     private final Object mVLock_ = new Object(); // 用于同步的锁对象
     private Handler mMultiVideoHandler_ = null;
     private HandlerThread mMultiVideoHandlerThread_ = null;
 
     public void setWlglSurfaceView(WLGLSurfaceView wlglSurfaceView) {
-        this.mWlglSurfaceView_ = wlglSurfaceView;
+        mWlglSurfaceView_ = wlglSurfaceView;
         wlglSurfaceView.getWlRender().setOnSurfaceCreateListener(new WLRender.OnSurfaceCreateListener() {
             @Override
             public void onSurfaceCreate(Surface s) {
@@ -81,49 +77,49 @@ public class WLPlayer {
         });
     }
 
-    private OnLoadListener onLoadListener = null;
+    private OnLoadListener mOnLoadListener_ = null;
     public void setOnLoadListener(OnLoadListener onLoadListener) {
-        this.onLoadListener = onLoadListener;
+        mOnLoadListener_ = onLoadListener;
     }
 
-    private OnPreparedListener onPreparedListener = null;
+    private OnPreparedListener mOnPreparedListener_ = null;
     public void setOnPreparedListener(OnPreparedListener onPreparedListener) {
-        this.onPreparedListener = onPreparedListener;
+        mOnPreparedListener_ = onPreparedListener;
     }
 
-    private OnPauseResumeListener onPauseResumeListener = null;
+    private OnPauseResumeListener mOnPauseResumeListener_ = null;
     public void setOnPauseResumeListener(OnPauseResumeListener onPauseResumeListener) {
-        this.onPauseResumeListener = onPauseResumeListener;
+        mOnPauseResumeListener_ = onPauseResumeListener;
     }
 
-    private OnTimeInfoListener onTimeInfoListener = null;
+    private OnTimeInfoListener mOnTimeInfoListener_ = null;
     public void setOnTimeInfoListener(OnTimeInfoListener onTimeInfoListener) {
-        this.onTimeInfoListener = onTimeInfoListener;
+        mOnTimeInfoListener_ = onTimeInfoListener;
     }
 
-    private OnCompleteListener onCompleteListener = null;
-    public void setOnCompleteListener(OnCompleteListener onCompleteListener) {
-        this.onCompleteListener = onCompleteListener;
-    }
-
-    private OnErrorListener onErrorListener = null;
-    public void setOnErrorListener(OnErrorListener onErrorListener) {
-        this.onErrorListener = onErrorListener;
-    }
-
-    private OnVolumeDBListener onVolumeDBListener = null;
-    public void setOnVolumeDBListener(OnVolumeDBListener onVolumeDBListener) {
-        this.onVolumeDBListener = onVolumeDBListener;
-    }
-
-    private OnRecordTimeListener onRecordTimeListener = null;
-    public void setOnRecordTimeListener(OnRecordTimeListener onRecordTimeListener) {
-        this.onRecordTimeListener = onRecordTimeListener;
-    }
-
-    private OnPcmInfoListener onPcmInfoListener = null;
+    private OnPcmInfoListener mOnPcmInfoListener_ = null;
     public void setOnPcmInfoListener(OnPcmInfoListener onPcmInfoListener) {
-        this.onPcmInfoListener = onPcmInfoListener;
+        mOnPcmInfoListener_ = onPcmInfoListener;
+    }
+
+    private OnVolumeDBListener mOnVolumeDBListener_ = null;
+    public void setOnVolumeDBListener(OnVolumeDBListener onVolumeDBListener) {
+        mOnVolumeDBListener_ = onVolumeDBListener;
+    }
+
+    private OnCompleteListener mOnCompleteListener_ = null;
+    public void setOnCompleteListener(OnCompleteListener onCompleteListener) {
+        mOnCompleteListener_ = onCompleteListener;
+    }
+
+    private OnErrorListener mOnErrorListener_ = null;
+    public void setOnErrorListener(OnErrorListener onErrorListener) {
+        mOnErrorListener_ = onErrorListener;
+    }
+
+    private OnRecordTimeListener mOnRecordTimeListener_ = null;
+    public void setOnRecordTimeListener(OnRecordTimeListener onRecordTimeListener) {
+        mOnRecordTimeListener_ = onRecordTimeListener;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -171,28 +167,26 @@ public class WLPlayer {
     /**
      * 准备播放源
      */
-    public void prepared(String playSource) {
-        MyLog.i("prepared in source: " + playSource);
+    public void prepare(String playSource) {
+        MyLog.i("prepare in source: " + playSource);
         if (TextUtils.isEmpty(playSource)) {
             MyLog.i("source must not be empty");
             return;
         }
 
-        MyLog.i("prepared before stop");
         stop();//先停止播放
-        MyLog.i("prepared after stop");
 
         if (mMultiVideoHandler_ != null) {
             mMultiVideoHandler_.post(new Runnable() {
                 @Override
                 public void run() {
-                    MyLog.i("prepared in thread start");
-                    _nativePrepared(playSource);
-                    MyLog.i("prepared in thread end");
+                    MyLog.i("prepare in thread start");
+                    _nativePrepare(playSource);
+                    MyLog.i("prepare in thread end");
                 }
             });
         }
-        MyLog.i("prepared out");
+        MyLog.i("prepare out");
     }
 
     /**
@@ -219,8 +213,8 @@ public class WLPlayer {
      */
     public void pause() {
         _nativePause();
-        if (onPauseResumeListener != null) {
-            onPauseResumeListener.onPause(true);
+        if (mOnPauseResumeListener_ != null) {
+            mOnPauseResumeListener_.onPause(true);
         }
     }
 
@@ -229,8 +223,8 @@ public class WLPlayer {
      */
     public void resume() {
         _nativeResume();
-        if (onPauseResumeListener != null) {
-            onPauseResumeListener.onPause(false);
+        if (mOnPauseResumeListener_ != null) {
+            mOnPauseResumeListener_.onPause(false);
         }
     }
 
@@ -252,7 +246,6 @@ public class WLPlayer {
                     _releaseVMediaCodec();
 
                     mTimeInfoBean_ = null;
-                    mDuration_ = -1;
                     mTotalTime_ = 0;//记录硬解耗时
                     mFrameCount_ = 0;//记录硬解播放的总帧数
                     mStartMs_ = 0;//记录每次硬解解码前的系统时间
@@ -277,7 +270,7 @@ public class WLPlayer {
      */
     public void playNext(String url) {
         MyLog.i("playNext in url: " + url);
-        prepared(url);
+        prepare(url);
     }
 
     /**
@@ -285,10 +278,7 @@ public class WLPlayer {
      * @return 视频总时长
      */
     public int getDuration() {
-        if (mDuration_ < 0) {
-            mDuration_ = _nativeDuration();
-        }
-        return mDuration_;
+        return _nativeDuration();
     }
 
     /**
@@ -364,7 +354,6 @@ public class WLPlayer {
                     e.printStackTrace();
                 }
                 mVDecMediaCodec_ = null;
-                mVDecMediaFormat_ = null;
                 mVBufferInfo_ = null;
                 MyLog.i("releaseVMediaCodec out");
             }
@@ -387,66 +376,48 @@ public class WLPlayer {
 
     @CalledByNative
     private void onCallLoad(boolean load) {
-        if (onLoadListener != null) {
-            onLoadListener.onLoad(load);
+        if (mOnLoadListener_ != null) {
+            mOnLoadListener_.onLoad(load);
         }
     }
 
     @CalledByNative
     private void onCallPrepared() {
-        if (onPreparedListener != null) {
-            onPreparedListener.onPrepared();
+        if (mOnPreparedListener_ != null) {
+            mOnPreparedListener_.onPrepared();
         }
     }
 
     @CalledByNative
     private void onCallTimeInfo(int currentTime, int totalTime) {
-        if (onTimeInfoListener != null) {
+        if (mOnTimeInfoListener_ != null) {
             if (mTimeInfoBean_ == null) {
                 mTimeInfoBean_ = new TimeInfoBean();
             }
             mTimeInfoBean_.setCurrentTime(currentTime);
             mTimeInfoBean_.setTotalTime(totalTime);
-            onTimeInfoListener.onTimeInfo(mTimeInfoBean_);
-        }
-    }
-
-    @CalledByNative
-    private void onCallComplete() {
-        MyLog.i("onCallComplete start");
-        stop();
-        if (onCompleteListener != null) {
-            onCompleteListener.onComplete();
-        }
-        MyLog.i("onCallComplete end");
-    }
-
-    @CalledByNative
-    private void onCallError(int code, String msg) {
-        stop();
-        if (onErrorListener != null) {
-            onErrorListener.onError(code, msg);
-        }
-    }
-
-    @CalledByNative
-    private void onCallVolumeDB(int db) {
-        if (onVolumeDBListener != null) {
-            onVolumeDBListener.onDBValue(db);
-        }
-    }
-
-    @CalledByNative
-    private void onCallPcmInfo(byte[] buffer, int bufferSize) {
-        if (onPcmInfoListener != null) {
-            onPcmInfoListener.onPcmInfo(buffer, bufferSize);
+            mOnTimeInfoListener_.onTimeInfo(mTimeInfoBean_);
         }
     }
 
     @CalledByNative
     private void onCallPcmRate(int samplerate, int bit, int channels) {
-        if (onPcmInfoListener != null) {
-            onPcmInfoListener.onPcmRate(samplerate, bit, channels);
+        if (mOnPcmInfoListener_ != null) {
+            mOnPcmInfoListener_.onPcmRate(samplerate, bit, channels);
+        }
+    }
+
+    @CalledByNative
+    private void onCallPcmInfo(byte[] buffer, int bufferSize) {
+        if (mOnPcmInfoListener_ != null) {
+            mOnPcmInfoListener_.onPcmInfo(buffer, bufferSize);
+        }
+    }
+
+    @CalledByNative
+    private void onCallVolumeDB(int db) {
+        if (mOnVolumeDBListener_ != null) {
+            mOnVolumeDBListener_.onDBValue(db);
         }
     }
 
@@ -472,25 +443,24 @@ public class WLPlayer {
 
                     String mimeType = WLVideoSupportUtil.findVideoCodecType(codecTag);
                     MyLog.i("onCallinitMediaCodec mime is " + mimeType + " width is " + width + " height is " + height);
-                    mVDecMediaFormat_ = MediaFormat.createVideoFormat(mimeType, width, height);
-                    mVDecMediaFormat_.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
+                    MediaFormat videoFormat = MediaFormat.createVideoFormat(mimeType, width, height);
+                    videoFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
                     /**
                      * 这里三个字段都是设置为ffmpeg提取的extradata数据，目前硬件解码是没问题的，
                      * 理论上是需要分别提取SPS和PPS数据填充设置,H265需要设置VPS，SPS，PPS三个字段.
                      * 应该MediaCodec针对直接传递的extradata数据在内部进行了提取VPS,SPS,PPS,比较强大
                      */
-//                MyLog.i("java onCallinitMediaCodec csd size: " + csd.length);
-//                printBytesInLines(csd, csd.length);
-
-                    mVDecMediaFormat_.setByteBuffer("csd-0", ByteBuffer.wrap(csd));
-                    mVDecMediaFormat_.setByteBuffer("csd-1", ByteBuffer.wrap(csd));
+//                    MyLog.i("java onCallinitMediaCodec csd size: " + csd.length);
+//                    _printBytesInLines(csd, csd.length);
+                    videoFormat.setByteBuffer("csd-0", ByteBuffer.wrap(csd));
+                    videoFormat.setByteBuffer("csd-1", ByteBuffer.wrap(csd));
                     if (mimeType.equals("video/hevc")) {
-                        mVDecMediaFormat_.setByteBuffer("csd-2", ByteBuffer.wrap(csd));
+                        videoFormat.setByteBuffer("csd-2", ByteBuffer.wrap(csd));
                     }
-                    MyLog.i(mVDecMediaFormat_.toString());
+                    MyLog.i(videoFormat.toString());
                     mVBufferInfo_ = new MediaCodec.BufferInfo();
                     mVDecMediaCodec_ = MediaCodec.createByCodecName(WLVideoSupportUtil.getHardwareDecoderName(codecTag));
-                    mVDecMediaCodec_.configure(mVDecMediaFormat_, mSurface_, null, 0);
+                    mVDecMediaCodec_.configure(videoFormat, mSurface_, null, 0);
                     mVDecMediaCodec_.start();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -498,19 +468,10 @@ public class WLPlayer {
                 mStartMs_ = System.currentTimeMillis();
                 MyLog.i("onCallinitMediaCodec end");
             } else {
-                if (onErrorListener != null) {
-                    onErrorListener.onError(2001, "surface is null");
+                if (mOnErrorListener_ != null) {
+                    mOnErrorListener_.onError(2001, "surface is null");
                 }
             }
-        }
-    }
-
-    @CalledByNative
-    private void onCallRenderYUV(int width, int height, byte[] y, byte[] u, byte[] v) {
-        //MyLog.i("onCallRenderYUV width: " + width + " height: " + height);
-        if (mWlglSurfaceView_ != null) {
-            mWlglSurfaceView_.getWlRender().setRenderType(WLRender.RENDER_YUV);
-            mWlglSurfaceView_.setYUVData(width, height, y, u, v);
         }
     }
 
@@ -546,6 +507,32 @@ public class WLPlayer {
                  }
              }
          }
+    }
+
+    @CalledByNative
+    private void onCallRenderYUV(int width, int height, byte[] y, byte[] u, byte[] v) {
+        if (mWlglSurfaceView_ != null) {
+            mWlglSurfaceView_.getWlRender().setRenderType(WLRender.RENDER_YUV);
+            mWlglSurfaceView_.setYUVData(width, height, y, u, v);
+        }
+    }
+
+    @CalledByNative
+    private void onCallComplete() {
+        MyLog.i("onCallComplete start");
+        stop();
+        if (mOnCompleteListener_ != null) {
+            mOnCompleteListener_.onComplete();
+        }
+        MyLog.i("onCallComplete end");
+    }
+
+    @CalledByNative
+    private void onCallError(int code, String msg) {
+        stop();
+        if (mOnErrorListener_ != null) {
+            mOnErrorListener_.onError(code, msg);
+        }
     }
 
     //录音操作
@@ -716,13 +703,12 @@ public class WLPlayer {
     }
 
     @CalledByNative
-    private void encodePcmToAAC(byte[] pcmBuffer, int size) {
-//        MyLog.i("encodePcmToAAC buffer size: " + size);
+    private void onCallPcmToAAC(byte[] pcmBuffer, int size) {
         synchronized (mALock_) {
             if ((pcmBuffer != null) && (size > 0) && (mAEncMediaCodec_ != null)) {
                 mRecordTime_ += size * 1.0 / (mAudioSamplerate_ * 2 * 2);//计算当前包的时长，并累加
-                if (onRecordTimeListener != null) {
-                    onRecordTimeListener.onAudioRecordTime((int) mRecordTime_);//回调当前录制时长,单位秒
+                if (mOnRecordTimeListener_ != null) {
+                    mOnRecordTimeListener_.onAudioRecordTime((int) mRecordTime_);//回调当前录制时长,单位秒
                 }
 
                 int inputBufferIndex = mAEncMediaCodec_.dequeueInputBuffer(0);//获取到编码输入buffer的可用索引
@@ -759,7 +745,7 @@ public class WLPlayer {
     }
 
     //native方法
-    private native void _nativePrepared(String source);
+    private native void _nativePrepare(String source);
 
     private native void _nativeStart();
 
