@@ -1,5 +1,7 @@
 package com.jiaquan.mymusic;
 
+import android.Manifest;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 
@@ -23,6 +25,12 @@ public class CutActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cutaudio);
+
+        // 要申请的权限
+        String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.CHANGE_NETWORK_STATE};
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(permissions, 321);
+        }
 
         mWlPlayer_ = new WLPlayer();
         /**
@@ -50,12 +58,12 @@ public class CutActivity extends AppCompatActivity {
          */
         mWlPlayer_.setOnPcmInfoListener(new OnPcmInfoListener() {
             @Override
-            public void onPcmRate(int samplerate, int bit, int channels) {
+            public void onPcmInfo(int samplerate, int bit, int channels) {
                 MyLog.i("PcmInfo samplerate: " + samplerate + " bit:" + bit + " channels:" + channels);
             }
 
             @Override
-            public void onPcmInfo(byte[] buffer, int buffersize) {
+            public void onPcmData(byte[] buffer, int buffersize) {
                 MyLog.i("PcmInfo bufferSize: " + buffersize);
             }
         });

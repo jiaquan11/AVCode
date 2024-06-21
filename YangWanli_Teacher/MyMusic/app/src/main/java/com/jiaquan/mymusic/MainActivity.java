@@ -58,8 +58,8 @@ public class MainActivity extends AppCompatActivity {
         mWlPlayer_ = new WLPlayer();
         mWlPlayer_.setWlglSurfaceView(mWlglSurfaceView_);
         mWlPlayer_.setVolume(80);//设置初始音量
-        mTvVolume_.setText("音量: " + mWlPlayer_.getVolumePercent() + "%");//设置音量显示值
-        mSeekBarVolume_.setProgress(mWlPlayer_.getVolumePercent());//设置音量进度条的初始值
+        mTvVolume_.setText("音量: " + mWlPlayer_.getVolume() + "%");//设置音量显示值
+        mSeekBarVolume_.setProgress(mWlPlayer_.getVolume());//设置音量进度条的初始值
         mWlPlayer_.setChannelType(ChannelTypeEnum.MUTE_LEFT);//设置声道控制
         mWlPlayer_.setSpeed(1.0f);//设置音频播放速度值
         mWlPlayer_.setPitch(1.0f);//设置音调值
@@ -161,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 mWlPlayer_.setVolume(progress);
-                mTvVolume_.setText("音量: " + mWlPlayer_.getVolumePercent() + "%");
+                mTvVolume_.setText("音量: " + mWlPlayer_.getVolume() + "%");
             }
 
             @Override

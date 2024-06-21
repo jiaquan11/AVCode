@@ -36,9 +36,9 @@ void _PcmBufferCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
         if (bufferSize > 0) {
             wlAudio->clock += (bufferSize * 4) / ((double) (wlAudio->m_sample_rate * 2 * 2));//累加一下播放一段pcm所耗费的时间
 //            LOGI("pcmBufferCallBack audio clock: %lf", wlAudio->clock);
-            if (wlAudio->clock - wlAudio->last_time >= 0.1) {
+            if (wlAudio->clock - wlAudio->last_time >= 0.1) {//100毫秒上报一次当前的音频播放时间戳
                 wlAudio->last_time = wlAudio->clock;
-                wlAudio->m_call_java->OnCallTimeInfo(CHILD_THREAD, wlAudio->clock, wlAudio->m_duration);//100毫秒上报一次当前的音频播放时间戳
+                wlAudio->m_call_java->OnCallTimeInfo(CHILD_THREAD, wlAudio->clock, wlAudio->m_duration);
             }
 
             wlAudio->m_buffer_queue->PutBuffer(wlAudio->sampleBuffer, bufferSize * 4);//将解码的Pcm数据放入缓冲区，用于另外一个线程获取用于上报
@@ -150,7 +150,7 @@ void *_PcmCallBack(void *data) {
                 wlAudio->m_call_java->OnCallPcmToAAC(CHILD_THREAD, pcmBean->m_buffer, pcmBean->m_buffsize);
             }
             if (wlAudio->showPcm) {
-                wlAudio->m_call_java->OnCallPcmInfo(CHILD_THREAD, pcmBean->m_buffer, pcmBean->m_buffsize);
+                wlAudio->m_call_java->OnCallPcmData(CHILD_THREAD, pcmBean->m_buffer, pcmBean->m_buffsize);
             }
         } else {//分包上报
             int pack_num = pcmBean->m_buffsize / wlAudio->m_default_pcm_size;
@@ -162,7 +162,7 @@ void *_PcmCallBack(void *data) {
                     wlAudio->m_call_java->OnCallPcmToAAC(CHILD_THREAD, bf, wlAudio->m_default_pcm_size);
                 }
                 if (wlAudio->showPcm) {
-                    wlAudio->m_call_java->OnCallPcmInfo(CHILD_THREAD, bf, wlAudio->m_default_pcm_size);
+                    wlAudio->m_call_java->OnCallPcmData(CHILD_THREAD, bf, wlAudio->m_default_pcm_size);
                 }
                 free(bf);
                 bf = NULL;
@@ -175,7 +175,7 @@ void *_PcmCallBack(void *data) {
                     wlAudio->m_call_java->OnCallPcmToAAC(CHILD_THREAD, bf, pack_sub);
                 }
                 if (wlAudio->showPcm) {
-                    wlAudio->m_call_java->OnCallPcmInfo(CHILD_THREAD, bf, pack_sub);
+                    wlAudio->m_call_java->OnCallPcmData(CHILD_THREAD, bf, pack_sub);
                 }
                 free(bf);
                 bf = NULL;

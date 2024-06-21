@@ -1,5 +1,5 @@
 package com.jiaquan.myplayer.listener;
 public interface OnPcmInfoListener {
-    void onPcmRate(int samplerate, int bit, int channels);
-    void onPcmInfo(byte[] buffer, int buffersize);
+    void onPcmInfo(int samplerate, int bit, int channels);
+    void onPcmData(byte[] buffer, int buffersize);
 }

@@ -34,6 +34,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class WLPlayer {
     static {
@@ -49,10 +50,12 @@ public class WLPlayer {
     }
 
     private WLGLSurfaceView mWlglSurfaceView_ = null;
+    private String mDecoderName_ = "";
     private Surface mSurface_ = null;
     private MediaCodec mVDecMediaCodec_ = null;
     private MediaCodec.BufferInfo mVBufferInfo_ = null;
     private static TimeInfoBean mTimeInfoBean_ = null;
+    private int mAudioSamplerate_ = 0;
     private long mStartMs_ = 0;//记录每次硬解解码前的系统时间
     public int mFrameCount_ = 0;//记录硬解播放的总帧数
     public long mTotalTime_ = 0;//记录硬解耗时
@@ -60,7 +63,7 @@ public class WLPlayer {
     private ChannelTypeEnum mChannelType_ = ChannelTypeEnum.MUTE_CENTER;
     private float mSpeed_ = 1.0f;
     private float mPitch_ = 1.0f;
-    private final Object mVLock_ = new Object(); // 用于同步的锁对象
+    private final Object mVLock_ = new Object(); //用于同步的锁对象
     private Handler mMultiVideoHandler_ = null;
     private HandlerThread mMultiVideoHandlerThread_ = null;
 
@@ -159,6 +162,7 @@ public class WLPlayer {
             _getSupportedCodec();
         }
 
+        //创建一个线程用于处理播放器同步操作
         mMultiVideoHandlerThread_ = new HandlerThread("MultiVideoHandlerThread");
         mMultiVideoHandlerThread_.start();
         mMultiVideoHandler_ = new Handler(mMultiVideoHandlerThread_.getLooper());
@@ -296,7 +300,7 @@ public class WLPlayer {
      * 获取音量
      * @return 音量百分比
      */
-    public int getVolumePercent() {
+    public int getVolume() {
         return mVolumePercent_;
     }
 
@@ -327,21 +331,6 @@ public class WLPlayer {
         _nativeSpeed(mSpeed_);
     }
 
-    /**
-     * 开始剪切音频播放
-     * @param startTime 开始时间
-     * @param endTime 结束时间
-     * @param showPcm 是否显示pcm数据
-     */
-    public void cutAudioPlay(int startTime, int endTime, boolean showPcm) {
-        if (_nativeCutAudioPlay(startTime, endTime, showPcm)) {//先seek到指定位置
-            start();
-        } else {
-            stop();
-            onCallError(2001, "cutAudioPlay params is wrong!");
-        }
-    }
-
     private void _releaseVMediaCodec() {
         synchronized (mVLock_) {
             MyLog.i("releaseVMediaCodec in: " + mVDecMediaCodec_);
@@ -350,11 +339,11 @@ public class WLPlayer {
                     mVDecMediaCodec_.flush();
                     mVDecMediaCodec_.stop();
                     mVDecMediaCodec_.release();
+                    mVDecMediaCodec_ = null;
+                    mVBufferInfo_ = null;
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                mVDecMediaCodec_ = null;
-                mVBufferInfo_ = null;
                 MyLog.i("releaseVMediaCodec out");
             }
         }
@@ -363,7 +352,7 @@ public class WLPlayer {
     private void _printBytesInLines(byte[] bytes, int len) {
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < len; i++) {
-            stringBuilder.append(String.format("%02X ", bytes[i]));
+            stringBuilder.append(String.format("%02X ", bytes[i]));//转换为16进制
             if ((i + 1) % 16 == 0) {
                 MyLog.i(stringBuilder.toString());
                 stringBuilder.setLength(0);
@@ -401,16 +390,17 @@ public class WLPlayer {
     }
 
     @CalledByNative
-    private void onCallPcmRate(int samplerate, int bit, int channels) {
+    private void onCallPcmInfo(int samplerate, int bit, int channels) {
         if (mOnPcmInfoListener_ != null) {
-            mOnPcmInfoListener_.onPcmRate(samplerate, bit, channels);
+            mAudioSamplerate_ = samplerate;
+            mOnPcmInfoListener_.onPcmInfo(samplerate, bit, channels);
         }
     }
 
     @CalledByNative
-    private void onCallPcmInfo(byte[] buffer, int bufferSize) {
+    private void onCallPcmData(byte[] buffer, int bufferSize) {
         if (mOnPcmInfoListener_ != null) {
-            mOnPcmInfoListener_.onPcmInfo(buffer, bufferSize);
+            mOnPcmInfoListener_.onPcmData(buffer, bufferSize);
         }
     }
 
@@ -424,8 +414,8 @@ public class WLPlayer {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @CalledByNative
     private boolean onCallIsSupportMediaCodec(String codecTag) {
-        String codecName = WLVideoSupportUtil.getHardwareDecoderName(codecTag);
-        if (TextUtils.isEmpty(codecName)) {
+        mDecoderName_ = WLVideoSupportUtil.getHardwareDecoderName(codecTag);
+        if (TextUtils.isEmpty(mDecoderName_)) {
             MyLog.i("onCallIsSupportMediaCodec is not support");
             return false;
         }
@@ -459,7 +449,7 @@ public class WLPlayer {
                     }
                     MyLog.i(videoFormat.toString());
                     mVBufferInfo_ = new MediaCodec.BufferInfo();
-                    mVDecMediaCodec_ = MediaCodec.createByCodecName(WLVideoSupportUtil.getHardwareDecoderName(codecTag));
+                    mVDecMediaCodec_ = MediaCodec.createByCodecName(mDecoderName_);
                     mVDecMediaCodec_.configure(videoFormat, mSurface_, null, 0);
                     mVDecMediaCodec_.start();
                 } catch (Exception e) {
@@ -469,22 +459,22 @@ public class WLPlayer {
                 MyLog.i("onCallinitMediaCodec end");
             } else {
                 if (mOnErrorListener_ != null) {
-                    mOnErrorListener_.onError(2001, "surface is null");
+                    mOnErrorListener_.onError(2000, "surface is null");
                 }
             }
         }
     }
 
    @CalledByNative
-    private void onCallDecodeVPacket(int datasize, byte[] data) {
+    private void onCallDecodeVPacket(byte[] data, int datasize) {
         /**
-         *这里的码流数据，底层使用了ffmpeg进行了过滤，转换为AnnexB模式，在如果是I帧，会在I帧前补充添加带有startcode的VPS,SPS,PPS，
+         * 这里的码流数据，底层使用了ffmpeg进行了过滤，转换为AnnexB模式，在如果是I帧，会在I帧前补充添加带有startcode的VPS,SPS,PPS，
          * 然后再跟上实际的startcode + I帧图像数据。如果是非I帧，会直接在前面将AVCC字段转换为00 00 00 01的startcode + 实际的图像数据
          */
 //        MyLog.i("data size: " + data.length);
 //        _printBytesInLines(data, 1000);
          synchronized (mVLock_) {
-             if ((mSurface_ != null) && (datasize > 0) && (data != null) && (mVDecMediaCodec_ != null)) {
+             if ((mSurface_ != null) && (data != null) && (datasize > 0) && (mVDecMediaCodec_ != null)) {
                  try {
                      int inputBufferIndex = mVDecMediaCodec_.dequeueInputBuffer(10);
                      if (inputBufferIndex >= 0) {
@@ -543,7 +533,6 @@ public class WLPlayer {
     private MediaCodec.BufferInfo mABufferInfo_ = null;
     private byte[] mOutByteBuffer_ = new byte[4096 * 3];
     private double mRecordTime_ = 0;
-    private int mAudioSamplerate_ = 0;
     private final Object mALock_ = new Object(); // 用于同步的锁对象
     /**
      * 开始录音
@@ -551,7 +540,6 @@ public class WLPlayer {
      */
     public void startAudioRecord(File outfile) {
         if (!mIsInitAMediaCodec_) {
-            mAudioSamplerate_ = _nativeSamplerate();
             if (mAudioSamplerate_ > 0) {
                 try {
                     mFileOutputStream_ = new FileOutputStream(outfile);
@@ -560,6 +548,7 @@ public class WLPlayer {
                     throw new RuntimeException(e);
                 }
                 mRecordTime_ = 0;
+                Arrays.fill(mOutByteBuffer_, (byte) 0);
 
                 _initAudioMediaCodec(mAudioSamplerate_);
                 mIsInitAMediaCodec_ = true;
@@ -596,6 +585,7 @@ public class WLPlayer {
             synchronized (mALock_) {
                 _releaseAMediaCodec();
                 try {
+                    mFileOutputStream_.flush();
                     mFileOutputStream_.close();
                     mFileOutputStream_ = null;
                 } catch (IOException e) {
@@ -692,14 +682,18 @@ public class WLPlayer {
 
     //释放音频编码器
     private void _releaseAMediaCodec() {
-        if (mAEncMediaCodec_ == null) {
-            return;
+        if (mAEncMediaCodec_ != null) {
+            try {
+                mAEncMediaCodec_.flush();
+                mAEncMediaCodec_.stop();
+                mAEncMediaCodec_.release();
+                mAEncMediaCodec_ = null;
+                mAEncMediaFormat_ = null;
+                mABufferInfo_ = null;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
-        mAEncMediaCodec_.stop();
-        mAEncMediaCodec_.release();
-        mAEncMediaCodec_ = null;
-        mAEncMediaFormat_ = null;
-        mABufferInfo_ = null;
     }
 
     @CalledByNative
@@ -722,17 +716,19 @@ public class WLPlayer {
                 int index = mAEncMediaCodec_.dequeueOutputBuffer(mABufferInfo_, 0);
                 while (index >= 0) {
                     try {
-                        ByteBuffer byteBuffer = mAEncMediaCodec_.getOutputBuffers()[index];
-                        byteBuffer.position(mABufferInfo_.offset);
-                        byteBuffer.limit(mABufferInfo_.offset + mABufferInfo_.size);
+                        ByteBuffer audioEncodeBuffer = mAEncMediaCodec_.getOutputBuffers()[index];
+                        audioEncodeBuffer.position(mABufferInfo_.offset);
+                        audioEncodeBuffer.limit(mABufferInfo_.offset + mABufferInfo_.size);
 
                         int packetSize = mABufferInfo_.size + 7;//AAC码流需要添加7字节的头
                         _addADTSHeader(mOutByteBuffer_, packetSize, _getADTSSampleRateType(mAudioSamplerate_));//mediacodec编码出来的aac码流没有aac头，增加AAC码流头
 
-                        byteBuffer.get(mOutByteBuffer_, 7, mABufferInfo_.size);//将编码码流数据放入AAC码流头后面存放
-                        byteBuffer.position(mABufferInfo_.offset);
+                        audioEncodeBuffer.get(mOutByteBuffer_, 7, mABufferInfo_.size);//将编码码流数据放入AAC码流头后面存放
+                        audioEncodeBuffer.position(mABufferInfo_.offset);
 
                         mFileOutputStream_.write(mOutByteBuffer_, 0, packetSize);//将完整的一帧音频码流数据写入文件
+                        mFileOutputStream_.flush();
+                        Arrays.fill(mOutByteBuffer_, (byte) 0);
 
                         mAEncMediaCodec_.releaseOutputBuffer(index, false);//取出码流数据后，释放这个buffer,返回给队列中循环使用
                         index = mAEncMediaCodec_.dequeueOutputBuffer(mABufferInfo_, 0);
@@ -741,6 +737,21 @@ public class WLPlayer {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * 开始剪切音频播放
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @param showPcm 是否显示pcm数据
+     */
+    public void cutAudioPlay(int startTime, int endTime, boolean showPcm) {
+        if (_nativeCutAudioPlay(startTime, endTime, showPcm)) {//先seek到指定位置
+            start();
+        } else {
+            stop();
+            onCallError(2001, "cutAudioPlay params is wrong!");
         }
     }
 
@@ -766,8 +777,6 @@ public class WLPlayer {
     private native void _nativePitch(float pitch);
 
     private native void _nativeSpeed(float speed);
-
-    private native int _nativeSamplerate();
 
     private native void _nativeStartstopRecord(boolean start);
 

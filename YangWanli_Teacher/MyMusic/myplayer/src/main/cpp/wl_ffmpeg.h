@@ -13,7 +13,7 @@ extern "C" {
 
 class WLFFmpeg {
 public:
-    WLFFmpeg(WLPlayStatus *play_status, CallJava *calljava, const char *url);
+    WLFFmpeg(WLPlayStatus *play_status, CallJava *call_java, const char *url);
 
     ~WLFFmpeg();
 
@@ -41,8 +41,6 @@ public:
     void SetPitch(float pitch);
 
     void SetSpeed(float speed);
-
-    int GetSampleRate();
 
     void StartStopRecord(bool flag);
 

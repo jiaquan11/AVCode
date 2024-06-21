@@ -24,7 +24,7 @@ bool g_is_exit = false;
 
 JNIEXPORT void JNICALL Prepare(JNIEnv *env, jobject thiz, jstring source_jstr) {
     LOGI("native jni prepared in, g_wl_ffmpeg: %p", g_wl_ffmpeg);
-    const char *source = env->GetStringUTFChars(source_jstr, 0);
+    const char *source_str = env->GetStringUTFChars(source_jstr, 0);
     if (g_wl_ffmpeg == NULL) {
         if (g_call_java == NULL) {
             g_call_java = new CallJava(g_java_vm, env, thiz);
@@ -32,10 +32,10 @@ JNIEXPORT void JNICALL Prepare(JNIEnv *env, jobject thiz, jstring source_jstr) {
         g_call_java->OnCallLoad(MAIN_THREAD, true);
 
         g_play_status = new WLPlayStatus();
-        g_wl_ffmpeg = new WLFFmpeg(g_play_status, g_call_java, source);
+        g_wl_ffmpeg = new WLFFmpeg(g_play_status, g_call_java, source_str);
         g_wl_ffmpeg->Prepare();
     }
-    env->ReleaseStringUTFChars(source_jstr, source);
+    env->ReleaseStringUTFChars(source_jstr, source_str);
     LOGI("native jni prepared out!");
 }
 
@@ -76,7 +76,6 @@ JNIEXPORT void JNICALL Stop(JNIEnv *env, jobject thiz) {
             g_play_status = NULL;
             LOGI("release g_play_status over");
         }
-
         if (g_call_java != NULL) {
             delete g_call_java;
             g_call_java = NULL;
@@ -124,13 +123,6 @@ JNIEXPORT void JNICALL Speed(JNIEnv *env, jobject thiz, jfloat speed) {
     }
 }
 
-JNIEXPORT jint JNICALL Samplerate(JNIEnv *env, jobject thiz) {
-    if (g_wl_ffmpeg != NULL) {
-        return g_wl_ffmpeg->GetSampleRate();
-    }
-    return 0;
-}
-
 JNIEXPORT void JNICALL StartstopRecord(JNIEnv *env, jobject thiz, jboolean start) {
     if (g_wl_ffmpeg != NULL) {
         g_wl_ffmpeg->StartStopRecord(start);
@@ -156,7 +148,6 @@ static JNINativeMethod gMethods[] = {
          {"_nativeChannelType",     "(I)V",                  (void *) ChannelType},
          {"_nativePitch",           "(F)V",                  (void *) Pitch},
         {"_nativeSpeed",           "(F)V",                  (void *) Speed},
-        {"_nativeSamplerate",      "()I",                   (void *) Samplerate},
         {"_nativeStartstopRecord", "(Z)V",                  (void *) StartstopRecord},
         {"_nativeCutAudioPlay",    "(IIZ)Z",                (void *) CutAudioPlay},
 };

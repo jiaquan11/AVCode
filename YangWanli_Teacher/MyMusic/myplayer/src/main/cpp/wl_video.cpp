@@ -46,25 +46,23 @@ void *playVideo(void *data) {
         }
 
         if (video->m_codec_type == CODEC_MEDIACODEC) {
-            //LOGI("硬解码视频");
-            if (av_bsf_send_packet(video->m_abs_ctx, av_packet) != 0){
+            if (av_bsf_send_packet(video->m_abs_ctx, av_packet) != 0) {
                 av_packet_free(&av_packet);
                 av_free(av_packet);
                 av_packet = NULL;
                 continue;
             }
-            while (av_bsf_receive_packet(video->m_abs_ctx, av_packet) == 0){
+            while (av_bsf_receive_packet(video->m_abs_ctx, av_packet) == 0) {
                 double diff = video->GetFrameDiffTime(NULL, av_packet);
                 av_usleep(video->GetDelayTime(diff) * 1000000);
 
-                video->m_call_java->OnCallDecodeVPacket(CHILD_THREAD, av_packet->size, av_packet->data);//调用Java层硬解
+                video->m_call_java->OnCallDecodeVPacket(CHILD_THREAD, av_packet->data,av_packet->size);//调用Java层硬解
                 av_packet_free(&av_packet);
                 av_free(av_packet);
                 continue;
             }
             av_packet = NULL;
         } else if (video->m_codec_type == CODEC_YUV) {
-            //LOGI("软解码视频");
             pthread_mutex_lock(&video->m_codec_mutex);
             if (avcodec_send_packet(video->m_avcodec_ctx, av_packet) != 0) {
                 av_packet_free(&av_packet);
@@ -89,21 +87,21 @@ void *playVideo(void *data) {
             //LOGI("子线程解码一个AVFrame成功!");
             if (avFrame->format == AV_PIX_FMT_YUV420P) {
                 //LOGI("当前视频是YUV420P格式!");
-                double diff = video->GetFrameDiffTime(avFrame, NULL);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
+                double diff = video->GetFrameDiffTime(avFrame,NULL);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
                 av_usleep(video->GetDelayTime(diff) * 1000000);
-//            av_usleep(diff * 1000000);
+//              av_usleep(diff * 1000000);
                 //直接渲染
                 video->m_call_java->OnCallRenderYUV(CHILD_THREAD,
-                                                 avFrame->width,
-                                                 avFrame->linesize[0],
-                                                 avFrame->height,
-                                                 avFrame->data[0],
-                                                 avFrame->data[1],
-                                                 avFrame->data[2]);
+                                                    avFrame->width,
+                                                    avFrame->height,
+                                                    avFrame->linesize[0],
+                                                    avFrame->data[0],
+                                                    avFrame->data[1],
+                                                    avFrame->data[2]);
             } else {
                 LOGI("当前视频不是YUV420P格式，需转换!");
                 AVFrame *pFrameYUV420p = av_frame_alloc();//分配一个Frame内存空间
-                int size = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, video->m_avcodec_ctx->width, video->m_avcodec_ctx->height, 1);//获取指定尺寸的YUV420P的内存大小
+                int size = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, video->m_avcodec_ctx->width, video->m_avcodec_ctx->height,1);//获取指定尺寸的YUV420P的内存大小
                 uint8_t *buffer = static_cast<uint8_t *>(av_malloc(size * sizeof(uint8_t)));//分配对应的YUV420P大小的内存
                 av_image_fill_arrays(pFrameYUV420p->data,
                                      pFrameYUV420p->linesize,
@@ -142,12 +140,12 @@ void *playVideo(void *data) {
 
                 //渲染
                 video->m_call_java->OnCallRenderYUV(CHILD_THREAD,
-                                                 video->m_avcodec_ctx->width,
-                                                 pFrameYUV420p->linesize[0],
-                                                 video->m_avcodec_ctx->height,
-                                                 pFrameYUV420p->data[0],
-                                                 pFrameYUV420p->data[1],
-                                                 pFrameYUV420p->data[2]);
+                                                    video->m_avcodec_ctx->width,
+                                                    video->m_avcodec_ctx->height,
+                                                    pFrameYUV420p->linesize[0],
+                                                    pFrameYUV420p->data[0],
+                                                    pFrameYUV420p->data[1],
+                                                    pFrameYUV420p->data[2]);
 
                 av_frame_free(&pFrameYUV420p);
                 av_free(pFrameYUV420p);
@@ -169,13 +167,13 @@ void *playVideo(void *data) {
 }
 
 void WLVideo::Play() {
-    if ((m_play_status != NULL) && !m_play_status->m_is_exit){
+    if ((m_play_status != NULL) && !m_play_status->m_is_exit) {
         pthread_create(&m_thread_play, NULL, playVideo, this);//创建一个视频解码渲染线程，用于从缓冲区获取packet并解码渲染
     }
 }
 
 void WLVideo::Release() {
-    if (m_queue != NULL){
+    if (m_queue != NULL) {
         m_queue->NoticeQueue();
     }
 
@@ -186,7 +184,7 @@ void WLVideo::Release() {
         m_queue = NULL;
     }
 
-    if (m_abs_ctx != NULL){
+    if (m_abs_ctx != NULL) {
         av_bsf_free(&m_abs_ctx);
         m_abs_ctx = NULL;
     }
@@ -206,12 +204,12 @@ void WLVideo::Release() {
     }
 }
 
-double WLVideo::GetFrameDiffTime(AVFrame *avFrame, AVPacket* avPacket) {
+double WLVideo::GetFrameDiffTime(AVFrame *avFrame, AVPacket *avPacket) {
     double pts = 0;
-    if (avFrame != NULL){
+    if (avFrame != NULL) {
         pts = av_frame_get_best_effort_timestamp(avFrame);
     }
-    if (avPacket != NULL){
+    if (avPacket != NULL) {
         pts = avPacket->pts;
     }
 

@@ -23,19 +23,19 @@ public:
 
     void OnCallTimeInfo(int type, int curr, int total);
 
-    void OnCallPcmRate(int type, int samplerate, int bit, int channels);
+    void OnCallPcmInfo(int type, int samplerate, int bit, int channels);
 
-    void OnCallPcmInfo(int type, void *buffer, int size);
+    void OnCallPcmData(int type, void *buffer, int size);
 
     void OnCallVolumeDB(int type, int db);
 
-    bool OnCallIsSupportVideo(int type, const char *ffcodecname);
+    bool OnCallIsSupportMediaCodec(int type, const char *codec_tag);
 
-    void OnCallInitMediaCodec(int type, const char *mime, int width, int height, int csd_size, uint8_t *csd);
+    void OnCallInitMediaCodec(int type, const char *codec_tag, int width, int height, int csd_size, uint8_t *csd);
 
-    void OnCallDecodeVPacket(int type, int datasize, uint8_t *data);
+    void OnCallDecodeVPacket(int type, uint8_t *data, int datasize);
 
-    void OnCallRenderYUV(int type, int width, int linesize, int height, uint8_t *fy, uint8_t *fu, uint8_t *fv);
+    void OnCallRenderYUV(int type, int width, int height, int linesize, uint8_t *y_data, uint8_t *u_data, uint8_t *v_data);
 
     void OnCallComplete(int type);
 
@@ -44,7 +44,7 @@ public:
     void OnCallPcmToAAC(int type, void *buffer, int size);
 
 private:
-    void _CutAndCopyYuv(uint8_t* data[], uint8_t *srcfy, uint8_t *srcfu, uint8_t *srcfv, int linesize, int width, int height);
+    void _CutAndCopyYuv(uint8_t* data[], uint8_t *srcy, uint8_t *srcu, uint8_t *srcv, int width, int height, int linesize);
 
 private:
     JavaVM *m_java_vm_ = NULL;
@@ -54,16 +54,16 @@ private:
     jmethodID m_jmid_load_;
     jmethodID m_jmid_prepared_;
     jmethodID m_jmid_timeinfo_;
-    jmethodID m_jmid_pcmrate_;
-    jmethodID m_jmid_pcminfo_;
+    jmethodID m_jmid_pcm_info_;
+    jmethodID m_jmid_pcm_data_;
     jmethodID m_jmid_volumedb_;
-    jmethodID m_jmid_support_video_;
+    jmethodID m_jmid_is_support_mediacodec_;
     jmethodID m_jmid_init_mediacodec_;
     jmethodID m_jmid_decode_vpacket_;
     jmethodID m_jmid_render_yuv_;
     jmethodID m_jmid_complete_;
     jmethodID m_jmid_error_;
-    jmethodID m_jmid_pcmtoaac_;
+    jmethodID m_jmid_pcm_to_aac_;
 
     uint8_t *m_data_[3] = {NULL};
     bool m_has_allocate_ = false;
