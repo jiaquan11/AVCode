@@ -63,7 +63,6 @@ JNIEXPORT void JNICALL Stop(JNIEnv *env, jobject thiz) {
         LOGE("native Stop is exiting, can not call stop again,");
         return;
     }
-
     g_is_exit = true;
     if (g_wl_ffmpeg != NULL) {
         LOGI("release g_wl_ffmpeg before");

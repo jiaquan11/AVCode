@@ -47,7 +47,7 @@ public:
     bool CutAudioPlay(int start_time, int end_time, bool show_pcm);
 
 private:
-    int _GetCodecContext(AVCodecParameters *codecPar, AVCodecContext** av_codec_ctx);
+    int _GetCodecContext(AVCodecParameters *codec_par, AVCodecContext** av_codec_ctx);
 
 public:
     WLPlayStatus *m_play_status = NULL;
@@ -66,7 +66,6 @@ private:
     WLAudio* m_wlaudio_ = NULL;
     WLVideo* m_wlvideo_ = NULL;
 
-    bool m_is_exit_ = false;
     bool m_support_mediacodec_ = false;
     bool m_is_play_end_ = false;
 };

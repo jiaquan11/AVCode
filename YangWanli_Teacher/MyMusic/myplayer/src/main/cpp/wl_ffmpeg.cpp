@@ -4,7 +4,6 @@ WLFFmpeg::WLFFmpeg(WLPlayStatus *play_status, CallJava *call_java, const char *u
     m_play_status = play_status;
     m_call_java_ = call_java;
     strcpy(m_url_, url);
-    m_is_exit_ = false;
     pthread_mutex_init(&m_init_mutex_, NULL);//初始化互斥锁,保证资源的初始化和释放是顺序的，安全的
     pthread_mutex_init(&m_seek_mutex_, NULL);
 }
@@ -39,7 +38,6 @@ void WLFFmpeg::DemuxFFmpegThread() {
             LOGE("can not open url: %s", m_url_);
             m_call_java_->OnCallError(CHILD_THREAD, 1001, "can not open url");
         }
-        m_is_exit_ = true;
         pthread_mutex_unlock(&m_init_mutex_);
         return;
     }
@@ -48,7 +46,6 @@ void WLFFmpeg::DemuxFFmpegThread() {
             LOGE("can not find streams from url: %s", m_url_);
             m_call_java_->OnCallError(CHILD_THREAD, 1002, "can not find streams from url");
         }
-        m_is_exit_ = true;
         pthread_mutex_unlock(&m_init_mutex_);
         return;
     }
@@ -90,11 +87,7 @@ void WLFFmpeg::DemuxFFmpegThread() {
     }
 
     if (m_call_java_ != NULL) {
-        if ((m_play_status != NULL) && !m_play_status->m_is_exit) {
-            m_call_java_->OnCallPrepared(CHILD_THREAD);
-        } else {
-            m_is_exit_ = true;
-        }
+        m_call_java_->OnCallPrepared(CHILD_THREAD);
     }
     pthread_mutex_unlock(&m_init_mutex_);
     LOGI("WLFFmpeg DemuxFFmpegThread out");
@@ -126,7 +119,6 @@ void WLFFmpeg::Prepare() {
             LOGE("WLFFmpeg pthread_create demux_thread_ failed");
             m_call_java_->OnCallError(MAIN_THREAD, 1000, "pthread_create demux_thread_ failed");
         }
-        m_is_exit_ = true;
     }
 }
 
@@ -244,14 +236,12 @@ void WLFFmpeg::StartFFmpegThread() {
                 m_wlvideo_->m_queue->PutAVPacket(av_packet);
             } else {//非音频packet
                 av_packet_free(&av_packet);
-                av_free(av_packet);
             }
         } else {
             /**
              * 读取到文件尾，等待缓冲区中的数据消耗完
              */
             av_packet_free(&av_packet);
-            av_free(av_packet);
             while ((m_play_status != NULL) && !m_play_status->m_is_exit) {
                 /**
                  * 音频缓冲区中的packet已消耗完，等待音频播放结束
@@ -266,16 +256,14 @@ void WLFFmpeg::StartFFmpegThread() {
                     if (!m_play_status->m_seek) {
                         av_usleep(100 * 1000);
                         m_play_status->m_is_exit = true;
-                        LOGI("playStatus m_is_exit_ set true");
+                        m_is_play_end_ = true;
                     }
-                    m_is_play_end_ = true;
                     break;
                 }
             }
         }
     }
     LOGI("demux is over");
-    m_is_exit_ = true;
     /**
      *只有整个播放完成，才回调状态
      *按上面的逻辑，是以音频播放结束为准
@@ -299,10 +287,9 @@ void WLFFmpeg::Start() {
     int ret = pthread_create(&m_start_thread_, NULL, _StartFFmpeg, this);//开启一个子线程，用于读取流数据，并存放到缓存队列中
     if (ret != 0) {
         if (LOG_DEBUG) {
-            LOGE("WLFFmpeg pthread_create start_thread_ failed");
-            m_call_java_->OnCallError(MAIN_THREAD, 1007, "pthread_create start_thread_ failed");
+            LOGE("WLFFmpeg pthread_create m_start_thread_ failed");
+            m_call_java_->OnCallError(MAIN_THREAD, 1007, "pthread_create m_start_thread_ failed");
         }
-        m_is_exit_ = true;
     }
 }
 
@@ -406,18 +393,6 @@ void WLFFmpeg::Release() {
     }
 
     pthread_mutex_lock(&m_init_mutex_);
-    int sleep_count = 0;
-    while (!m_is_exit_) {//若播放子线程仍然没有退出，则延迟等待10s
-        if (sleep_count > 1000) {
-            m_is_exit_ = true;
-        }
-        if (LOG_DEBUG) {
-            LOGI("wait ffmpeg exit %d", sleep_count);
-        }
-        sleep_count++;
-        av_usleep(1000 * 10);
-    }
-
     if (m_wlaudio_ != NULL) {
         m_wlaudio_->Release();
         delete m_wlaudio_;
@@ -435,8 +410,6 @@ void WLFFmpeg::Release() {
     LOGI("WLFFmpeg release m_avformat_ctx_");
     if (m_avformat_ctx_ != NULL) {
         avformat_close_input(&m_avformat_ctx_);
-        avformat_free_context(m_avformat_ctx_);
-        m_avformat_ctx_ = NULL;
     }
 
     if (m_play_status != NULL) {
@@ -490,14 +463,13 @@ bool WLFFmpeg::CutAudioPlay(int start_time, int end_time, bool show_pcm) {
     return false;
 }
 
-int WLFFmpeg::_GetCodecContext(AVCodecParameters *codecPar, AVCodecContext **av_codec_ctx) {
-    AVCodec *av_codec = avcodec_find_decoder(codecPar->codec_id);
+int WLFFmpeg::_GetCodecContext(AVCodecParameters *codec_par, AVCodecContext **av_codec_ctx) {
+    AVCodec *av_codec = avcodec_find_decoder(codec_par->codec_id);
     if (!av_codec) {
         if (LOG_DEBUG) {
             LOGE("can not find deocder");
         }
         m_call_java_->OnCallError(CHILD_THREAD, 1003, "can not find deocder");
-        m_is_exit_ = true;
         pthread_mutex_unlock(&m_init_mutex_);
         return -1;
     }
@@ -508,17 +480,15 @@ int WLFFmpeg::_GetCodecContext(AVCodecParameters *codecPar, AVCodecContext **av_
             LOGE("can not alloc new decoder context");
         }
         m_call_java_->OnCallError(CHILD_THREAD, 1004, "can not alloc new decoder context");
-        m_is_exit_ = true;
         pthread_mutex_unlock(&m_init_mutex_);
         return -2;
     }
 
-    if (avcodec_parameters_to_context(*av_codec_ctx, codecPar) < 0) {
+    if (avcodec_parameters_to_context(*av_codec_ctx, codec_par) < 0) {
         if (LOG_DEBUG) {
             LOGE("can not fill decoder context");
         }
         m_call_java_->OnCallError(CHILD_THREAD, 1005, "can not fill decoder context");
-        m_is_exit_ = true;
         pthread_mutex_unlock(&m_init_mutex_);
         return -3;
     }
@@ -528,7 +498,6 @@ int WLFFmpeg::_GetCodecContext(AVCodecParameters *codecPar, AVCodecContext **av_
             LOGE("can not open decoder");
         }
         m_call_java_->OnCallError(CHILD_THREAD, 1006, "can not open decoder");
-        m_is_exit_ = true;
         pthread_mutex_unlock(&m_init_mutex_);
         return -4;
     }
