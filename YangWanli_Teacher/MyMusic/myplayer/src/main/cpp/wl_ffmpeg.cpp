@@ -5,7 +5,7 @@ WLFFmpeg::WLFFmpeg(WLPlayStatus *play_status, CallJava *call_java, const char *u
     m_call_java_ = call_java;
     strcpy(m_url_, url);
     m_is_exit_ = false;
-    pthread_mutex_init(&m_init_mutex_, NULL);
+    pthread_mutex_init(&m_init_mutex_, NULL);//初始化互斥锁,保证资源的初始化和释放是顺序的，安全的
     pthread_mutex_init(&m_seek_mutex_, NULL);
 }
 
@@ -15,7 +15,7 @@ WLFFmpeg::~WLFFmpeg() {
 }
 
 /**
- * 若在avformat_open_input调用时加载网络流很慢，导致阻塞卡死，
+ * 若在avformat_open_input调用时加载网络流很慢，导致阻塞卡死,
  * 这个回调函数中返回AVERROR_EOF会立即退出加载，返回失败
  */
 int avformat_callback(void *ctx) {
@@ -29,10 +29,8 @@ int avformat_callback(void *ctx) {
 void WLFFmpeg::DemuxFFmpegThread() {
     LOGI("WLFFmpeg DemuxFFmpegThread in");
     pthread_mutex_lock(&m_init_mutex_);
-
     av_register_all();
     avformat_network_init();
-
     m_avformat_ctx_ = avformat_alloc_context();
     m_avformat_ctx_->interrupt_callback.callback = avformat_callback;//设置中断函数
     m_avformat_ctx_->interrupt_callback.opaque = this;
@@ -62,7 +60,7 @@ void WLFFmpeg::DemuxFFmpegThread() {
                 m_wlaudio_->m_stream_index = i;
                 m_wlaudio_->m_codec_par = m_avformat_ctx_->streams[i]->codecpar;
                 m_wlaudio_->time_base = m_avformat_ctx_->streams[i]->time_base;
-                m_wlaudio_->m_duration = m_avformat_ctx_->duration / AV_TIME_BASE;//媒体总时长，单位为秒
+                m_wlaudio_->m_duration = m_avformat_ctx_->duration / AV_TIME_BASE;//媒体文件总时长
                 m_duration = m_wlaudio_->m_duration;
                 m_call_java_->OnCallPcmInfo(CHILD_THREAD, m_wlaudio_->m_sample_rate, 16, 2);//上报音频采样率，采样位宽，和声道数信息
             }
@@ -83,12 +81,10 @@ void WLFFmpeg::DemuxFFmpegThread() {
         }
     }
 
-    //打开ffmpeg音频解码器
     if (m_wlaudio_ != NULL) {
         _GetCodecContext(m_wlaudio_->m_codec_par, &m_wlaudio_->m_avcodec_ctx);
     }
 
-    //打开ffmpeg视频解码器
     if (m_wlvideo_ != NULL) {
         _GetCodecContext(m_wlvideo_->m_codec_par, &m_wlvideo_->m_avcodec_ctx);
     }
@@ -212,7 +208,6 @@ void WLFFmpeg::StartFFmpegThread() {
             strcat(buffer, "\n");
             LOGD("%s", buffer);
         }
-
         m_wlvideo_->m_call_java->OnCallInitMediaCodec(CHILD_THREAD,codec_tag,
                                                            m_wlvideo_->m_avcodec_ctx->width, m_wlvideo_->m_avcodec_ctx->height,
                                                    m_wlvideo_->m_avcodec_ctx->extradata_size,m_wlvideo_->m_avcodec_ctx->extradata);
@@ -279,7 +274,6 @@ void WLFFmpeg::StartFFmpegThread() {
             }
         }
     }
-
     LOGI("demux is over");
     m_is_exit_ = true;
     /**
@@ -371,7 +365,6 @@ void WLFFmpeg::Release() {
     int result = pthread_join(m_demux_thread_, &thread_return);
     LOGI("m_demux_thread_ join result: %d", result);
     if (result != 0) {
-        // 错误处理
         switch (result) {
             case ESRCH:
                 LOGE("m_demux_thread_ pthread_join failed: Thread not found (ESRCH)");
@@ -393,7 +386,6 @@ void WLFFmpeg::Release() {
     result = pthread_join(m_start_thread_, &thread_return);
     LOGI("m_start_thread_ join result: %d", result);
     if (result != 0) {
-        // 错误处理
         switch (result) {
             case ESRCH:
                 LOGE("m_start_thread_ pthread_join failed: Thread not found (ESRCH)");
@@ -513,33 +505,33 @@ int WLFFmpeg::_GetCodecContext(AVCodecParameters *codecPar, AVCodecContext **av_
     *av_codec_ctx = avcodec_alloc_context3(av_codec);
     if (!*av_codec_ctx) {
         if (LOG_DEBUG) {
-            LOGE("can not alloc new decoderCtx");
+            LOGE("can not alloc new decoder context");
         }
-        m_call_java_->OnCallError(CHILD_THREAD, 1004, "can not alloc new decoderCtx");
+        m_call_java_->OnCallError(CHILD_THREAD, 1004, "can not alloc new decoder context");
         m_is_exit_ = true;
         pthread_mutex_unlock(&m_init_mutex_);
-        return -1;
+        return -2;
     }
 
     if (avcodec_parameters_to_context(*av_codec_ctx, codecPar) < 0) {
         if (LOG_DEBUG) {
-            LOGE("can not fill decoderCtx");
+            LOGE("can not fill decoder context");
         }
-        m_call_java_->OnCallError(CHILD_THREAD, 1005, "can not fill decoderCtx");
+        m_call_java_->OnCallError(CHILD_THREAD, 1005, "can not fill decoder context");
         m_is_exit_ = true;
         pthread_mutex_unlock(&m_init_mutex_);
-        return -1;
+        return -3;
     }
 
     if (avcodec_open2(*av_codec_ctx, av_codec, 0) != 0) {
         if (LOG_DEBUG) {
-            LOGE("can not open audio decoder");
+            LOGE("can not open decoder");
         }
-        m_call_java_->OnCallError(CHILD_THREAD, 1006, "can not open audio decoder");
+        m_call_java_->OnCallError(CHILD_THREAD, 1006, "can not open decoder");
         m_is_exit_ = true;
         pthread_mutex_unlock(&m_init_mutex_);
-        return -1;
+        return -4;
     }
-    LOGI("decoder open success!");
+    LOGI("open decoder success!");
     return 0;
 }

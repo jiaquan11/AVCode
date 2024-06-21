@@ -20,21 +20,22 @@ public:
     ~WLQueue();
 
 public:
-    int PutAVPacket(AVPacket *packet);
+    void PutAVPacket(AVPacket *packet);
 
-    int GetAVPacket(AVPacket *packet);
+    void GetAVPacket(AVPacket *packet);
 
     int GetQueueSize();
-
-    void NoticeQueue();
 
     void ClearAvPacket();
 
 private:
-    std::queue<AVPacket *> m_queue_packet_;//包缓冲区队列
+    void _NoticeQueue();
+
+private:
+    WLPlayStatus *m_play_status_ = NULL;
+    std::queue<AVPacket *> m_queue_packet_;
     pthread_mutex_t m_mutex_packet_;
     pthread_cond_t m_cond_packet_;
-    WLPlayStatus *m_play_status_ = NULL;
 };
 
 #endif //MYPLAYER_WLQUEUE_H_

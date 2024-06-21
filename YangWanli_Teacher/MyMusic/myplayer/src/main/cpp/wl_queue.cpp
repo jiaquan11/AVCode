@@ -8,53 +8,49 @@ WLQueue::WLQueue(WLPlayStatus *play_status) {
 
 WLQueue::~WLQueue() {
     ClearAvPacket();
-
     pthread_mutex_destroy(&m_mutex_packet_);
     pthread_cond_destroy(&m_cond_packet_);
 }
 
-int WLQueue::PutAVPacket(AVPacket *packet) {
+void WLQueue::PutAVPacket(AVPacket *packet) {
     pthread_mutex_lock(&m_mutex_packet_);
     m_queue_packet_.push(packet);
-    if (LOG_DEBUG) {
-//        LOGI("put a packet into queue, the count: %d", m_queue_packet_.size());
-    }
-
-    NoticeQueue();
+    _NoticeQueue();//达到条件，发出信号，通知其它线程
     pthread_mutex_unlock(&m_mutex_packet_);
-    return 0;
 }
 
-int WLQueue::GetAVPacket(AVPacket *packet) {
+void WLQueue::GetAVPacket(AVPacket *packet) {
     pthread_mutex_lock(&m_mutex_packet_);
     while ((m_play_status_ != NULL) && !m_play_status_->m_is_exit) {
         if (m_queue_packet_.size() > 0) {
             AVPacket *avPacket = m_queue_packet_.front();
-            /*
-             * av_packet_ref将原packet的buf引用赋值给目标packet,建立一个新的引用
-             * 其它字段全部进行拷贝
-             * */
+            /**
+             * av_packet_ref
+             * 为packet分配内存并将src的内容拷贝到packet中
+             */
             if (av_packet_ref(packet, avPacket) == 0) {
                 m_queue_packet_.pop();
             }
-            /*
+
+            /**
+             * av_packet_unref
+             * 释放packet的引用，如果引用计数为0，释放数据buf
+             * 仅释放 avPacket 内部的数据，不释放 avPacket 结构本身的内存
              * av_packet_free
-             * avPacket如果有引用计数，av_packet_free会取消引用，但不会释放数据buf。
-             * 只有没有引用计数为0，才会释放数据buf, 释放packet malloc的内存
-             * */
+             * 若avPacket 是动态分配的并且你需要释放整个结构和内部的数据，使用 av_packet_free(&avPacket).
+             */
             av_packet_free(&avPacket);
-            av_free(avPacket);
-            avPacket = NULL;
-            if (LOG_DEBUG) {
-//                LOGI("get a packet from the queue, the rest: %d", m_queue_packet_.size());
-            }
+            /**
+             *不需要再调用 av_free(avPacket)，也不需要手动将 avPacket 置为 NULL，因为 av_packet_free 已经做了这一步。
+             */
+//            av_free(avPacket);
+//            avPacket = NULL;
             break;
         } else {
             pthread_cond_wait(&m_cond_packet_, &m_mutex_packet_);//阻塞当前线程，其它线程可以继续操作
         }
     }
     pthread_mutex_unlock(&m_mutex_packet_);
-    return 0;
 }
 
 int WLQueue::GetQueueSize() {
@@ -65,21 +61,18 @@ int WLQueue::GetQueueSize() {
     return size;
 }
 
-//清除缓冲区队列
 void WLQueue::ClearAvPacket() {
-    NoticeQueue();
+    _NoticeQueue();//直接通知唤醒，不需要加锁
 
     pthread_mutex_lock(&m_mutex_packet_);
     while (!m_queue_packet_.empty()) {
         AVPacket *packet = m_queue_packet_.front();
         m_queue_packet_.pop();
         av_packet_free(&packet);
-        av_free(packet);
-        packet = NULL;
     }
     pthread_mutex_unlock(&m_mutex_packet_);
 }
 
-void WLQueue::NoticeQueue() {
+void WLQueue::_NoticeQueue() {
     pthread_cond_signal(&m_cond_packet_);
 }

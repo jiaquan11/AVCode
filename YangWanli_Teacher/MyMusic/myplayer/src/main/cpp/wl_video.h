@@ -18,7 +18,7 @@ extern "C" {
 
 class WLVideo {
 public:
-    WLVideo(WLPlayStatus *playStatus, CallJava *callJava);
+    WLVideo(WLPlayStatus *play_status, CallJava *callJava);
 
     ~WLVideo();
 
@@ -27,7 +27,7 @@ public:
 
     void Release();
 
-    double GetFrameDiffTime(AVFrame *avFrame, AVPacket *avPacket);
+    double GetFrameDiffTime(AVFrame *avframe, AVPacket *avpacket);
 
     double GetDelayTime(double diff);
 

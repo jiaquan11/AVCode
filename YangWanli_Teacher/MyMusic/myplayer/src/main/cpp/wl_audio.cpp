@@ -227,10 +227,9 @@ void WLAudio::Release() {
     }
 
     if (m_queue != NULL) {
-        m_queue->NoticeQueue();
-        pthread_join(m_play_thread_, NULL);
         delete m_queue;
         m_queue = NULL;
+        pthread_join(m_play_thread_, NULL);
     }
 
     if (m_pcm_player_object_ != NULL) {
@@ -276,7 +275,7 @@ void WLAudio::Release() {
     if (m_avcodec_ctx != NULL) {
         avcodec_close(m_avcodec_ctx);
         avcodec_free_context(&m_avcodec_ctx);
-        m_avcodec_ctx = NULL;
+        m_avcodec_ctx = NULL;//虽然 avcodec_free_context 已经做了这件事，但是显式赋值可以使代码更加清晰和健壮
     }
 
     if (m_play_status != NULL) {
@@ -433,19 +432,12 @@ int WLAudio::_ResampleAudio(void **pcmbuf) {
         int ret = -1;
         if (readFrameFinish) {
             m_avpacket_ = av_packet_alloc();
-            if (m_queue->GetAVPacket(m_avpacket_) != 0) {
-                av_packet_free(&m_avpacket_);
-                av_free(m_avpacket_);
-                m_avpacket_ = NULL;
-                continue;
-            }
+            m_queue->GetAVPacket(m_avpacket_);
 
             pthread_mutex_lock(&m_codec_mutex);
             ret = avcodec_send_packet(m_avcodec_ctx, m_avpacket_);
             if (ret != 0) {
                 av_packet_free(&m_avpacket_);
-                av_free(m_avpacket_);
-                m_avpacket_ = NULL;
                 pthread_mutex_unlock(&m_codec_mutex);
                 continue;
             }

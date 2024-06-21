@@ -1,9 +1,9 @@
 #include "wl_video.h"
 
-WLVideo::WLVideo(WLPlayStatus *playStatus, CallJava *call_java) {
-    this->m_play_status = playStatus;
+WLVideo::WLVideo(WLPlayStatus *play_status, CallJava *call_java) {
+    this->m_play_status = play_status;
     m_call_java = call_java;
-    m_queue = new WLQueue(playStatus);
+    m_queue = new WLQueue(play_status);
     pthread_mutex_init(&m_codec_mutex, NULL);
 }
 
@@ -38,18 +38,11 @@ void *playVideo(void *data) {
             }
         }
         AVPacket *av_packet = av_packet_alloc();
-        if (video->m_queue->GetAVPacket(av_packet) != 0) {
-            av_packet_free(&av_packet);
-            av_free(av_packet);
-            av_packet = NULL;
-            continue;
-        }
+        video->m_queue->GetAVPacket(av_packet);
 
         if (video->m_codec_type == CODEC_MEDIACODEC) {
             if (av_bsf_send_packet(video->m_abs_ctx, av_packet) != 0) {
                 av_packet_free(&av_packet);
-                av_free(av_packet);
-                av_packet = NULL;
                 continue;
             }
             while (av_bsf_receive_packet(video->m_abs_ctx, av_packet) == 0) {
@@ -58,7 +51,6 @@ void *playVideo(void *data) {
 
                 video->m_call_java->OnCallDecodeVPacket(CHILD_THREAD, av_packet->data,av_packet->size);//调用Java层硬解
                 av_packet_free(&av_packet);
-                av_free(av_packet);
                 continue;
             }
             av_packet = NULL;
@@ -66,38 +58,32 @@ void *playVideo(void *data) {
             pthread_mutex_lock(&video->m_codec_mutex);
             if (avcodec_send_packet(video->m_avcodec_ctx, av_packet) != 0) {
                 av_packet_free(&av_packet);
-                av_free(av_packet);
-                av_packet = NULL;
                 pthread_mutex_unlock(&video->m_codec_mutex);
                 continue;
             }
 
-            AVFrame *avFrame = av_frame_alloc();
-            if (avcodec_receive_frame(video->m_avcodec_ctx, avFrame) != 0) {
-                av_frame_free(&avFrame);
-                av_free(avFrame);
-                avFrame = NULL;
+            AVFrame *avframe = av_frame_alloc();
+            if (avcodec_receive_frame(video->m_avcodec_ctx, avframe) != 0) {
+                av_frame_free(&avframe);
                 av_packet_free(&av_packet);
-                av_free(av_packet);
-                av_packet = NULL;
                 pthread_mutex_unlock(&video->m_codec_mutex);
                 continue;
             }
 
             //LOGI("子线程解码一个AVFrame成功!");
-            if (avFrame->format == AV_PIX_FMT_YUV420P) {
+            if (avframe->format == AV_PIX_FMT_YUV420P) {
                 //LOGI("当前视频是YUV420P格式!");
-                double diff = video->GetFrameDiffTime(avFrame,NULL);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
+                double diff = video->GetFrameDiffTime(avframe,NULL);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
                 av_usleep(video->GetDelayTime(diff) * 1000000);
 //              av_usleep(diff * 1000000);
                 //直接渲染
                 video->m_call_java->OnCallRenderYUV(CHILD_THREAD,
-                                                    avFrame->width,
-                                                    avFrame->height,
-                                                    avFrame->linesize[0],
-                                                    avFrame->data[0],
-                                                    avFrame->data[1],
-                                                    avFrame->data[2]);
+                                                    avframe->width,
+                                                    avframe->height,
+                                                    avframe->linesize[0],
+                                                    avframe->data[0],
+                                                    avframe->data[1],
+                                                    avframe->data[2]);
             } else {
                 LOGI("当前视频不是YUV420P格式，需转换!");
                 AVFrame *pFrameYUV420p = av_frame_alloc();//分配一个Frame内存空间
@@ -121,17 +107,16 @@ void *playVideo(void *data) {
                         SWS_BICUBIC, NULL, NULL, NULL);//只是进行格式转换,非YUV420P格式转换为YUV420P格式
                 if (!sws_ctx) {
                     av_frame_free(&pFrameYUV420p);
-                    av_free(pFrameYUV420p);
                     av_free(buffer);
                     pthread_mutex_unlock(&video->m_codec_mutex);
                     continue;
                 }
 
                 sws_scale(sws_ctx,
-                          avFrame->data,
-                          avFrame->linesize,
+                          avframe->data,
+                          avframe->linesize,
                           0,
-                          avFrame->height,
+                          avframe->height,
                           pFrameYUV420p->data,
                           pFrameYUV420p->linesize);//格式转换
 
@@ -148,17 +133,12 @@ void *playVideo(void *data) {
                                                     pFrameYUV420p->data[2]);
 
                 av_frame_free(&pFrameYUV420p);
-                av_free(pFrameYUV420p);
                 av_free(buffer);
                 sws_freeContext(sws_ctx);
             }
 
-            av_frame_free(&avFrame);
-            av_free(avFrame);
-            avFrame = NULL;
+            av_frame_free(&avframe);
             av_packet_free(&av_packet);
-            av_free(av_packet);
-            av_packet = NULL;
             pthread_mutex_unlock(&video->m_codec_mutex);
         }
     }
@@ -174,15 +154,11 @@ void WLVideo::Play() {
 
 void WLVideo::Release() {
     if (m_queue != NULL) {
-        m_queue->NoticeQueue();
-    }
-
-    pthread_join(m_thread_play, NULL);//等待子线程结束
-
-    if (m_queue != NULL) {
         delete m_queue;
         m_queue = NULL;
     }
+
+    pthread_join(m_thread_play, NULL);//等待子线程结束
 
     if (m_abs_ctx != NULL) {
         av_bsf_free(&m_abs_ctx);
@@ -204,13 +180,13 @@ void WLVideo::Release() {
     }
 }
 
-double WLVideo::GetFrameDiffTime(AVFrame *avFrame, AVPacket *avPacket) {
+double WLVideo::GetFrameDiffTime(AVFrame *avframe, AVPacket *avpacket) {
     double pts = 0;
-    if (avFrame != NULL) {
-        pts = av_frame_get_best_effort_timestamp(avFrame);
+    if (avframe != NULL) {
+        pts = av_frame_get_best_effort_timestamp(avframe);
     }
-    if (avPacket != NULL) {
-        pts = avPacket->pts;
+    if (avpacket != NULL) {
+        pts = avpacket->pts;
     }
 
     if (pts == AV_NOPTS_VALUE) {
