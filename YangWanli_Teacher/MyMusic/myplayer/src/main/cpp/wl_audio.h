@@ -82,9 +82,9 @@ public:
 
     bool m_is_cut = false;
     int end_time = 0;
-    bool showPcm = false;
+    bool m_show_pcm = false;
 
-    WLQueue *m_queue = NULL;
+    WLQueue *m_packet_queue = NULL;
     WLBufferQueue *m_buffer_queue;
     int m_default_pcm_size = 4096;
 
@@ -96,7 +96,7 @@ public:
 
 private:
     pthread_t m_play_thread_;
-    pthread_t m_pcm_callback_thread_;
+    pthread_t m_pcm_report_callback_thread_;
 
     // 引擎接口
     SLObjectItf m_engine_object_ = NULL;

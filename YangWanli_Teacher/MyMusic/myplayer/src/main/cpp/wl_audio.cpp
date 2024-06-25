@@ -6,9 +6,9 @@ WLAudio::WLAudio(int sample_rate, WLPlayStatus *play_status, CallJava *call_java
     m_call_java = call_java;
     m_is_cut = false;
     this->end_time = 0;
-    this->showPcm = false;
+    this->m_show_pcm = false;
 
-    m_queue = new WLQueue(m_play_status);
+    m_packet_queue = new WLQueue(m_play_status);
 
     m_buffer_ = (uint8_t *) (av_malloc(sample_rate * 2 * 2));//分配了一秒的音频pcm数据内存
 
@@ -29,7 +29,7 @@ WLAudio::~WLAudio() {
 }
 
 //给到OpenSLES注册的回调函数，会由OpenSLES主动调用，直接将pcm数据放入OpenSLES中的缓冲队列中进行播放
-void _PcmBufferCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
+void _PcmBufferPlayCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
     WLAudio *wlAudio = (WLAudio *) (context);
     if (wlAudio != NULL) {
         int bufferSize = wlAudio->GetSoundTouchData();//返回的是当前音频包解码后的PCM的采样点数(单个)
@@ -109,7 +109,7 @@ void WLAudio::InitOpenSLES() {
 
     //4.设置缓存队列和回调函数
     (*m_pcm_player_object_)->GetInterface(m_pcm_player_object_, SL_IID_BUFFERQUEUE, &pcmBufferQueue);//根据音频播放器实例获取到音频缓存队列的接口
-    (*pcmBufferQueue)->RegisterCallback(pcmBufferQueue, _PcmBufferCallBack, this);
+    (*pcmBufferQueue)->RegisterCallback(pcmBufferQueue, _PcmBufferPlayCallBack, this);
 
     //获取音量接口
     (*m_pcm_player_object_)->GetInterface(m_pcm_player_object_, SL_IID_VOLUME, &m_pcm_player_volume_);
@@ -124,20 +124,20 @@ void WLAudio::InitOpenSLES() {
     (*m_pcm_player_play_)->SetPlayState(m_pcm_player_play_, SL_PLAYSTATE_PLAYING);
 
     //6.调用一次pcm播放的回调函数，表示启动opensles播放
-    _PcmBufferCallBack(pcmBufferQueue, this);
+    _PcmBufferPlayCallBack(pcmBufferQueue, this);
     LOGI("initOpenSLES is end");
 }
 
-void *_DecodePlay(void *data) {
-    WLAudio *wlAudio = (WLAudio *) data;
+void *_PlayAudio(void *arg) {
+    WLAudio *wlAudio = (WLAudio *) arg;
     wlAudio->InitOpenSLES();
 //    pthread_exit(&wlAudio->thread_play);
     return 0;
 }
 
 //线程函数：用于获取缓冲区中的播放的pcm数据上报
-void *_PcmCallBack(void *data) {
-    WLAudio *wlAudio = (WLAudio *) data;
+void *_PcmBufferReportCallBack(void *arg) {
+    WLAudio *wlAudio = (WLAudio *) arg;
     wlAudio->m_buffer_queue = new WLBufferQueue(wlAudio->m_play_status);
     while ((wlAudio->m_play_status != NULL) && !wlAudio->m_play_status->m_is_exit) {
         WLPcmBean *pcmBean = NULL;
@@ -149,7 +149,7 @@ void *_PcmCallBack(void *data) {
             if (wlAudio->m_is_record_pcm) {
                 wlAudio->m_call_java->OnCallPcmToAAC(CHILD_THREAD, pcmBean->m_buffer, pcmBean->m_buffsize);
             }
-            if (wlAudio->showPcm) {
+            if (wlAudio->m_show_pcm) {
                 wlAudio->m_call_java->OnCallPcmData(CHILD_THREAD, pcmBean->m_buffer, pcmBean->m_buffsize);
             }
         } else {//分包上报
@@ -161,7 +161,7 @@ void *_PcmCallBack(void *data) {
                 if (wlAudio->m_is_record_pcm) {
                     wlAudio->m_call_java->OnCallPcmToAAC(CHILD_THREAD, bf, wlAudio->m_default_pcm_size);
                 }
-                if (wlAudio->showPcm) {
+                if (wlAudio->m_show_pcm) {
                     wlAudio->m_call_java->OnCallPcmData(CHILD_THREAD, bf, wlAudio->m_default_pcm_size);
                 }
                 free(bf);
@@ -174,7 +174,7 @@ void *_PcmCallBack(void *data) {
                 if (wlAudio->m_is_record_pcm) {
                     wlAudio->m_call_java->OnCallPcmToAAC(CHILD_THREAD, bf, pack_sub);
                 }
-                if (wlAudio->showPcm) {
+                if (wlAudio->m_show_pcm) {
                     wlAudio->m_call_java->OnCallPcmData(CHILD_THREAD, bf, pack_sub);
                 }
                 free(bf);
@@ -190,8 +190,14 @@ void *_PcmCallBack(void *data) {
 
 void WLAudio::Play() {
     if ((m_play_status != NULL) && !m_play_status->m_is_exit) {
-        pthread_create(&m_play_thread_, NULL, _DecodePlay, this);//创建音频播放子线程，初始化opensles相关流程，并注册好播放回调
-        pthread_create(&m_pcm_callback_thread_, NULL, _PcmCallBack, this);//创建pcm数据的回调子线程
+        int ret = pthread_create(&m_play_thread_, NULL, _PlayAudio, this);//创建音频播放子线程，初始化opensles相关流程，并注册好播放回调
+        if (ret != 0) {
+            LOGE("Create Play Audio Thread failed!");
+        }
+        ret = pthread_create(&m_pcm_report_callback_thread_, NULL, _PcmBufferReportCallBack, this);//创建pcm数据的回调子线程
+        if (ret != 0) {
+            LOGE("Create Pcm Call Back Thread failed!");
+        }
     }
 }
 
@@ -218,20 +224,59 @@ void WLAudio::Stop() {
 
 void WLAudio::Release() {
     Stop();
-
     if (m_buffer_queue != NULL) {
         m_buffer_queue->NoticeThread();
-        pthread_join(m_pcm_callback_thread_, NULL);
+        void *thread_ret;
+        int result =  pthread_join(m_pcm_report_callback_thread_, &thread_ret);
+        LOGI("audio m_pcm_report_callback_thread_ join result: %d", result);
+        if (result != 0) {
+            switch (result) {
+                case ESRCH:
+                    LOGE("audio m_pcm_report_callback_thread_ pthread_join failed: Thread not found (ESRCH)");
+                    break;
+                case EINVAL:
+                    LOGE("audio m_pcm_report_callback_thread_ pthread_join failed: Invalid thread or thread already detached (EINVAL)");
+                    break;
+                case EDEADLK:
+                    LOGE("audio m_pcm_report_callback_thread_ pthread_join failed: Deadlock detected (EDEADLK)");
+                    break;
+                default:
+                    LOGE("audio m_pcm_report_callback_thread_ pthread_join failed: Unknown error (%d)", result);
+            }
+            // Exit or perform additional actions if needed
+            exit(EXIT_FAILURE);
+        } else {
+            LOGI("audio m_pcm_report_callback_thread_ Thread returned: %ld", (long)thread_ret);
+        }
         delete m_buffer_queue;
         m_buffer_queue = NULL;
     }
-
-    if (m_queue != NULL) {
-        delete m_queue;
-        m_queue = NULL;
-        pthread_join(m_play_thread_, NULL);
+    if (m_packet_queue != NULL) {
+        delete m_packet_queue;
+        m_packet_queue = NULL;
+        void *thread_ret;
+        int result = pthread_join(m_play_thread_, &thread_ret);
+        LOGI("audio m_play_thread_ join result: %d", result);
+        if (result != 0) {
+            switch (result) {
+                case ESRCH:
+                    LOGE("audio m_play_thread_ pthread_join failed: Thread not found (ESRCH)");
+                    break;
+                case EINVAL:
+                    LOGE("audio m_play_thread_ pthread_join failed: Invalid thread or thread already detached (EINVAL)");
+                    break;
+                case EDEADLK:
+                    LOGE("audio m_play_thread_ pthread_join failed: Deadlock detected (EDEADLK)");
+                    break;
+                default:
+                    LOGE("audio m_play_thread_ pthread_join failed: Unknown error (%d)", result);
+            }
+            // Exit or perform additional actions if needed
+            exit(EXIT_FAILURE);
+        } else {
+            LOGI("audio m_play_thread_ Thread returned: %ld", (long)thread_ret);
+        }
     }
-
     if (m_pcm_player_object_ != NULL) {
         (*m_pcm_player_object_)->Destroy(m_pcm_player_object_);
         m_pcm_player_object_ = NULL;
@@ -240,48 +285,39 @@ void WLAudio::Release() {
         m_pcm_player_volume_ = NULL;
         m_pcm_player_mute_ = NULL;
     }
-
     if (m_output_mix_object_ != NULL) {
         (*m_output_mix_object_)->Destroy(m_output_mix_object_);
         m_output_mix_object_ = NULL;
         m_output_mix_environmental_reverb_ = NULL;
     }
-
     if (m_engine_object_ != NULL) {
         (*m_engine_object_)->Destroy(m_engine_object_);
         m_engine_object_ = NULL;
         m_engine_engine_ = NULL;
     }
-
     if (m_buffer_ != NULL) {
         free(m_buffer_);
         m_buffer_ = NULL;
     }
-
     if (m_out_buffer_ != NULL) {
         m_out_buffer_ = NULL;
     }
-
     if (m_soundtouch_ != NULL) {
         delete m_soundtouch_;
         m_soundtouch_ = NULL;
     }
-
     if (sampleBuffer != NULL) {
         free(sampleBuffer);
         sampleBuffer = NULL;
     }
-
     if (m_avcodec_ctx != NULL) {
         avcodec_close(m_avcodec_ctx);
         avcodec_free_context(&m_avcodec_ctx);
         m_avcodec_ctx = NULL;//虽然 avcodec_free_context 已经做了这件事，但是显式赋值可以使代码更加清晰和健壮
     }
-
     if (m_play_status != NULL) {
         m_play_status = NULL;
     }
-
     if (m_call_java != NULL) {
         m_call_java = NULL;
     }
@@ -358,7 +394,6 @@ int WLAudio::GetPCMDB(char *pcmdata, size_t pcmsize) {
         memcpy(&pervalue, (pcmdata + i), 2);//转为short
         sum += abs(pervalue);//short值累加
     }
-
     sum = sum / (pcmsize / 2);//求平均
     if (sum > 0) {
         db = (int) 20.0 * log10(sum);//计算得到分贝
@@ -414,8 +449,7 @@ int WLAudio::_ResampleAudio(void **pcmbuf) {
             av_usleep(100 * 1000);//100毫秒
             continue;
         }
-
-        if (m_queue->GetQueueSize() == 0) {//加载中
+        if (m_packet_queue->GetQueueSize() == 0) {//加载中
             if (!m_play_status->m_load) {
                 m_play_status->m_load = true;
                 m_call_java->OnCallLoad(CHILD_THREAD, true);
@@ -432,7 +466,7 @@ int WLAudio::_ResampleAudio(void **pcmbuf) {
         int ret = -1;
         if (readFrameFinish) {
             m_avpacket_ = av_packet_alloc();
-            m_queue->GetAVPacket(m_avpacket_);
+            m_packet_queue->GetAVPacket(m_avpacket_);
 
             pthread_mutex_lock(&m_codec_mutex);
             ret = avcodec_send_packet(m_avcodec_ctx, m_avpacket_);
@@ -515,7 +549,6 @@ int WLAudio::_ResampleAudio(void **pcmbuf) {
             av_frame_free(&m_avframe_);
             av_free(m_avframe_);
             m_avframe_ = NULL;
-
             pthread_mutex_unlock(&m_codec_mutex);
             continue;
         }

@@ -66,7 +66,6 @@ private:
     WLAudio* m_wlaudio_ = NULL;
     WLVideo* m_wlvideo_ = NULL;
 
-    bool m_support_mediacodec_ = false;
     bool m_is_play_end_ = false;
 };
 

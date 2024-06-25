@@ -13,8 +13,8 @@ extern "C" {
 #include "call_java.h"
 #include "wl_audio.h"
 
-#define CODEC_YUV 0
-#define CODEC_MEDIACODEC 1
+#define RENDER_YUV 0
+#define RENDER_MEDIACODEC 1
 
 class WLVideo {
 public:
@@ -32,24 +32,24 @@ public:
     double GetDelayTime(double diff);
 
 public:
+    WLPlayStatus *m_play_status = NULL;
+    CallJava *m_call_java = NULL;
+    int m_render_type = RENDER_YUV;
+    WLAudio *m_audio = NULL;
     int m_stream_index = -1;
     AVCodecContext *m_avcodec_ctx = NULL;
     AVCodecParameters *m_codec_par = NULL;
-    WLQueue *m_queue = NULL;
-    WLPlayStatus *m_play_status = NULL;
-    CallJava *m_call_java = NULL;
+    AVBSFContext *m_abs_ctx = NULL;
+    WLQueue *m_packet_queue = NULL;
     AVRational m_time_base;
-
     pthread_mutex_t m_codec_mutex;
-    pthread_t m_thread_play;
-
-    WLAudio *m_audio = NULL;
     double m_clock = 0;
-    double m_delay_time = 0;
     double m_default_delay_time = 0.04;
 
-    int m_codec_type = CODEC_YUV;
-    AVBSFContext *m_abs_ctx = NULL;
+private:
+    pthread_t m_play_thread_;
+    double m_delay_time_ = 0;
+    double m_last_audio_clock_ = 0;
 };
 
 #endif //MYPLAYER_WLVIDEO_H_
