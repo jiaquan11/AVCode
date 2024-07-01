@@ -7,6 +7,7 @@ WLVideo::WLVideo(WLPlayStatus *play_status, CallJava *call_java) {
     m_call_java = call_java;
     m_packet_queue = new WLQueue(play_status);
     m_pts_queue = new WLLinkOrderQueue();
+    m_avpacket = av_packet_alloc();
     pthread_mutex_init(&m_codec_mutex, NULL);
 }
 
@@ -37,69 +38,77 @@ void *_PlayVideo(void *arg) {
             }
         }
 
-        AVPacket *avpacket = av_packet_alloc();
         if (video->m_render_type == RENDER_MEDIACODEC) {
-            if (!video->m_read_frame_finished && (video->m_pts_queue->Size() <= video->m_max_ref_frames)) {
+            if ((video->m_b_frames > 0) && !video->m_read_frame_finished && (video->m_pts_queue->Size() < (video->m_b_frames + 1))) {
                 LOGI("video wait pts queue size is %d max_ref_frames: %d", video->m_pts_queue->Size(), video->m_max_ref_frames);
                 av_usleep(5 * 1000);//休眠5毫秒
                 continue;
             }
 
-            video->m_packet_queue->GetAVPacket(avpacket);
-            if (av_bsf_send_packet(video->m_abs_ctx, avpacket) != 0) {
+            video->m_packet_queue->GetAVPacket(video->m_avpacket);
+            if (av_bsf_send_packet(video->m_abs_ctx, video->m_avpacket) != 0) {
                 LOGE("video av_bsf_send_packet to filter failed");
-                av_packet_free(&avpacket);
                 continue;
             }
             /**
              * av_bsf_receive_packet,目前验证是没有缓冲的，所以这里不需要循环接收
              */
-            if (av_bsf_receive_packet(video->m_abs_ctx, avpacket) == 0) {
+            if (av_bsf_receive_packet(video->m_abs_ctx, video->m_avpacket) == 0) {
+                /**
+                 * 对于MediaCodec硬解的音视频同步，在解码渲染前，根据时间戳是否要休眠一段时间，保证音视频同步
+                 * 从pts队列中取出一个pts，这里的pts是已经排好序的，用于控制视频渲染速度，保证音视频同步
+                 * MediaCodec的解码接口releaseOutputBuffer前面不能做延时处理，否则导致缓冲区异常，出现绿屏或者花屏。
+                 * 所以在进行queueInputBuffer前进行延时处理，保证音视频同步，但是因为如果是有B帧的情况，packet的pts是不连续的，
+                 * 所以这里需要对pts进行排序，再进行延时处理。实际这个pts并不真正对应这一帧解码数据，只是为了顺序播放
+                 */
                 int pts_ms = video->m_pts_queue->Popup();
                 double diff = video->GetFrameDiffTime(pts_ms);
                 av_usleep(video->GetDelayTime(diff) * 1000000);
-                video->m_call_java->OnCallDecodeVPacket(CHILD_THREAD, avpacket->data,avpacket->size, avpacket->pts * av_q2d(video->m_time_base));
+                video->m_call_java->OnCallDecodeVPacket(CHILD_THREAD, video->m_avpacket->data,video->m_avpacket->size, video->m_avpacket->pts * av_q2d(video->m_time_base));
             } else {
                 LOGE("video av_bsf_receive_packet from filter failed");
-                av_packet_free(&avpacket);
                 continue;
             }
 
         } else if (video->m_render_type == RENDER_YUV) {
-            video->m_packet_queue->GetAVPacket(avpacket);
+            video->m_packet_queue->GetAVPacket(video->m_avpacket);
             pthread_mutex_lock(&video->m_codec_mutex);
-            if (avcodec_send_packet(video->m_avcodec_ctx, avpacket) != 0) {
+            if (avcodec_send_packet(video->m_avcodec_ctx, video->m_avpacket) != 0) {
                 LOGE("WLVideo avcodec_send_packet failed");
-                av_packet_free(&avpacket);
                 pthread_mutex_unlock(&video->m_codec_mutex);
                 continue;
             }
-            av_packet_free(&avpacket);
 
-            AVFrame *avframe = av_frame_alloc();
-            while (avcodec_receive_frame(video->m_avcodec_ctx, avframe) == 0) {
-                if (avframe->format == AV_PIX_FMT_YUV420P) {
-                    double diff = video->GetFrameDiffTime(avframe,NULL);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
+            if (video->m_avframe == NULL) {
+                video->m_avframe = av_frame_alloc();
+            }
+            while (avcodec_receive_frame(video->m_avcodec_ctx, video->m_avframe) == 0) {
+                if (video->m_avframe->format == AV_PIX_FMT_YUV420P) {
+                    double diff = video->GetFrameDiffTime(video->m_avframe,NULL);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
                     av_usleep(video->GetDelayTime(diff) * 1000000);
                     video->m_call_java->OnCallRenderYUV(CHILD_THREAD,
-                                                        avframe->width,
-                                                        avframe->height,
-                                                        avframe->linesize[0],
-                                                        avframe->data[0],
-                                                        avframe->data[1],
-                                                        avframe->data[2]);
+                                                        video->m_avframe->width,
+                                                        video->m_avframe->height,
+                                                        video->m_avframe->linesize[0],
+                                                        video->m_avframe->data[0],
+                                                        video->m_avframe->data[1],
+                                                        video->m_avframe->data[2]);
                 } else {
-                    AVFrame *scale_avframe = av_frame_alloc();
+                    if (video->m_scale_avframe == NULL) {
+                        video->m_scale_avframe = av_frame_alloc();
+                    }
                     int size = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, video->m_avcodec_ctx->width, video->m_avcodec_ctx->height,1);
-                    uint8_t *scale_buffer = static_cast<uint8_t *>(av_malloc(size * sizeof(uint8_t)));
-                    av_image_fill_arrays(scale_avframe->data,
-                                         scale_avframe->linesize,
-                                         scale_buffer,
+                    if (video->m_scale_buffer == NULL) {
+                        video->m_scale_buffer = static_cast<uint8_t *>(av_malloc(size * sizeof(uint8_t)));
+                    }
+                    av_image_fill_arrays(video->m_scale_avframe->data,
+                                         video->m_scale_avframe->linesize,
+                                         video->m_scale_buffer,
                                          AV_PIX_FMT_YUV420P,
                                          video->m_avcodec_ctx->width,
                                          video->m_avcodec_ctx->height,
                                          1);
-                    SwsContext *sws_ctx = sws_getContext(
+                    video->m_sws_ctx = sws_getContext(
                             video->m_avcodec_ctx->width,
                             video->m_avcodec_ctx->height,
                             video->m_avcodec_ctx->pix_fmt,
@@ -107,39 +116,33 @@ void *_PlayVideo(void *arg) {
                             video->m_avcodec_ctx->height,
                             AV_PIX_FMT_YUV420P,
                             SWS_BICUBIC, NULL, NULL, NULL);
-                    if (!sws_ctx) {
-                        av_frame_free(&scale_avframe);
-                        av_free(scale_buffer);
+                    if (!video->m_sws_ctx) {
                         pthread_mutex_unlock(&video->m_codec_mutex);
                         continue;
                     }
-                    sws_scale(sws_ctx,
-                              avframe->data,
-                              avframe->linesize,
+                    sws_scale(video->m_sws_ctx,
+                              video->m_avframe->data,
+                              video->m_avframe->linesize,
                               0,
-                              avframe->height,
-                              scale_avframe->data,
-                              scale_avframe->linesize);
+                              video->m_avframe->height,
+                              video->m_scale_avframe->data,
+                              video->m_scale_avframe->linesize);
                     //手动复制时间戳和其他元数据,用于音视频同步
-                    scale_avframe->pts = avframe->pts;
-                    scale_avframe->pkt_dts = avframe->pkt_dts;
-                    scale_avframe->best_effort_timestamp = av_frame_get_best_effort_timestamp(avframe);
-                    scale_avframe->sample_aspect_ratio = avframe->sample_aspect_ratio;
-                    double diff = video->GetFrameDiffTime(scale_avframe, NULL);
+                    video->m_scale_avframe->pts = video->m_avframe->pts;
+                    video->m_scale_avframe->pkt_dts = video->m_avframe->pkt_dts;
+                    video->m_scale_avframe->best_effort_timestamp = av_frame_get_best_effort_timestamp(video->m_avframe);
+                    video->m_scale_avframe->sample_aspect_ratio = video->m_avframe->sample_aspect_ratio;
+                    double diff = video->GetFrameDiffTime(video->m_scale_avframe, NULL);
                     av_usleep(video->GetDelayTime(diff) * 1000000);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
                     video->m_call_java->OnCallRenderYUV(CHILD_THREAD,
                                                         video->m_avcodec_ctx->width,
                                                         video->m_avcodec_ctx->height,
-                                                        scale_avframe->linesize[0],
-                                                        scale_avframe->data[0],
-                                                        scale_avframe->data[1],
-                                                        scale_avframe->data[2]);
-                    av_frame_free(&scale_avframe);
-                    av_free(scale_buffer);
-                    sws_freeContext(sws_ctx);
+                                                        video->m_scale_avframe->linesize[0],
+                                                        video->m_scale_avframe->data[0],
+                                                        video->m_scale_avframe->data[1],
+                                                        video->m_scale_avframe->data[2]);
                 }
             }
-            av_frame_free(&avframe);
             pthread_mutex_unlock(&video->m_codec_mutex);
         }
     }
@@ -189,8 +192,29 @@ void WLVideo::Release() {
         LOGI("video m_play_thread_ Thread returned: %ld", (long)thread_ret);
     }
 
+    if (m_avpacket != NULL) {
+        av_packet_free(&m_avpacket);
+        m_avpacket = NULL;
+    }
+    if (m_avframe != NULL) {
+        av_frame_free(&m_avframe);
+        m_avframe = NULL;
+    }
+    if (m_scale_avframe != NULL) {
+        av_frame_free(&m_scale_avframe);
+        m_scale_avframe = NULL;
+    }
+    if (m_scale_buffer != NULL) {
+        av_free(m_scale_buffer);
+        m_scale_buffer = NULL;
+    }
+    if (m_sws_ctx != NULL) {
+        sws_freeContext(m_sws_ctx);
+        m_sws_ctx = NULL;
+    }
     if (m_abs_ctx != NULL) {
         av_bsf_free(&m_abs_ctx);
+        m_abs_ctx = NULL;
     }
     if (m_avcodec_ctx != NULL) {
         pthread_mutex_lock(&m_codec_mutex);
@@ -316,7 +340,7 @@ void WLVideo::Get264Params(AVCodecContext *avctx) {
      */
     parseh264_sps((uint8_t *) (m_sps_ + 4 + 1), m_sps_len_ - 4 - 1, &level, &profile, &interlaced, &max_ref_frames);
     m_max_ref_frames = max_ref_frames;
-    LOGI("WLVideo Get264Params level:%d profile:%d interlaced:%d max_ref_frames:%d", level, profile, interlaced, max_ref_frames);
+    LOGI("WLVideo Get264Params level:%d profile:%d interlaced:%d m_max_ref_frames:%d", level, profile, interlaced, m_max_ref_frames);
 }
 
 /**
@@ -389,8 +413,8 @@ void WLVideo::Get265Params(AVCodecContext *avctx) {
     LOGI("WLVideo Get265Params m_vps_len_: %d,m_sps_len_: %d,m_pps_len: %d", m_vps_len_, m_sps_len_, m_pps_len);
 
     HevcSPSParams params;
-    ParseHEVCSPS((uint8_t*)(m_sps_ + 4), m_sps_len_ - 4, params);
-    m_max_ref_frames = params.max_ref_frames;
+    bool ret = ParseHEVCSPS((uint8_t*)(m_sps_ + 4), m_sps_len_ - 4, params);
+    m_max_ref_frames = ret ? params.max_ref_frames : 0;
     LOGI("WLVideo Get265Params max_ref_frames: %d", params.max_ref_frames);
     LOGI("WLVideo Get265Params out");
 }

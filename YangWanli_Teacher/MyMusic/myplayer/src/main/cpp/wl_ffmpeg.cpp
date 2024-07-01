@@ -87,8 +87,22 @@ void WLFFmpeg::DemuxFFmpegThread() {
         const char *codec_tag = (m_wlvideo_->m_avcodec_ctx->codec)->name;
         if (strcasecmp(codec_tag, "h264") == 0) {
             m_wlvideo_->Get264Params(m_wlvideo_->m_avcodec_ctx);
+            /**
+             * has_b_frames 表示的是解码器最大可能需要的 B 帧缓冲数，而不一定是两个参考帧之间的实际 B 帧数。
+             * 有时，这个值可能并不直接反映所有的 B 帧数量，而是针对解码器优化的一个内部设置。
+             * 帧重排序特性
+             * 在某些编码方式中，可能会采用更复杂的帧重排序机制，即使有多个B帧，解码器仍然可以通过帧重排序算法优化来减少边解码边显示实时要求的缓冲帧数
+             * 假设编码器生成的帧序列如下（GOP中）：P-B-B-B-B-P，即有4个B帧。尽管has_b_frames = 2,这也可能通过具体的解码逻辑优化得到满足。
+             * 例如，解码器可能分批处理B帧，部分处理并重排序，缓冲更多未输出的帧，从而以较低的has_b_frames 维持流畅解码
+             */
+            LOGI("video h264 has_b_frames: %d", m_wlvideo_->m_avcodec_ctx->has_b_frames);
+            m_wlvideo_->m_b_frames = m_wlvideo_->m_avcodec_ctx->has_b_frames;
+            LOGI("video h264 max_b_frames: %d", m_wlvideo_->m_avcodec_ctx->max_b_frames);
         } else if (strcasecmp(codec_tag, "hevc") == 0) {
             m_wlvideo_->Get265Params(m_wlvideo_->m_avcodec_ctx);
+            LOGI("video hevc has_b_frames: %d", m_wlvideo_->m_avcodec_ctx->has_b_frames);
+            m_wlvideo_->m_b_frames = m_wlvideo_->m_avcodec_ctx->has_b_frames;
+            LOGI("video hevc max_b_frames: %d", m_wlvideo_->m_avcodec_ctx->max_b_frames);
         }
     }
 

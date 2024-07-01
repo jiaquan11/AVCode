@@ -47,6 +47,11 @@ public:
     AVCodecContext *m_avcodec_ctx = NULL;
     AVCodecParameters *m_codec_par = NULL;
     AVBSFContext *m_abs_ctx = NULL;
+    AVPacket *m_avpacket = NULL;
+    AVFrame *m_avframe = NULL;
+    AVFrame *m_scale_avframe = NULL;
+    uint8_t *m_scale_buffer = NULL;
+    SwsContext *m_sws_ctx = NULL;
     WLQueue *m_packet_queue = NULL;
     WLLinkOrderQueue *m_pts_queue = NULL;
     AVRational m_time_base;
@@ -54,6 +59,7 @@ public:
     double m_clock = 0;
     double m_default_delay_time = 0.04;
     int m_max_ref_frames = 0;
+    int m_b_frames = 0;
     bool m_read_frame_finished = false;
 
 private:
