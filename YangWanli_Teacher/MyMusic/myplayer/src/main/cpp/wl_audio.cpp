@@ -32,6 +32,10 @@ WLAudio::~WLAudio() {
 void _PcmBufferPlayCallBack(SLAndroidSimpleBufferQueueItf bf, void *context) {
     WLAudio *wlAudio = (WLAudio *) (context);
     if (wlAudio != NULL) {
+        /**
+         * 返回的是当前音频包解码后的PCM的采样点数(单个)
+         * 这里可能输出采样点数是不均匀的，因为有缓冲区的存在，所以可能会有多个音频包的pcm数据一起输出
+         */
         int bufferSize = wlAudio->GetSoundTouchData();//返回的是当前音频包解码后的PCM的采样点数(单个)
         if (bufferSize > 0) {
             wlAudio->clock += (bufferSize * 4) / ((double) (wlAudio->m_sample_rate * 2 * 2));//累加一下播放一段pcm所耗费的时间
@@ -500,11 +504,7 @@ int WLAudio::_ResampleAudio(void **pcmbuf) {
                     NULL, NULL);
             if (!swr_ctx || (swr_init(swr_ctx) < 0)) {
                 av_packet_free(&m_avpacket_);
-                av_free(m_avpacket_);
-                m_avpacket_ = NULL;
                 av_frame_free(&m_avframe_);
-                av_free(m_avframe_);
-                m_avframe_ = NULL;
                 swr_free(&swr_ctx);
                 readFrameFinish = true;
                 pthread_mutex_unlock(&m_codec_mutex);
@@ -528,33 +528,18 @@ int WLAudio::_ResampleAudio(void **pcmbuf) {
             if (LOG_DEBUG) {
 //                LOGI("data size %d", data_size);
             }
-
-//            av_packet_free(&avPacket);
-//            av_free(avPacket);
-//            avPacket = NULL;
-
             av_frame_free(&m_avframe_);
-            av_free(m_avframe_);
-            m_avframe_ = NULL;
             swr_free(&swr_ctx);
-            swr_ctx = NULL;
             pthread_mutex_unlock(&m_codec_mutex);
             break;
         } else {//没有获取到解码数据，继续往解码器塞数据解码
             readFrameFinish = true;
-
             av_packet_free(&m_avpacket_);
-            av_free(m_avpacket_);
-            m_avpacket_ = NULL;
             av_frame_free(&m_avframe_);
-            av_free(m_avframe_);
-            m_avframe_ = NULL;
             pthread_mutex_unlock(&m_codec_mutex);
             continue;
         }
     }
-//    fclose(outFile);
-//    LOGI("fclose the pcm file");
     return m_data_size_;
 }
 

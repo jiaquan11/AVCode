@@ -17,6 +17,7 @@ add_library(native-lib
             wl_pcm_bean.cpp
             wl_buffer_queue.cpp
             wl_video.cpp
+            wl_link_order_queue.cpp
             soundtouch/SoundTouch/AAFilter.cpp
             soundtouch/SoundTouch/FIFOSampleBuffer.cpp
             soundtouch/SoundTouch/FIRFilter.cpp

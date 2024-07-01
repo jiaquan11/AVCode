@@ -10,6 +10,7 @@ extern "C" {
 };
 
 #include "wl_queue.h"
+#include "wl_link_order_queue.h"
 #include "call_java.h"
 #include "wl_audio.h"
 
@@ -18,7 +19,7 @@ extern "C" {
 
 class WLVideo {
 public:
-    WLVideo(WLPlayStatus *play_status, CallJava *callJava);
+    WLVideo(WLPlayStatus *play_status, CallJava *call_java);
 
     ~WLVideo();
 
@@ -27,9 +28,15 @@ public:
 
     void Release();
 
+    double GetFrameDiffTime(int pts_ms);
+
     double GetFrameDiffTime(AVFrame *avframe, AVPacket *avpacket);
 
-    double GetDelayTime(double diff);
+    double GetDelayTime(double diff_secds);
+
+    void Get264Params(AVCodecContext *avctx);
+
+    void Get265Params(AVCodecContext *avctx);
 
 public:
     WLPlayStatus *m_play_status = NULL;
@@ -41,15 +48,27 @@ public:
     AVCodecParameters *m_codec_par = NULL;
     AVBSFContext *m_abs_ctx = NULL;
     WLQueue *m_packet_queue = NULL;
+    WLLinkOrderQueue *m_pts_queue = NULL;
     AVRational m_time_base;
     pthread_mutex_t m_codec_mutex;
     double m_clock = 0;
     double m_default_delay_time = 0.04;
+    int m_max_ref_frames = 0;
+    bool m_read_frame_finished = false;
 
 private:
     pthread_t m_play_thread_;
     double m_delay_time_ = 0;
     double m_last_audio_clock_ = 0;
+    double m_last_video_clock_ = 0;
+
+    static const int kMaxPpsLen = 2000;
+    char *m_vps_ = NULL;
+    int m_vps_len_ = 0;
+    char *m_sps_ = NULL;
+    int m_sps_len_ = 0;
+    char *m_pps_ = NULL;
+    int m_pps_len = 0;
 };
 
 #endif //MYPLAYER_WLVIDEO_H_

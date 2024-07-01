@@ -424,7 +424,7 @@ public class WLPlayer {
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @CalledByNative
-    private void onCallInitMediaCodec(String codecTag, int width, int height, byte[] csd) {
+    private void onCallInitMediaCodec(String codecTag, int width, int height) {
         synchronized (mVLock_) {
             if (mSurface_ != null) {
                 try {
@@ -436,17 +436,16 @@ public class WLPlayer {
                     MediaFormat videoFormat = MediaFormat.createVideoFormat(mimeType, width, height);
                     videoFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
                     /**
-                     * 这里三个字段都是设置为ffmpeg提取的extradata数据，目前硬件解码是没问题的，
-                     * 理论上是需要分别提取SPS和PPS数据填充设置,H265需要设置VPS，SPS，PPS三个字段.
-                     * 应该MediaCodec针对直接传递的extradata数据在内部进行了提取VPS,SPS,PPS,比较强大
+                     * 这里无需设置csd数据给到MediaFormat来创建MediaCodec.
+                     * 这是因为传递给到MediaCodec的帧码流数据已经通过h264_mp4toannexb_filter或者是hevc_mp4toannexb_filter过滤器转换为了AnnexB模式。
+                     * 在这个过滤器中，如果是I帧，会在I帧前补充添加带有startcode的VPS,SPS,PPS，然后再跟上实际的startcode + I帧图像数据。
+                     * 如果是非I帧，会直接在前面将AVCC字段转换为00 00 00 01的startcode + 实际的图像数据
                      */
-//                    MyLog.i("java onCallinitMediaCodec csd size: " + csd.length);
-//                    _printBytesInLines(csd, csd.length);
-                    videoFormat.setByteBuffer("csd-0", ByteBuffer.wrap(csd));
-                    videoFormat.setByteBuffer("csd-1", ByteBuffer.wrap(csd));
-                    if (mimeType.equals("video/hevc")) {
-                        videoFormat.setByteBuffer("csd-2", ByteBuffer.wrap(csd));
-                    }
+//                    videoFormat.setByteBuffer("csd-0", ByteBuffer.wrap(csd));
+//                    videoFormat.setByteBuffer("csd-1", ByteBuffer.wrap(csd));
+//                    if (mimeType.equals("video/hevc")) {
+//                        videoFormat.setByteBuffer("csd-2", ByteBuffer.wrap(csd));
+//                    }
                     MyLog.i(videoFormat.toString());
                     mVBufferInfo_ = new MediaCodec.BufferInfo();
                     mVDecMediaCodec_ = MediaCodec.createByCodecName(mDecoderName_);
@@ -466,7 +465,8 @@ public class WLPlayer {
     }
 
    @CalledByNative
-    private void onCallDecodeVPacket(byte[] data, int datasize) {
+    private void onCallDecodeVPacket(byte[] data, int dataSize, double ptsSecds) {
+        MyLog.i("onCallDecodeVPacket pts ms: " + (long)(ptsSecds * 1000));
         /**
          * 这里的码流数据，底层使用了ffmpeg进行了过滤，转换为AnnexB模式，在如果是I帧，会在I帧前补充添加带有startcode的VPS,SPS,PPS，
          * 然后再跟上实际的startcode + I帧图像数据。如果是非I帧，会直接在前面将AVCC字段转换为00 00 00 01的startcode + 实际的图像数据
@@ -474,14 +474,21 @@ public class WLPlayer {
 //        MyLog.i("data size: " + data.length);
 //        _printBytesInLines(data, 1000);
          synchronized (mVLock_) {
-             if ((mSurface_ != null) && (data != null) && (datasize > 0) && (mVDecMediaCodec_ != null)) {
+             if ((mSurface_ != null) && (data != null) && (dataSize > 0) && (mVDecMediaCodec_ != null)) {
                  try {
                      int inputBufferIndex = mVDecMediaCodec_.dequeueInputBuffer(10);
                      if (inputBufferIndex >= 0) {
                          ByteBuffer byteBuffer = mVDecMediaCodec_.getInputBuffers()[inputBufferIndex];
                          byteBuffer.clear();
                          byteBuffer.put(data);
-                         mVDecMediaCodec_.queueInputBuffer(inputBufferIndex, 0, datasize, 0, 0);//丢给mediaCodec解码输入队列
+                         /**
+                          * 这里的ptsSecds是从ffmpeg中提取的，是以秒为单位的，而硬解码器需要的是微秒，所以这里需要乘以1000000
+                          * 这个ptsSecds是avpacket的pts,对于B帧视频，这个pts值是非递增的。queueInputBuffer只有传入时间戳，
+                          * 在dequeueOutputBuffer时才能从BufferInfo中获取到presentationTimeUs值，这个presentationTimeUs值是递增的，
+                          * 如果queueInputBuffer没有对时间戳进行传值，那么dequeueOutputBuffer获取到的presentationTimeUs值是0
+                          */
+                         mVDecMediaCodec_.queueInputBuffer(inputBufferIndex, 0, dataSize, (long)(ptsSecds * 1000000), 0);
+//                         MyLog.i("onCallDecodeVPacket queueInputBuffer");
                      }
                      int outputBufferIndex = mVDecMediaCodec_.dequeueOutputBuffer(mVBufferInfo_, 10);
                      while (outputBufferIndex >= 0) {//循环从硬解解码器的输出队列中获取解码数据进行渲染
@@ -489,6 +496,10 @@ public class WLPlayer {
                          mStartMs_ = System.currentTimeMillis();
                          mFrameCount_++;
                          mTotalTime_ += decodeTime;
+                         MyLog.i("onCallDecodeVPacket dequeueOutputBuffer ptsMs: " + mVBufferInfo_.presentationTimeUs/1000);
+                         /**
+                          * 在releaseOutputBuffer前，不能做sleep等延时操作，否则会导致MediaCodec的输出队列阻塞，出现绿屏或花屏的现象
+                          */
                          mVDecMediaCodec_.releaseOutputBuffer(outputBufferIndex, true);
                          outputBufferIndex = mVDecMediaCodec_.dequeueOutputBuffer(mVBufferInfo_, 10);
                      }

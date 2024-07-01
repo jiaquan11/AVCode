@@ -18,8 +18,8 @@ CallJava::CallJava(JavaVM *vm, JNIEnv *env, jobject obj) {
     m_jmid_pcm_data_ = env->GetMethodID(clz, "onCallPcmData", "([BI)V");
     m_jmid_volumedb_ = env->GetMethodID(clz, "onCallVolumeDB", "(I)V");
     m_jmid_is_support_mediacodec_ = env->GetMethodID(clz, "onCallIsSupportMediaCodec", "(Ljava/lang/String;)Z");
-    m_jmid_init_mediacodec_ = env->GetMethodID(clz, "onCallInitMediaCodec", "(Ljava/lang/String;II[B)V");
-    m_jmid_decode_vpacket_ = env->GetMethodID(clz, "onCallDecodeVPacket", "([BI)V");
+    m_jmid_init_mediacodec_ = env->GetMethodID(clz, "onCallInitMediaCodec", "(Ljava/lang/String;II)V");
+    m_jmid_decode_vpacket_ = env->GetMethodID(clz, "onCallDecodeVPacket", "([BID)V");
     m_jmid_render_yuv_ = env->GetMethodID(clz, "onCallRenderYUV", "(II[B[B[B)V");
     m_jmid_complete_ = env->GetMethodID(clz, "onCallComplete", "()V");
     m_jmid_error_ = env->GetMethodID(clz, "onCallError", "(ILjava/lang/String;)V");
@@ -195,14 +195,10 @@ bool CallJava::OnCallIsSupportMediaCodec(int type, const char *codec_tag) {
     }
 }
 
-void CallJava::OnCallInitMediaCodec(int type, const char *codec_tag, int width, int height, int csd_size, uint8_t *csd) {
+void CallJava::OnCallInitMediaCodec(int type, const char *codec_tag, int width, int height) {
     if (type == MAIN_THREAD) {
         jstring codec_tag_jstr = m_jni_env_->NewStringUTF(codec_tag);
-        jbyteArray csd_array = m_jni_env_->NewByteArray(csd_size);
-        m_jni_env_->SetByteArrayRegion(csd_array, 0, csd_size, reinterpret_cast<const jbyte *>(csd));
-
-        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_init_mediacodec_, codec_tag_jstr, width, height, csd_array);
-        m_jni_env_->DeleteLocalRef(csd_array);
+        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_init_mediacodec_, codec_tag_jstr, width, height);
         m_jni_env_->DeleteLocalRef(codec_tag_jstr);
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
@@ -213,20 +209,17 @@ void CallJava::OnCallInitMediaCodec(int type, const char *codec_tag, int width, 
             }
         }
         jstring codec_tag_jstr = env->NewStringUTF(codec_tag);
-        jbyteArray csd_array = env->NewByteArray(csd_size);
-        env->SetByteArrayRegion(csd_array, 0, csd_size, reinterpret_cast<const jbyte *>(csd));
-        env->CallVoidMethod(m_jobj_, m_jmid_init_mediacodec_, codec_tag_jstr, width, height, csd_array);
-        env->DeleteLocalRef(csd_array);
+        env->CallVoidMethod(m_jobj_, m_jmid_init_mediacodec_, codec_tag_jstr, width, height);
         env->DeleteLocalRef(codec_tag_jstr);
         m_java_vm_->DetachCurrentThread();
     }
 }
 
-void CallJava::OnCallDecodeVPacket(int type, uint8_t *packetdata, int datasize) {
+void CallJava::OnCallDecodeVPacket(int type, uint8_t *packetdata, int data_size, double pts_secds) {
     if (type == MAIN_THREAD) {
-        jbyteArray data = m_jni_env_->NewByteArray(datasize);
-        m_jni_env_->SetByteArrayRegion(data, 0, datasize, reinterpret_cast<const jbyte *>(packetdata));
-        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_decode_vpacket_, data, datasize);
+        jbyteArray data = m_jni_env_->NewByteArray(data_size);
+        m_jni_env_->SetByteArrayRegion(data, 0, data_size, reinterpret_cast<const jbyte *>(packetdata));
+        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_decode_vpacket_, data, data_size, pts_secds);
         m_jni_env_->DeleteLocalRef(data);
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
@@ -236,9 +229,9 @@ void CallJava::OnCallDecodeVPacket(int type, uint8_t *packetdata, int datasize) 
                 return;
             }
         }
-        jbyteArray data = env->NewByteArray(datasize);
-        env->SetByteArrayRegion(data, 0, datasize, reinterpret_cast<const jbyte *>(packetdata));
-        env->CallVoidMethod(m_jobj_, m_jmid_decode_vpacket_, data, datasize);
+        jbyteArray data = env->NewByteArray(data_size);
+        env->SetByteArrayRegion(data, 0, data_size, reinterpret_cast<const jbyte *>(packetdata));
+        env->CallVoidMethod(m_jobj_, m_jmid_decode_vpacket_, data, data_size, pts_secds);
         env->DeleteLocalRef(data);
         m_java_vm_->DetachCurrentThread();
     }

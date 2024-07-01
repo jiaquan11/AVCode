@@ -1,5 +1,5 @@
-#ifndef MYPLAYER_CALLJAVA_H_
-#define MYPLAYER_CALLJAVA_H_
+#ifndef MYPLAYER_CALL_JAVA_H_
+#define MYPLAYER_CALL_JAVA_H_
 
 #include "jni.h"
 #include <stdlib.h>
@@ -31,9 +31,9 @@ public:
 
     bool OnCallIsSupportMediaCodec(int type, const char *codec_tag);
 
-    void OnCallInitMediaCodec(int type, const char *codec_tag, int width, int height, int csd_size, uint8_t *csd);
+    void OnCallInitMediaCodec(int type, const char *codec_tag, int width, int height);
 
-    void OnCallDecodeVPacket(int type, uint8_t *data, int datasize);
+    void OnCallDecodeVPacket(int type, uint8_t *data, int data_size, double pts_secds);
 
     void OnCallRenderYUV(int type, int width, int height, int linesize, uint8_t *y_data, uint8_t *u_data, uint8_t *v_data);
 

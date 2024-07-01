@@ -84,6 +84,12 @@ void WLFFmpeg::DemuxFFmpegThread() {
 
     if (m_wlvideo_ != NULL) {
         _GetCodecContext(m_wlvideo_->m_codec_par, &m_wlvideo_->m_avcodec_ctx);
+        const char *codec_tag = (m_wlvideo_->m_avcodec_ctx->codec)->name;
+        if (strcasecmp(codec_tag, "h264") == 0) {
+            m_wlvideo_->Get264Params(m_wlvideo_->m_avcodec_ctx);
+        } else if (strcasecmp(codec_tag, "hevc") == 0) {
+            m_wlvideo_->Get265Params(m_wlvideo_->m_avcodec_ctx);
+        }
     }
 
     if (m_call_java_ != NULL) {
@@ -94,8 +100,8 @@ void WLFFmpeg::DemuxFFmpegThread() {
 }
 
 void *_DemuxFFmpeg(void *arg) {
-    WLFFmpeg *wlfFmpeg = (WLFFmpeg *) (arg);
-    wlfFmpeg->DemuxFFmpegThread();
+    WLFFmpeg *wlffmpeg = (WLFFmpeg *) (arg);
+    wlffmpeg->DemuxFFmpegThread();
 
     /**
      * 使用return语句退出线程比使用pthread_exit()函数更简单和直观。
@@ -203,9 +209,7 @@ void WLFFmpeg::StartFFmpegThread() {
             strcat(buffer, "\n");
             LOGD("%s", buffer);
         }
-        m_wlvideo_->m_call_java->OnCallInitMediaCodec(CHILD_THREAD,codec_tag,
-                                                           m_wlvideo_->m_avcodec_ctx->width, m_wlvideo_->m_avcodec_ctx->height,
-                                                   m_wlvideo_->m_avcodec_ctx->extradata_size,m_wlvideo_->m_avcodec_ctx->extradata);
+        m_wlvideo_->m_call_java->OnCallInitMediaCodec(CHILD_THREAD,codec_tag, m_wlvideo_->m_avcodec_ctx->width, m_wlvideo_->m_avcodec_ctx->height);
     }
 
     m_wlaudio_->Play();//开启音频播放，内部创建子线程用于获取缓冲区的pacekt，解码为pcm并给到opengles播放
@@ -237,6 +241,8 @@ void WLFFmpeg::StartFFmpegThread() {
                 m_wlaudio_->m_packet_queue->PutAVPacket(av_packet);
             } else if (av_packet->stream_index == m_wlvideo_->m_stream_index) {
                 m_wlvideo_->m_packet_queue->PutAVPacket(av_packet);
+                //为了方便数据排序对比，这里将视频packet的pts(毫秒)int值放入排序队列
+                m_wlvideo_->m_pts_queue->Push((int)(av_packet->pts * av_q2d(m_wlvideo_->m_time_base) * 1000));//将视频packet的pts(毫秒)放入排序队列
             } else {//非音频packet
                 av_packet_free(&av_packet);
             }
@@ -244,6 +250,7 @@ void WLFFmpeg::StartFFmpegThread() {
             /**
              * 读取到文件尾，等待缓冲区中的数据消耗完
              */
+             m_wlvideo_->m_read_frame_finished = true;
             av_packet_free(&av_packet);
             while ((m_play_status != NULL) && !m_play_status->m_is_exit) {
                 /**
@@ -253,14 +260,14 @@ void WLFFmpeg::StartFFmpegThread() {
                     break;
                 }
                 /**
-                 * 等待音频和视频缓冲播放结束
+                 * 等待音频和视频缓冲都播放结束
                  */
                 if ((m_wlaudio_->m_packet_queue->GetQueueSize() > 0) || (m_wlvideo_->m_packet_queue->GetQueueSize() > 0)) {
                     av_usleep(100 * 1000);
                     continue;
                 }
                 m_play_status->m_is_exit = true;
-                m_is_play_end_ = true;
+                m_is_play_end_ = true;//完整播放结束
                 LOGI("all data play end");
                 break;
             }
@@ -280,8 +287,8 @@ void WLFFmpeg::StartFFmpegThread() {
 }
 
 void *_StartFFmpeg(void *arg) {
-    WLFFmpeg *wlfFmpeg = (WLFFmpeg *) (arg);
-    wlfFmpeg->StartFFmpegThread();
+    WLFFmpeg *wlffmpeg = (WLFFmpeg *) (arg);
+    wlffmpeg->StartFFmpegThread();
 //  pthread_exit(&wlfFmpeg->m_start_thread_);
     return 0;
 }
