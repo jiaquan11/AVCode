@@ -127,7 +127,7 @@ void *_DemuxFFmpeg(void *arg) {
      * 当线程调用pthread_exit()函数时，会将线程的退出状态返回给调用线程。
      * 如果线程是由main()函数创建的，那么线程的退出状态将返回给主进程。
      * 如果线程是由其他线程创建的，那么线程的退出状态将返回给创建线程。
-     * */
+     */
 //    pthread_exit(&wlfFmpeg->m_demux_thread_);
     return 0;
 }
@@ -271,6 +271,7 @@ void WLFFmpeg::StartFFmpegThread() {
                  * seek状态下，直接退出,不再等待缓冲区数据消耗完,会重新读取数据
                  */
                 if (m_play_status->m_seek) {
+                    m_wlvideo_->m_read_frame_finished = false;
                     break;
                 }
                 /**
@@ -280,6 +281,7 @@ void WLFFmpeg::StartFFmpegThread() {
                     av_usleep(100 * 1000);
                     continue;
                 }
+                av_usleep(100 * 1000);//继续延时100ms，主要是等待解码器缓存刷新
                 m_play_status->m_is_exit = true;
                 m_is_play_end_ = true;//完整播放结束
                 LOGI("all data play end");

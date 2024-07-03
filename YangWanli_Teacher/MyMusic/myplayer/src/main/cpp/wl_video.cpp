@@ -25,12 +25,16 @@ void *_PlayVideo(void *arg) {
         }
 
         if (video->m_packet_queue->GetQueueSize() == 0) {//视频缓冲区中数据读取完，回调缓冲中，等待数据
-            if (!video->m_play_status->m_load) {
-                video->m_play_status->m_load = true;
-                video->m_call_java->OnCallLoad(CHILD_THREAD, true);
+            if (!video->m_read_frame_finished) {
+                if (!video->m_play_status->m_load) {
+                    video->m_play_status->m_load = true;
+                    video->m_call_java->OnCallLoad(CHILD_THREAD, true);
+                }
+                av_usleep(1000 * 100);
+                continue;
+            } else {
+                video->m_is_video_play_end = true;//视频packet缓冲消耗完，等待下面刷新解码器缓冲区
             }
-            av_usleep(1000 * 100);
-            continue;
         } else {
             if (video->m_play_status->m_load) {
                 video->m_play_status->m_load = false;
@@ -39,8 +43,18 @@ void *_PlayVideo(void *arg) {
         }
 
         if (video->m_render_type == RENDER_MEDIACODEC) {
+            /**
+             * 这里根据是否有B帧的帧重排缓冲区大小来判断是否需要等待排序完成
+             */
             if ((video->m_b_frames > 0) && !video->m_read_frame_finished && (video->m_pts_queue->Size() < (video->m_b_frames + 1))) {
                 LOGI("video wait pts queue size is %d max_ref_frames: %d", video->m_pts_queue->Size(), video->m_max_ref_frames);
+                av_usleep(5 * 1000);//休眠5毫秒
+                continue;
+            }
+
+            if (video->m_is_video_play_end) {
+                LOGI("flush MediaCodec image to render");
+                video->m_call_java->OnCallDecodeVPacket(CHILD_THREAD, NULL, 0, 0);
                 av_usleep(5 * 1000);//休眠5毫秒
                 continue;
             }
@@ -67,12 +81,19 @@ void *_PlayVideo(void *arg) {
                 video->m_call_java->OnCallDecodeVPacket(CHILD_THREAD, video->m_avpacket->data,video->m_avpacket->size, video->m_avpacket->pts * av_q2d(video->m_time_base));
             } else {
                 LOGE("video av_bsf_receive_packet from filter failed");
-                continue;
             }
-
         } else if (video->m_render_type == RENDER_YUV) {
-            video->m_packet_queue->GetAVPacket(video->m_avpacket);
+            if (!video->m_is_video_play_end) {
+                video->m_packet_queue->GetAVPacket(video->m_avpacket);//数据没有结束才会从缓冲区中读取数据，否则会阻塞在这里，没法下面的解码器刷新
+            } else {
+                video->m_avpacket = NULL;//刷新解码器缓存，需要刷空帧
+                LOGI("flush ffmpeg decoder to yuv render");
+            }
             pthread_mutex_lock(&video->m_codec_mutex);
+            /**
+             * 刷新解码器的时候也需要多次调用avcodec_send_packet，传值为NULL,然后多次调用
+             * avcodec_receive_frame，直到avcodec_receive_frame返回AVERROR(EAGAIN)或者AVERROR_EOF
+             */
             if (avcodec_send_packet(video->m_avcodec_ctx, video->m_avpacket) != 0) {
                 LOGE("WLVideo avcodec_send_packet failed");
                 pthread_mutex_unlock(&video->m_codec_mutex);
@@ -84,6 +105,7 @@ void *_PlayVideo(void *arg) {
             }
             while (avcodec_receive_frame(video->m_avcodec_ctx, video->m_avframe) == 0) {
                 if (video->m_avframe->format == AV_PIX_FMT_YUV420P) {
+                    LOGI("WLVideo avcodec_receive_frame success");
                     double diff = video->GetFrameDiffTime(video->m_avframe,NULL);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
                     av_usleep(video->GetDelayTime(diff) * 1000000);
                     video->m_call_java->OnCallRenderYUV(CHILD_THREAD,
@@ -265,6 +287,8 @@ double WLVideo::GetFrameDiffTime(AVFrame *avframe, AVPacket *avpacket) {
     if (pts >= 0) {
         m_clock = pts;
     }
+    LOGI("GetFrameDiffTime frame pts ms: %d", (int)(pts * 1000));
+
     LOGI("audio clock diff is %d", (int)((m_audio->clock - m_last_audio_clock_) * 1000));
     m_last_audio_clock_ = m_audio->clock;
     LOGI("video clock diff is %d", (int)((m_clock - m_last_video_clock_) * 1000));
@@ -274,24 +298,30 @@ double WLVideo::GetFrameDiffTime(AVFrame *avframe, AVPacket *avpacket) {
     return diff;
 }
 
+/**
+ * 根据音视频的时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
+ * @param diff_secds 音视频的时间戳差值
+ * @return 返回延迟时间
+ */
 double WLVideo::GetDelayTime(double diff_secds) {
-    //以差值3毫秒为标准进行调整(音视频差值在3毫秒内认为是同步的)  (defaultDelayTime:为正常的视频播放帧率耗时)
+    //以差值3毫秒为标准进行调整(音视频差值在3毫秒内认为是同步的)
+    // (defaultDelayTime:为正常的视频播放帧率耗时)
     if (diff_secds > 0.003) {//音频快 视频慢，视频减少休眠时间
-        m_delay_time_ = m_delay_time_ * 2 / 3;
+        m_delay_time_ = m_delay_time_ * 2 / 3;// 减少视频休眠时间
         if (m_delay_time_ < m_default_delay_time / 2) {
             m_delay_time_ = m_default_delay_time * 2 / 3;//减少延时
         } else if (m_delay_time_ > m_default_delay_time * 2) {
-            m_delay_time_ = m_default_delay_time * 2;
+            m_delay_time_ = m_default_delay_time * 2;// 限制最大延时
         }
     } else if (diff_secds < -0.003) {//视频快，增加休眠时间
-        m_delay_time_ = m_delay_time_ * 3 / 2;
+        m_delay_time_ = m_delay_time_ * 3 / 2;//增加休眠时间
         if (m_delay_time_ < m_default_delay_time / 2) {
             m_delay_time_ = m_default_delay_time * 2 / 3;
         } else if (m_delay_time_ > m_default_delay_time * 2) {
             m_delay_time_ = m_default_delay_time * 2;
         }
     } else if (diff_secds == 0.003) {
-
+        // 这里不做任何处理
     }
 
     if (diff_secds >= 0.5) {//音频太快，视频不休眠

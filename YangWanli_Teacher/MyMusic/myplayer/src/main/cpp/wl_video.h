@@ -61,6 +61,7 @@ public:
     int m_max_ref_frames = 0;
     int m_b_frames = 0;
     bool m_read_frame_finished = false;
+    bool m_is_video_play_end = false;
 
 private:
     pthread_t m_play_thread_;

@@ -435,6 +435,7 @@ public class WLPlayer {
                     MyLog.i("onCallinitMediaCodec mime is " + mimeType + " width is " + width + " height is " + height);
                     MediaFormat videoFormat = MediaFormat.createVideoFormat(mimeType, width, height);
                     videoFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
+                    videoFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
                     /**
                      * 这里无需设置csd数据给到MediaFormat来创建MediaCodec.
                      * 这是因为传递给到MediaCodec的帧码流数据已经通过h264_mp4toannexb_filter或者是hevc_mp4toannexb_filter过滤器转换为了AnnexB模式。
@@ -466,32 +467,47 @@ public class WLPlayer {
 
    @CalledByNative
     private void onCallDecodeVPacket(byte[] data, int dataSize, double ptsSecds) {
-        MyLog.i("onCallDecodeVPacket pts ms: " + (long)(ptsSecds * 1000));
+        MyLog.i("onCallDecodeVPacket size: " + dataSize + ", pts ms: " + (long)(ptsSecds * 1000));
         /**
          * 这里的码流数据，底层使用了ffmpeg进行了过滤，转换为AnnexB模式，在如果是I帧，会在I帧前补充添加带有startcode的VPS,SPS,PPS，
          * 然后再跟上实际的startcode + I帧图像数据。如果是非I帧，会直接在前面将AVCC字段转换为00 00 00 01的startcode + 实际的图像数据
          */
-//        MyLog.i("data size: " + data.length);
-//        _printBytesInLines(data, 1000);
          synchronized (mVLock_) {
-             if ((mSurface_ != null) && (data != null) && (dataSize > 0) && (mVDecMediaCodec_ != null)) {
+             if ((mSurface_ != null) && (mVDecMediaCodec_ != null)) {
                  try {
                      int inputBufferIndex = mVDecMediaCodec_.dequeueInputBuffer(10);
                      if (inputBufferIndex >= 0) {
-                         ByteBuffer byteBuffer = mVDecMediaCodec_.getInputBuffers()[inputBufferIndex];
-                         byteBuffer.clear();
-                         byteBuffer.put(data);
-                         /**
-                          * 这里的ptsSecds是从ffmpeg中提取的，是以秒为单位的，而硬解码器需要的是微秒，所以这里需要乘以1000000
-                          * 这个ptsSecds是avpacket的pts,对于B帧视频，这个pts值是非递增的。queueInputBuffer只有传入时间戳，
-                          * 在dequeueOutputBuffer时才能从BufferInfo中获取到presentationTimeUs值，这个presentationTimeUs值是递增的，
-                          * 如果queueInputBuffer没有对时间戳进行传值，那么dequeueOutputBuffer获取到的presentationTimeUs值是0
-                          */
-                         mVDecMediaCodec_.queueInputBuffer(inputBufferIndex, 0, dataSize, (long)(ptsSecds * 1000000), 0);
-//                         MyLog.i("onCallDecodeVPacket queueInputBuffer");
+                         if ((data != null) && (dataSize > 0)) {
+                             ByteBuffer byteBuffer = mVDecMediaCodec_.getInputBuffers()[inputBufferIndex];
+                             byteBuffer.clear();
+                             byteBuffer.put(data);
+                             /**
+                              * 这里的ptsSecds是从ffmpeg中提取的，是以秒为单位的，而硬解码器需要的是微秒，所以这里需要乘以1000000
+                              * 这个ptsSecds是avpacket的pts,对于B帧视频，这个pts值是非递增的。queueInputBuffer只有传入时间戳，
+                              * 在dequeueOutputBuffer时才能从BufferInfo中获取到presentationTimeUs值，这个presentationTimeUs值是递增的，
+                              * 如果queueInputBuffer没有对时间戳进行传值，那么dequeueOutputBuffer获取到的presentationTimeUs值是0
+                              */
+                             mVDecMediaCodec_.queueInputBuffer(inputBufferIndex, 0, dataSize, (long) (ptsSecds * 1000000), 0);
+                         } else {
+                             /**
+                              * 如果data为null或者dataSize为0，表示这是最后一帧数据，需要传入BUFFER_FLAG_END_OF_STREAM
+                              * 用于刷新解码器的缓冲区，保证解码器的输出队列中的数据都被渲染出来
+                              * 注意：刷新解码器缓存区，需要持续调用queueInputBuffer传入BUFFER_FLAG_END_OF_STREAM，直到
+                              * dequeueOutputBuffer返回BUFFER_FLAG_END_OF_STREAM，表示解码器的输出队列中的数据都被渲染出来
+                              * 如果只调用一次queueInputBuffer传入BUFFER_FLAG_END_OF_STREAM，可能会导致解码器的输出队列中的数据没有被渲染出来
+                              */
+                             MyLog.i("onCallDecodeVPacket send BUFFER_FLAG_END_OF_STREAM to MediaCodec");
+                             mVDecMediaCodec_.queueInputBuffer(inputBufferIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                         }
                      }
+
                      int outputBufferIndex = mVDecMediaCodec_.dequeueOutputBuffer(mVBufferInfo_, 10);
                      while (outputBufferIndex >= 0) {//循环从硬解解码器的输出队列中获取解码数据进行渲染
+                         MyLog.i("onCallDecodeVPacket dequeueOutputBuffer index: " + outputBufferIndex + " flags: " + mVBufferInfo_.flags);
+                         if ((mVBufferInfo_.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) == MediaCodec.BUFFER_FLAG_END_OF_STREAM) {
+                             MyLog.i("onCallDecodeVPacket receive BUFFER_FLAG_END_OF_STREAM from MediaCodec");
+                             break;
+                         }
                          long decodeTime = System.currentTimeMillis() - mStartMs_;
                          mStartMs_ = System.currentTimeMillis();
                          mFrameCount_++;
@@ -515,6 +531,7 @@ public class WLPlayer {
         if (mWlglSurfaceView_ != null) {
             mWlglSurfaceView_.getWlRender().setRenderType(WLRender.RENDER_YUV);
             mWlglSurfaceView_.setYUVData(width, height, y, u, v);
+            mFrameCount_++;
         }
     }
 
