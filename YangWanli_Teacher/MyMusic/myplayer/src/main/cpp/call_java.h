@@ -21,7 +21,7 @@ public:
 
     void OnCallPrepared(int type);
 
-    void OnCallTimeInfo(int type, int curr, int total);
+    void OnCallAudioTimeInfo(int type, int curr, int total);
 
     void OnCallPcmInfo(int type, int samplerate, int bit, int channels);
 
@@ -53,7 +53,7 @@ private:
 
     jmethodID m_jmid_load_;
     jmethodID m_jmid_prepared_;
-    jmethodID m_jmid_timeinfo_;
+    jmethodID m_jmid_audio_time_info_;
     jmethodID m_jmid_pcm_info_;
     jmethodID m_jmid_pcm_data_;
     jmethodID m_jmid_volumedb_;

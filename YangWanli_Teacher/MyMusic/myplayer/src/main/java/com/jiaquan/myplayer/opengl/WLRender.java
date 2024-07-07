@@ -140,6 +140,13 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         MyLog.i("WLRender onSurfaceCreated end");
     }
 
+    /**
+     * 屏幕尺寸发生变化时调用，例如横竖屏切换
+     * @param gl the GL interface. Use <code>instanceof</code> to
+     * test if the interface supports GL11 or higher interfaces.
+     * @param width
+     * @param height
+     */
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         GLES20.glViewport(0, 0, width, height);
@@ -174,10 +181,19 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         }
     }
 
+    /**
+     * 设置渲染类型
+     * @param renderType
+     */
     public void setRenderType(int renderType) {
         mRenderType_ = renderType;
     }
 
+    /**
+     * 设置视频宽高
+     * @param width
+     * @param height
+     */
     public void setVideoSize(int width, int height) {
         mPicWdith_ = width;
         mPicHeight_ = height;
@@ -195,14 +211,15 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         String vertexSource = WLShaderUtil.readRawTxt(mContext_, R.raw.vertex_shader);
         String fragmentSource = WLShaderUtil.readRawTxt(mContext_, R.raw.fragment_yuv);
         mProgramYuv_ = WLShaderUtil.createProgram(vertexSource, fragmentSource);
-        mMatrixYuv_ = GLES20.glGetUniformLocation(mProgramYuv_, "u_Matrix");
-        mAvPositionYuv_ = GLES20.glGetAttribLocation(mProgramYuv_, "av_Position");
-        mAfPositionYuv_ = GLES20.glGetAttribLocation(mProgramYuv_, "af_Position");
+        mAvPositionYuv_ = GLES20.glGetAttribLocation(mProgramYuv_, "av_Position");//顶点坐标
+        mAfPositionYuv_ = GLES20.glGetAttribLocation(mProgramYuv_, "af_Position");//纹理坐标
+        mMatrixYuv_ = GLES20.glGetUniformLocation(mProgramYuv_, "u_Matrix");//矩阵变量
 
         mSamplerY_ = GLES20.glGetUniformLocation(mProgramYuv_, "sampler_y");
         mSamplerU_ = GLES20.glGetUniformLocation(mProgramYuv_, "sampler_u");
         mSamplerV_ = GLES20.glGetUniformLocation(mProgramYuv_, "sampler_v");
 
+        //1、生成三个纹理对象(纹理id是纹理对象的标识)
         mTextureIdYuv_ = new int[3];
         GLES20.glGenTextures(3, mTextureIdYuv_, 0);
         for (int i = 0; i < 3; i++) {
@@ -211,14 +228,19 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_REPEAT);
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, i);
         }
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
     }
 
     private void _renderYUV() {
         if ((mYuvWidth_ > 0) && (mYuvHeight_ > 0) && (mYBuffer_ != null) && (mUBuffer_ != null) && (mVBuffer_ != null)) {
             GLES20.glUseProgram(mProgramYuv_);
 
+            /**
+             * 给矩阵变量赋值
+             * 这里每次渲染都设置一次矩阵,是为了解决glUniformMatrix4fv概率崩溃的问题，目前原因未知。
+             * 本来是不需要每次都设置矩阵的，只需要设置一次就可以了
+             */
             _setMatrix(mScreenWidth_, mScreenHeight_, mYuvWidth_, mYuvHeight_);
             GLES20.glUniformMatrix4fv(mMatrixYuv_, 1, false, mMatrixBuffer_);
             int error = GLES20.glGetError();
@@ -233,6 +255,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
             GLES20.glEnableVertexAttribArray(mAfPositionYuv_);
             GLES20.glVertexAttribPointer(mAfPositionYuv_, 2, GLES20.GL_FLOAT, false, 8, mTextureBuffer_);
 
+            //2、将纹理对象绑定到激活的纹理单元,这里需要绑定三个纹理单元(Y,U,V)
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextureIdYuv_[0]);
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, mYuvWidth_, mYuvHeight_, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, mYBuffer_);
@@ -245,6 +268,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
             GLES20.glActiveTexture(GLES20.GL_TEXTURE2);
             GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, mYuvWidth_ / 2, mYuvHeight_ / 2, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, mVBuffer_);
 
+            //3、将纹理单元绑定到着色器采样器，这里需要绑定三个纹理采样器
             GLES20.glUniform1i(mSamplerY_, 0);
             GLES20.glUniform1i(mSamplerU_, 1);
             GLES20.glUniform1i(mSamplerV_, 2);
@@ -263,11 +287,12 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         String vertexSource = WLShaderUtil.readRawTxt(mContext_, R.raw.vertex_shader);
         String fragmentSource = WLShaderUtil.readRawTxt(mContext_, R.raw.fragment_mediacodec);
         mProgramMediacodec_ = WLShaderUtil.createProgram(vertexSource, fragmentSource);
-        mMatrixMediacodec_ = GLES20.glGetUniformLocation(mProgramMediacodec_, "u_Matrix");
         mAvPositionMediacodec_ = GLES20.glGetAttribLocation(mProgramMediacodec_, "av_Position");
         mAfPositionMediacodec_ = GLES20.glGetAttribLocation(mProgramMediacodec_, "af_Position");
         mSamplerOESMediacodec_ = GLES20.glGetUniformLocation(mProgramMediacodec_, "sTexture");
+        mMatrixMediacodec_ = GLES20.glGetUniformLocation(mProgramMediacodec_, "u_Matrix");
 
+        //1.生成并设置纹理对象(纹理id是纹理对象的标识)
         //创建一个OES纹理
         int[] textrueids = new int[1];
         GLES20.glGenTextures(1, textrueids, 0);
@@ -296,6 +321,11 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
             throw new RuntimeException("OpenGL use program error: " + error);
         }
 
+        /**
+         * 给矩阵变量赋值
+         * 这里每次渲染都设置一次矩阵,是为了解决glUniformMatrix4fv概率崩溃的问题，目前原因未知。
+         * 本来是不需要每次都设置矩阵的，只需要设置一次就可以了
+         */
         _setMatrix(mScreenWidth_, mScreenHeight_, mPicWdith_, mPicHeight_);
         GLES20.glUniformMatrix4fv(mMatrixMediacodec_, 1, false, mMatrixBuffer_);//给矩阵变量赋值
         error = GLES20.glGetError();
@@ -310,10 +340,12 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         GLES20.glEnableVertexAttribArray(mAfPositionMediacodec_);
         GLES20.glVertexAttribPointer(mAfPositionMediacodec_, 2, GLES20.GL_FLOAT, false, 8, mTextureBuffer_);
 
+        //2、将纹理对象绑定到激活的纹理单元
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mTextureOESId_);
 
-        GLES20.glUniform1i(mSamplerOESMediacodec_, 0);
+        //3、将纹理单元绑定到着色器采样器
+        GLES20.glUniform1i(mSamplerOESMediacodec_, 0);//给纹理采样器赋值
     }
 
     //初始化单位矩阵
@@ -328,7 +360,7 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
     }
 
     /**
-     * 设置矩阵
+     * 设置矩阵，用来进行缩放等操作
      * @param screen_width 屏幕宽度
      * @param screen_height 屏幕高度
      * @param pic_width 图片宽度

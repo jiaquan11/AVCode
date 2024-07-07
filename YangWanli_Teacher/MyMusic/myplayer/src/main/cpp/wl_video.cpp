@@ -47,7 +47,7 @@ void *_PlayVideo(void *arg) {
              * 这里根据是否有B帧的帧重排缓冲区大小来判断是否需要等待排序完成
              */
             if ((video->m_b_frames > 0) && !video->m_read_frame_finished && (video->m_pts_queue->Size() < (video->m_b_frames + 1))) {
-                LOGI("video wait pts queue size is %d max_ref_frames: %d", video->m_pts_queue->Size(), video->m_max_ref_frames);
+                LOGI("video wait pts queue size is %d m_b_frames: %d", video->m_pts_queue->Size(), video->m_b_frames);
                 av_usleep(5 * 1000);//休眠5毫秒
                 continue;
             }
@@ -138,9 +138,10 @@ void *_PlayVideo(void *arg) {
                             video->m_avcodec_ctx->height,
                             AV_PIX_FMT_YUV420P,
                             SWS_BICUBIC, NULL, NULL, NULL);
-                    if (!video->m_sws_ctx) {
+                    if (video->m_sws_ctx == NULL) {
+                        LOGE("WLVideo sws_getContext failed");
                         pthread_mutex_unlock(&video->m_codec_mutex);
-                        continue;
+                        break;
                     }
                     sws_scale(video->m_sws_ctx,
                               video->m_avframe->data,
@@ -184,12 +185,7 @@ void WLVideo::Play() {
 
 void WLVideo::Release() {
     if (m_packet_queue != NULL) {
-        delete m_packet_queue;
-        m_packet_queue = NULL;
-    }
-    if (m_pts_queue != NULL) {
-        delete m_pts_queue;
-        m_pts_queue = NULL;
+        m_packet_queue->NoticeQueue();
     }
     void *thread_ret;
     int result = pthread_join(m_play_thread_, &thread_ret);
@@ -212,6 +208,15 @@ void WLVideo::Release() {
         exit(EXIT_FAILURE);
     } else {
         LOGI("video m_play_thread_ Thread returned: %ld", (long)thread_ret);
+    }
+
+    if (m_packet_queue != NULL) {
+        delete m_packet_queue;
+        m_packet_queue = NULL;
+    }
+    if (m_pts_queue != NULL) {
+        delete m_pts_queue;
+        m_pts_queue = NULL;
     }
 
     if (m_avpacket != NULL) {
@@ -263,12 +268,12 @@ double WLVideo::GetFrameDiffTime(int pts_ms) {
     }
     LOGI("GetFrameDiffTime pts_ms: %d", pts_ms);
     m_clock = pts_ms * 1.0 / 1000;
-    LOGI("audio clock diff is %d", (int)((m_audio->clock - m_last_audio_clock_) * 1000));
-    m_last_audio_clock_ = m_audio->clock;
+    LOGI("audio clock diff is %d", (int)((m_audio->m_clock - m_last_audio_clock_) * 1000));
+    m_last_audio_clock_ = m_audio->m_clock;
     LOGI("video clock diff is %d", (int)((m_clock - m_last_video_clock_) * 1000));
     m_last_video_clock_ = m_clock;
-    double diff = m_audio->clock - m_clock;//音频-视频，得到差值，这里的audio clock是音频的当前pcm播放实际计算的时间戳
-    LOGI("audio->clock: %lf, video clock: %lf, diff: %lf", m_audio->clock, m_clock, diff);
+    double diff = m_audio->m_clock - m_clock;//音频-视频，得到差值，这里的audio clock是音频的当前pcm播放实际计算的时间戳
+    LOGI("audio->clock: %lf, video clock: %lf, diff: %lf", m_audio->m_clock, m_clock, diff);
     return diff;
 }
 
@@ -289,12 +294,12 @@ double WLVideo::GetFrameDiffTime(AVFrame *avframe, AVPacket *avpacket) {
     }
     LOGI("GetFrameDiffTime frame pts ms: %d", (int)(pts * 1000));
 
-    LOGI("audio clock diff is %d", (int)((m_audio->clock - m_last_audio_clock_) * 1000));
-    m_last_audio_clock_ = m_audio->clock;
+    LOGI("audio clock diff is %d", (int)((m_audio->m_clock - m_last_audio_clock_) * 1000));
+    m_last_audio_clock_ = m_audio->m_clock;
     LOGI("video clock diff is %d", (int)((m_clock - m_last_video_clock_) * 1000));
     m_last_video_clock_ = m_clock;
-    double diff = m_audio->clock - m_clock;//音频-视频，得到差值，这里的audio clock是音频的当前pcm播放时间戳
-    LOGI("audio->clock: %lf, video clock: %lf, diff: %lf", m_audio->clock, m_clock, diff);
+    double diff = m_audio->m_clock - m_clock;//音频-视频，得到差值，这里的audio clock是音频的当前pcm播放时间戳
+    LOGI("audio->clock: %lf, video clock: %lf, diff: %lf", m_audio->m_clock, m_clock, diff);
     return diff;
 }
 

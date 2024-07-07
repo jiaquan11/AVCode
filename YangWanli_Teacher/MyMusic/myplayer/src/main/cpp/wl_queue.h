@@ -28,8 +28,7 @@ public:
 
     void ClearAvPacket();
 
-private:
-    void _NoticeQueue();
+    void NoticeQueue();
 
 private:
     WLPlayStatus *m_play_status_ = NULL;

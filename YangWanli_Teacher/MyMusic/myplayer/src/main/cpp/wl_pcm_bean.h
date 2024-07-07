@@ -4,15 +4,13 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "soundtouch/include/SoundTouch.h"
 
 /**
  * PCM数据Bean
  */
-using namespace soundtouch;
 class WLPcmBean {
 public:
-    WLPcmBean(SAMPLETYPE *buffer, int size);
+    WLPcmBean(char *buffer, int size);
 
     ~WLPcmBean();
 

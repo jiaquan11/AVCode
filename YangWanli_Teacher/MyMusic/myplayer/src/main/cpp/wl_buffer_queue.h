@@ -18,22 +18,22 @@ public:
     ~WLBufferQueue();
 
 public:
-    int PutBuffer(SAMPLETYPE *buffer, int size);
+    void PutBuffer(char* buffer, int size);
 
-    int GetBuffer(WLPcmBean **pcmbean);
+    void GetBuffer(WLPcmBean **pcm_bean);
 
     int GetBufferSize();
 
-    int NoticeThread();
+    void ClearBuffer();
+
+    void NoticeQueue();
 
 private:
-    int _ClearBuffer();
+    WLPlayStatus *m_play_status_ = NULL;
+    std::deque<WLPcmBean *> m_buffer_queue_;
+    pthread_mutex_t m_buffer_mutex_;
+    pthread_cond_t m_buffer_cond_;
 
-private:
-    std::deque<WLPcmBean *> m_queue_buffer_;
-    pthread_mutex_t m_mutex_buffer_;
-    pthread_cond_t m_cond_buffer_;
-    WLPlayStatus *m_wlplay_status_ = NULL;
 };
 
 #endif //MYPLAYER_WLBUFFERQUEUE_H_

@@ -1,7 +1,7 @@
 #include "wl_pcm_bean.h"
 
-WLPcmBean::WLPcmBean(SAMPLETYPE *buffer, int size) {
-    this->m_buffer = (char *) malloc(size);
+WLPcmBean::WLPcmBean(char* buffer, int size) {
+    m_buffer = static_cast<char *>(malloc(size));
     m_buffsize = size;
     memcpy(m_buffer, buffer, size);
 };

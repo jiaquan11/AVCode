@@ -10,7 +10,7 @@ WLLinkOrderQueue::WLLinkOrderQueue()
  * 析构函数，释放链表内部所有结点内存
  */
 WLLinkOrderQueue::~WLLinkOrderQueue() {
-    _Flush();
+    Clear();
     pthread_mutex_destroy(&m_pts_mutex_);
 }
 
@@ -80,6 +80,21 @@ int WLLinkOrderQueue::Popup() {
 }
 
 /**
+ * 清空所有结点
+ */
+void WLLinkOrderQueue::Clear() {
+    pthread_mutex_lock(&m_pts_mutex_);
+    int size = _Size();
+    while (size > 0) {
+        _Popup();
+        size--;
+    }
+    m_size_ = 0;
+    m_head_ = NULL;
+    pthread_mutex_unlock(&m_pts_mutex_);
+}
+
+/**
  * 获取队列大小
  * @return int 队列大小
  */
@@ -107,21 +122,6 @@ void WLLinkOrderQueue::_Popup() {
             m_size_ = 0;
         }
     }
-}
-
-/**
- * 清空所有结点
- */
-void WLLinkOrderQueue::_Flush() {
-    pthread_mutex_lock(&m_pts_mutex_);
-    int size = _Size();
-    while (size > 0) {
-        _Popup();
-        size--;
-    }
-    m_size_ = 0;
-    m_head_ = NULL;
-    pthread_mutex_unlock(&m_pts_mutex_);
 }
 
 int WLLinkOrderQueue::_Size() {

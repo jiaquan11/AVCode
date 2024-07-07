@@ -1,68 +1,60 @@
 #include "wl_buffer_queue.h"
 
 WLBufferQueue::WLBufferQueue(WLPlayStatus *play_status) {
-    m_wlplay_status_ = play_status;
-    pthread_mutex_init(&m_mutex_buffer_, NULL);
-    pthread_cond_init(&m_cond_buffer_, NULL);
+    m_play_status_ = play_status;
+    pthread_mutex_init(&m_buffer_mutex_, NULL);
+    pthread_cond_init(&m_buffer_cond_, NULL);
 }
 
 WLBufferQueue::~WLBufferQueue() {
-    m_wlplay_status_ = NULL;
-    _ClearBuffer();
-    pthread_mutex_destroy(&m_mutex_buffer_);
-    pthread_cond_destroy(&m_cond_buffer_);
-    if (LOG_DEBUG) {
-        LOGI("WLBufferQueue 释放完成");
-    }
+    ClearBuffer();
+    m_play_status_ = NULL;
+    pthread_mutex_destroy(&m_buffer_mutex_);
+    pthread_cond_destroy(&m_buffer_cond_);
 }
 
-int WLBufferQueue::PutBuffer(SAMPLETYPE *buffer, int size) {
-    pthread_mutex_lock(&m_mutex_buffer_);
-    WLPcmBean *pcmBean = new WLPcmBean(buffer, size);
-    m_queue_buffer_.push_back(pcmBean);
-    pthread_cond_signal(&m_cond_buffer_);
-    pthread_mutex_unlock(&m_mutex_buffer_);
-    return 0;
+void WLBufferQueue::PutBuffer(char* buffer, int size) {
+    pthread_mutex_lock(&m_buffer_mutex_);
+    WLPcmBean *pcm_bean = new WLPcmBean(buffer, size);
+    m_buffer_queue_.push_back(pcm_bean);
+    NoticeQueue();
+    pthread_mutex_unlock(&m_buffer_mutex_);
 }
 
-int WLBufferQueue::GetBuffer(WLPcmBean **pcmBean) {
-    pthread_mutex_lock(&m_mutex_buffer_);
-    while ((m_wlplay_status_ != NULL) && !m_wlplay_status_->m_is_exit) {
-        if (m_queue_buffer_.size() > 0) {
-            *pcmBean = m_queue_buffer_.front();
-            m_queue_buffer_.pop_front();
+void WLBufferQueue::GetBuffer(WLPcmBean **pcm_bean) {
+    pthread_mutex_lock(&m_buffer_mutex_);
+    while ((m_play_status_ != NULL) && !m_play_status_->m_is_exit) {
+        if (m_buffer_queue_.size() > 0) {
+            *pcm_bean = m_buffer_queue_.front();
+            m_buffer_queue_.pop_front();
             break;
         } else {
-            if (!m_wlplay_status_->m_is_exit) {
-                pthread_cond_wait(&m_cond_buffer_, &m_mutex_buffer_);//阻塞当前线程，唤醒其它线程
-            }
+            pthread_cond_wait(&m_buffer_cond_, &m_buffer_mutex_);//阻塞当前线程，唤醒其它线程
         }
     }
-    pthread_mutex_unlock(&m_mutex_buffer_);
-    return 0;
+    pthread_mutex_unlock(&m_buffer_mutex_);
 }
 
 int WLBufferQueue::GetBufferSize() {
     int size = 0;
-    pthread_mutex_lock(&m_mutex_buffer_);
-    size = m_queue_buffer_.size();
-    pthread_mutex_unlock(&m_mutex_buffer_);
+    pthread_mutex_lock(&m_buffer_mutex_);
+    size = m_buffer_queue_.size();
+    pthread_mutex_unlock(&m_buffer_mutex_);
     return size;
 }
 
-int WLBufferQueue::NoticeThread() {
-    pthread_cond_signal(&m_cond_buffer_);
-    return 0;
+void WLBufferQueue::ClearBuffer() {
+    NoticeQueue();
+
+    pthread_mutex_lock(&m_buffer_mutex_);
+    while (!m_buffer_queue_.empty()) {
+        WLPcmBean *pcm_bean = m_buffer_queue_.front();
+        m_buffer_queue_.pop_front();
+        delete pcm_bean;
+    }
+    pthread_mutex_unlock(&m_buffer_mutex_);
 }
 
-int WLBufferQueue::_ClearBuffer() {
-    NoticeThread();
-    pthread_mutex_lock(&m_mutex_buffer_);
-    while (!m_queue_buffer_.empty()) {
-        WLPcmBean *pcmBean = m_queue_buffer_.front();
-        m_queue_buffer_.pop_front();
-        delete pcmBean;
-    }
-    pthread_mutex_unlock(&m_mutex_buffer_);
-    return 0;
+void WLBufferQueue::NoticeQueue() {
+    pthread_cond_signal(&m_buffer_cond_);
 }

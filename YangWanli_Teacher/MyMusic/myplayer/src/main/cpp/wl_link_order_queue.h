@@ -24,12 +24,12 @@ public:
 
     int Popup();
 
+    void Clear();
+
     int Size();
 
 private:
     void _Popup();
-
-    void _Flush();
 
     int _Size();
 

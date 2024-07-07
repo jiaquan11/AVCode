@@ -56,7 +56,7 @@ void WLFFmpeg::DemuxFFmpegThread() {
                 m_wlaudio_ = new WLAudio(m_avformat_ctx_->streams[i]->codecpar->sample_rate, m_play_status,m_call_java_);//创建音频播放类实例
                 m_wlaudio_->m_stream_index = i;
                 m_wlaudio_->m_codec_par = m_avformat_ctx_->streams[i]->codecpar;
-                m_wlaudio_->time_base = m_avformat_ctx_->streams[i]->time_base;
+                m_wlaudio_->m_time_base = m_avformat_ctx_->streams[i]->time_base;
                 m_wlaudio_->m_duration = m_avformat_ctx_->duration / AV_TIME_BASE;//媒体文件总时长
                 m_duration = m_wlaudio_->m_duration;
                 m_call_java_->OnCallPcmInfo(CHILD_THREAD, m_wlaudio_->m_sample_rate, 16, 2);//上报音频采样率，采样位宽，和声道数信息
@@ -144,14 +144,17 @@ void WLFFmpeg::Prepare() {
 
 void WLFFmpeg::StartFFmpegThread() {
     LOGI("WLFFmpeg StartFFmpegThread in");
-    if (m_wlaudio_ == NULL) {
-        if (LOG_DEBUG) {
-            LOGE("audio is NULL");
-            m_call_java_->OnCallError(CHILD_THREAD, 1008, "audio is NULL");
-        }
-        return;
-    }
-
+    /**
+     * 只有音频或者只有视频,或者同时有音频和视频
+     * 都要需要支持播放
+     */
+//    if (m_wlaudio_ == NULL) {
+//        if (LOG_DEBUG) {
+//            LOGE("audio is NULL");
+//            m_call_java_->OnCallError(CHILD_THREAD, 1008, "audio is NULL");
+//        }
+//        return;
+//    }
     //要求必须要有视频流
 //    if (m_wlvideo_ == NULL) {
 //        return;
@@ -226,8 +229,12 @@ void WLFFmpeg::StartFFmpegThread() {
         m_wlvideo_->m_call_java->OnCallInitMediaCodec(CHILD_THREAD,codec_tag, m_wlvideo_->m_avcodec_ctx->width, m_wlvideo_->m_avcodec_ctx->height);
     }
 
-    m_wlaudio_->Play();//开启音频播放，内部创建子线程用于获取缓冲区的pacekt，解码为pcm并给到opengles播放
-    m_wlvideo_->Play();//开启视频播放,内部创建子线程用于获取缓冲区的pacekt,然后进行解码渲染
+    if (m_wlaudio_ != NULL) {
+        m_wlaudio_->Play();//开启音频播放，内部创建子线程用于获取缓冲区的pacekt，解码为pcm并给到opengles播放
+    }
+    if (m_wlvideo_ != NULL) {
+        m_wlvideo_->Play();//开启视频播放,内部创建子线程用于获取缓冲区的pacekt,然后进行解码渲染
+    }
 
     LOGI("WLFFmpeg is start");
     while ((m_play_status != NULL) && !m_play_status->m_is_exit) {
@@ -350,8 +357,9 @@ void WLFFmpeg::Seek(int64_t secds) {
         avformat_seek_file(m_avformat_ctx_, -1, INT64_MIN, ts, INT64_MAX, 0);//seek到指定的时间点，这里没有指定某个流进行seek，由ffmpeg内部去判断
         if (m_wlaudio_ != NULL) {
             m_wlaudio_->m_packet_queue->ClearAvPacket();
-            m_wlaudio_->clock = 0;
-            m_wlaudio_->last_time = 0;
+            m_wlaudio_->m_buffer_queue->ClearBuffer();
+            m_wlaudio_->m_clock = 0;
+            m_wlaudio_->m_last_time = 0;
             pthread_mutex_lock(&m_wlaudio_->m_codec_mutex);
             avcodec_flush_buffers(m_wlaudio_->m_avcodec_ctx);
             pthread_mutex_unlock(&m_wlaudio_->m_codec_mutex);
@@ -359,6 +367,7 @@ void WLFFmpeg::Seek(int64_t secds) {
         }
         if (m_wlvideo_ != NULL) {
             m_wlvideo_->m_packet_queue->ClearAvPacket();
+            m_wlvideo_->m_pts_queue->Clear();
             m_wlvideo_->m_clock = 0;
             pthread_mutex_lock(&m_wlvideo_->m_codec_mutex);
             avcodec_flush_buffers(m_wlvideo_->m_avcodec_ctx);
@@ -480,7 +489,7 @@ void WLFFmpeg::StartStopRecord(bool start) {
 bool WLFFmpeg::CutAudioPlay(int start_time, int end_time, bool show_pcm) {
     if ((start_time >= 0) && (end_time <= m_duration) && (start_time < end_time)) {//符合裁剪条件
         m_wlaudio_->m_is_cut = true;
-        m_wlaudio_->end_time = end_time;
+        m_wlaudio_->m_end_time = end_time;
         m_wlaudio_->m_show_pcm = show_pcm;
         Seek(start_time);
         return true;

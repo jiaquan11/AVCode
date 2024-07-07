@@ -8,14 +8,16 @@ WLQueue::WLQueue(WLPlayStatus *play_status) {
 
 WLQueue::~WLQueue() {
     ClearAvPacket();
+    m_play_status_ = NULL;
     pthread_mutex_destroy(&m_mutex_packet_);
     pthread_cond_destroy(&m_cond_packet_);
+
 }
 
 void WLQueue::PutAVPacket(AVPacket *packet) {
     pthread_mutex_lock(&m_mutex_packet_);
     m_queue_packet_.push(packet);
-    _NoticeQueue();//达到条件，发出信号，通知其它线程
+    NoticeQueue();//达到条件，发出信号，通知其它线程
     pthread_mutex_unlock(&m_mutex_packet_);
 }
 
@@ -62,7 +64,7 @@ int WLQueue::GetQueueSize() {
 }
 
 void WLQueue::ClearAvPacket() {
-    _NoticeQueue();//直接通知唤醒，不需要加锁
+    NoticeQueue();
 
     pthread_mutex_lock(&m_mutex_packet_);
     while (!m_queue_packet_.empty()) {
@@ -73,6 +75,6 @@ void WLQueue::ClearAvPacket() {
     pthread_mutex_unlock(&m_mutex_packet_);
 }
 
-void WLQueue::_NoticeQueue() {
+void WLQueue::NoticeQueue() {
     pthread_cond_signal(&m_cond_packet_);
 }
