@@ -11,7 +11,6 @@ WLQueue::~WLQueue() {
     m_play_status_ = NULL;
     pthread_mutex_destroy(&m_mutex_packet_);
     pthread_cond_destroy(&m_cond_packet_);
-
 }
 
 void WLQueue::PutAVPacket(AVPacket *packet) {

@@ -13,7 +13,7 @@ CallJava::CallJava(JavaVM *vm, JNIEnv *env, jobject obj) {
     }
     m_jmid_load_ = env->GetMethodID(clz, "onCallLoad", "(Z)V");
     m_jmid_prepared_ = env->GetMethodID(clz, "onCallPrepared", "()V");
-    m_jmid_audio_time_info_ = env->GetMethodID(clz, "onCallAudioTimeInfo", "(II)V");
+    m_jmid_time_info_ = env->GetMethodID(clz, "onCallTimeInfo", "(II)V");
     m_jmid_pcm_info_ = env->GetMethodID(clz, "onCallPcmInfo", "(III)V");
     m_jmid_pcm_data_ = env->GetMethodID(clz, "onCallPcmData", "([BI)V");
     m_jmid_volumedb_ = env->GetMethodID(clz, "onCallVolumeDB", "(I)V");
@@ -102,9 +102,9 @@ void CallJava::OnCallPrepared(int type) {
     }
 }
 
-void CallJava::OnCallAudioTimeInfo(int type, int curr, int total) {
+void CallJava::OnCallTimeInfo(int type, int curr, int total) {
     if (type == MAIN_THREAD) {
-        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_audio_time_info_, curr, total);
+        m_jni_env_->CallVoidMethod(m_jobj_, m_jmid_time_info_, curr, total);
     } else if (type == CHILD_THREAD) {
         JNIEnv *env;
         if (m_java_vm_->AttachCurrentThread(&env, 0) != JNI_OK) {
@@ -113,7 +113,7 @@ void CallJava::OnCallAudioTimeInfo(int type, int curr, int total) {
                 return;
             }
         }
-        env->CallVoidMethod(m_jobj_, m_jmid_audio_time_info_, curr, total);
+        env->CallVoidMethod(m_jobj_, m_jmid_time_info_, curr, total);
         m_java_vm_->DetachCurrentThread();
     }
 }

@@ -55,6 +55,7 @@ public:
     WLQueue *m_packet_queue = NULL;
     WLLinkOrderQueue *m_pts_queue = NULL;
     AVRational m_time_base;
+    int m_duration = 0;
     pthread_mutex_t m_codec_mutex;
     double m_clock = 0;
     double m_default_delay_time = 0.04;

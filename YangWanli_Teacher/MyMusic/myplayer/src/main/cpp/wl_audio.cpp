@@ -47,7 +47,7 @@ void _PcmBufferPlayCallBack(SLAndroidSimpleBufferQueueItf bf, void *arg) {
             audio->m_clock += (sample_count * 2 * 2) / ((double) (audio->m_sample_rate * 2 * 2));//累加一下播放一段pcm所耗费的时间
             if (audio->m_clock - audio->m_last_time >= 0.1) {//100毫秒上报一次当前的音频播放时间戳
                 audio->m_last_time = audio->m_clock;
-                audio->m_call_java->OnCallAudioTimeInfo(CHILD_THREAD, audio->m_clock, audio->m_duration);
+                audio->m_call_java->OnCallTimeInfo(CHILD_THREAD, audio->m_clock, audio->m_duration);
             }
 
             audio->m_buffer_queue->PutBuffer((char*)audio->m_sample_buffer, sample_count * 4);//将解码的Pcm数据放入缓冲区，用于另外一个线程获取用于上报

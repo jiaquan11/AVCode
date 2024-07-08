@@ -79,6 +79,9 @@ void *_PlayVideo(void *arg) {
                 double diff = video->GetFrameDiffTime(pts_ms);
                 av_usleep(video->GetDelayTime(diff) * 1000000);
                 video->m_call_java->OnCallDecodeVPacket(CHILD_THREAD, video->m_avpacket->data,video->m_avpacket->size, video->m_avpacket->pts * av_q2d(video->m_time_base));
+                if (video->m_audio == NULL) {
+                    video->m_call_java->OnCallTimeInfo(CHILD_THREAD, pts_ms * 1.0 / 1000, video->m_duration);
+                }
             } else {
                 LOGE("video av_bsf_receive_packet from filter failed");
             }
@@ -115,6 +118,10 @@ void *_PlayVideo(void *arg) {
                                                         video->m_avframe->data[0],
                                                         video->m_avframe->data[1],
                                                         video->m_avframe->data[2]);
+                    if (video->m_audio == NULL) {
+                        double pts_secds = video->m_avframe->pts * av_q2d(video->m_time_base);
+                        video->m_call_java->OnCallTimeInfo(CHILD_THREAD, pts_secds, video->m_duration);
+                    }
                 } else {
                     if (video->m_scale_avframe == NULL) {
                         video->m_scale_avframe = av_frame_alloc();
@@ -164,6 +171,10 @@ void *_PlayVideo(void *arg) {
                                                         video->m_scale_avframe->data[0],
                                                         video->m_scale_avframe->data[1],
                                                         video->m_scale_avframe->data[2]);
+                    if (video->m_audio == NULL) {
+                        double pts_secds = video->m_scale_avframe->pts * av_q2d(video->m_time_base);
+                        video->m_call_java->OnCallTimeInfo(CHILD_THREAD, pts_secds, video->m_duration);
+                    }
                 }
             }
             pthread_mutex_unlock(&video->m_codec_mutex);
@@ -263,7 +274,7 @@ void WLVideo::Release() {
 }
 
 double WLVideo::GetFrameDiffTime(int pts_ms) {
-    if (pts_ms < 0) {
+    if ((m_audio == NULL) || (pts_ms < 0)) {
         return 0;
     }
     LOGI("GetFrameDiffTime pts_ms: %d", pts_ms);
@@ -278,6 +289,10 @@ double WLVideo::GetFrameDiffTime(int pts_ms) {
 }
 
 double WLVideo::GetFrameDiffTime(AVFrame *avframe, AVPacket *avpacket) {
+    if (m_audio == NULL) {
+        return 0;
+    }
+
     double pts = 0;
     if (avframe != NULL) {
         pts = av_frame_get_best_effort_timestamp(avframe);
@@ -309,6 +324,9 @@ double WLVideo::GetFrameDiffTime(AVFrame *avframe, AVPacket *avpacket) {
  * @return 返回延迟时间
  */
 double WLVideo::GetDelayTime(double diff_secds) {
+    if (m_audio == NULL) {
+        return m_default_delay_time;//无音频时，按照视频中实际帧率延迟时间进行播放
+    }
     //以差值3毫秒为标准进行调整(音视频差值在3毫秒内认为是同步的)
     // (defaultDelayTime:为正常的视频播放帧率耗时)
     if (diff_secds > 0.003) {//音频快 视频慢，视频减少休眠时间

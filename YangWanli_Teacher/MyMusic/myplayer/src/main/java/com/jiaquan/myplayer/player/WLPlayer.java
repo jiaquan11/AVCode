@@ -378,7 +378,7 @@ public class WLPlayer {
     }
 
     @CalledByNative
-    private void onCallAudioTimeInfo(int currentTime, int totalTime) {
+    private void onCallTimeInfo(int currentTime, int totalTime) {
         if (mOnTimeInfoListener_ != null) {
             if (mTimeInfoBean_ == null) {
                 mTimeInfoBean_ = new TimeInfoBean();

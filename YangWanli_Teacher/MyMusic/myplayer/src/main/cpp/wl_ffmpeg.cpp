@@ -57,8 +57,7 @@ void WLFFmpeg::DemuxFFmpegThread() {
                 m_wlaudio_->m_stream_index = i;
                 m_wlaudio_->m_codec_par = m_avformat_ctx_->streams[i]->codecpar;
                 m_wlaudio_->m_time_base = m_avformat_ctx_->streams[i]->time_base;
-                m_wlaudio_->m_duration = m_avformat_ctx_->duration / AV_TIME_BASE;//媒体文件总时长
-                m_duration = m_wlaudio_->m_duration;
+                m_duration = m_avformat_ctx_->duration / AV_TIME_BASE;//媒体文件总时长
                 m_call_java_->OnCallPcmInfo(CHILD_THREAD, m_wlaudio_->m_sample_rate, 16, 2);//上报音频采样率，采样位宽，和声道数信息
             }
         } else if (m_avformat_ctx_->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
@@ -67,22 +66,25 @@ void WLFFmpeg::DemuxFFmpegThread() {
                 m_wlvideo_->m_stream_index = i;
                 m_wlvideo_->m_codec_par = m_avformat_ctx_->streams[i]->codecpar;
                 m_wlvideo_->m_time_base = m_avformat_ctx_->streams[i]->time_base;
+                m_duration = m_avformat_ctx_->duration / AV_TIME_BASE;//媒体文件总时长
                 int num = m_avformat_ctx_->streams[i]->avg_frame_rate.num;
                 int den = m_avformat_ctx_->streams[i]->avg_frame_rate.den;
                 if ((num != 0) && (den != 0)) {//获取到平均帧率值
                     int fps = num / den;//比如25/1
                     m_wlvideo_->m_default_delay_time = 1.0 / fps;//根据帧率值计算得到每一帧的播放延时
-                    LOGI("fps %d, defaultDelayTime: %lf", fps, m_wlvideo_->m_default_delay_time);
+                    LOGI("video fps %d, defaultDelayTime: %lf", fps, m_wlvideo_->m_default_delay_time);
                 }
             }
         }
     }
 
     if (m_wlaudio_ != NULL) {
+        m_wlaudio_->m_duration = m_duration;
         _GetCodecContext(m_wlaudio_->m_codec_par, &m_wlaudio_->m_avcodec_ctx);
     }
 
     if (m_wlvideo_ != NULL) {
+        m_wlvideo_->m_duration = m_duration;
         _GetCodecContext(m_wlvideo_->m_codec_par, &m_wlvideo_->m_avcodec_ctx);
         const char *codec_tag = (m_wlvideo_->m_avcodec_ctx->codec)->name;
         if (strcasecmp(codec_tag, "h264") == 0) {
@@ -248,7 +250,7 @@ void WLFFmpeg::StartFFmpegThread() {
          * 避免seek时卡顿,但是对于一个packet对应一个frame的音频文件，这里要改为40
          * 为了避免seek时卡顿，这里控制一下读取包的速度，音频包缓冲队列存储的数据不宜过多，不往下读取
          */
-        if (m_wlaudio_->m_packet_queue->GetQueueSize() > 40) {
+        if ((m_wlaudio_ != NULL) && m_wlaudio_->m_packet_queue->GetQueueSize() > 40) {
             av_usleep(100 * 1000);
             continue;
         }
@@ -258,9 +260,9 @@ void WLFFmpeg::StartFFmpegThread() {
         int ret = av_read_frame(m_avformat_ctx_, av_packet);
         pthread_mutex_unlock(&m_seek_mutex_);
         if (ret == 0) {
-            if (av_packet->stream_index == m_wlaudio_->m_stream_index) {
+            if ((m_wlaudio_ != NULL) && (av_packet->stream_index == m_wlaudio_->m_stream_index)) {
                 m_wlaudio_->m_packet_queue->PutAVPacket(av_packet);
-            } else if (av_packet->stream_index == m_wlvideo_->m_stream_index) {
+            } else if ((m_wlvideo_ != NULL) && (av_packet->stream_index == m_wlvideo_->m_stream_index)) {
                 m_wlvideo_->m_packet_queue->PutAVPacket(av_packet);
                 //为了方便数据排序对比，这里将视频packet的pts(毫秒)int值放入排序队列
                 m_wlvideo_->m_pts_queue->Push((int)(av_packet->pts * av_q2d(m_wlvideo_->m_time_base) * 1000));//将视频packet的pts(毫秒)放入排序队列
@@ -284,7 +286,7 @@ void WLFFmpeg::StartFFmpegThread() {
                 /**
                  * 等待音频和视频缓冲都播放结束
                  */
-                if ((m_wlaudio_->m_packet_queue->GetQueueSize() > 0) || (m_wlvideo_->m_packet_queue->GetQueueSize() > 0)) {
+                if (((m_wlaudio_ != NULL) && (m_wlaudio_->m_packet_queue->GetQueueSize() > 0)) || (((m_wlvideo_ != NULL) && (m_wlvideo_->m_packet_queue->GetQueueSize() > 0)))) {
                     av_usleep(100 * 1000);
                     continue;
                 }
