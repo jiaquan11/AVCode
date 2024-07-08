@@ -44,6 +44,12 @@ public class WLGLSurfaceView extends GLSurfaceView {
         }
     }
 
+    public void clearRender() {
+        if (mWlRender_ != null) {
+            mWlRender_.setRenderType(WLRender.RENDER_NONE);
+            requestRender();
+        }
+    }
     //获取GLSurfaceView的渲染器
     public WLRender getWlRender() {
         return mWlRender_;

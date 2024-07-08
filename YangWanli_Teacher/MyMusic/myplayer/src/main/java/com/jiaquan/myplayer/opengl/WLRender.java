@@ -18,6 +18,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
+    public static final int RENDER_NONE = 0;
     public static final int RENDER_YUV = 1;
     public static final int RENDER_MEDIACODEC = 2;
 
@@ -160,11 +161,13 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);//0 0 0是黑色清屏 1 1 1是白色
         if (mRenderType_ == RENDER_YUV) {
             _renderYUV();
+            //将绘制操作放在外面，每次都会进行绘制一次，暂时解决概率性的闪屏问题
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         } else if (mRenderType_ == RENDER_MEDIACODEC) {
             _renderMediaCodec();
+            //将绘制操作放在外面，每次都会进行绘制一次，暂时解决概率性的闪屏问题
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         }
-        //将绘制操作放在外面，每次都会进行绘制一次，暂时解决概率性的闪屏问题
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
     }
 
     /*

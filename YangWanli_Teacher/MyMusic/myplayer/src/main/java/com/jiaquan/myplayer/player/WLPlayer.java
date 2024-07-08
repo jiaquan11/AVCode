@@ -248,6 +248,7 @@ public class WLPlayer {
                     stopAudioRecord();
                     _nativeStop();
                     _releaseVMediaCodec();
+                    mWlglSurfaceView_.clearRender();
 
                     mTimeInfoBean_ = null;
                     mTotalTime_ = 0;//记录硬解耗时
