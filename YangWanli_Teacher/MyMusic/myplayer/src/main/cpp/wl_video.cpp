@@ -79,7 +79,8 @@ void *_PlayVideo(void *arg) {
                 double diff = video->GetFrameDiffTime(pts_ms);
                 av_usleep(video->GetDelayTime(diff) * 1000000);
                 video->m_call_java->OnCallDecodeVPacket(CHILD_THREAD, video->m_avpacket->data,video->m_avpacket->size, video->m_avpacket->pts * av_q2d(video->m_time_base));
-                if (video->m_audio == NULL) {
+                if ((video->m_audio == NULL) && (video->m_clock - video->m_last_time >= 0.1)) {
+                    video->m_last_time = video->m_clock;
                     video->m_call_java->OnCallTimeInfo(CHILD_THREAD, pts_ms * 1.0 / 1000, video->m_duration);
                 }
             } else {
@@ -118,9 +119,9 @@ void *_PlayVideo(void *arg) {
                                                         video->m_avframe->data[0],
                                                         video->m_avframe->data[1],
                                                         video->m_avframe->data[2]);
-                    if (video->m_audio == NULL) {
-                        double pts_secds = video->m_avframe->pts * av_q2d(video->m_time_base);
-                        video->m_call_java->OnCallTimeInfo(CHILD_THREAD, pts_secds, video->m_duration);
+                    if ((video->m_audio == NULL) && (video->m_clock - video->m_last_time >= 0.1)) {
+                        video->m_last_time = video->m_clock;
+                        video->m_call_java->OnCallTimeInfo(CHILD_THREAD, video->m_clock, video->m_duration);
                     }
                 } else {
                     if (video->m_scale_avframe == NULL) {
@@ -171,9 +172,9 @@ void *_PlayVideo(void *arg) {
                                                         video->m_scale_avframe->data[0],
                                                         video->m_scale_avframe->data[1],
                                                         video->m_scale_avframe->data[2]);
-                    if (video->m_audio == NULL) {
-                        double pts_secds = video->m_scale_avframe->pts * av_q2d(video->m_time_base);
-                        video->m_call_java->OnCallTimeInfo(CHILD_THREAD, pts_secds, video->m_duration);
+                    if ((video->m_audio == NULL) && (video->m_clock - video->m_last_time >= 0.1)) {
+                        video->m_last_time = video->m_clock;
+                        video->m_call_java->OnCallTimeInfo(CHILD_THREAD, video->m_clock, video->m_duration);
                     }
                 }
             }

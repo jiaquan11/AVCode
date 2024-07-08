@@ -58,6 +58,7 @@ public:
     int m_duration = 0;
     pthread_mutex_t m_codec_mutex;
     double m_clock = 0;
+    double m_last_time = 0;
     double m_default_delay_time = 0.04;
     int m_max_ref_frames = 0;
     int m_b_frames = 0;
