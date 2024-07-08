@@ -162,73 +162,75 @@ void WLFFmpeg::StartFFmpegThread() {
 //        return;
 //    }
 
-    bool support_mediacodec = false;
-    m_wlvideo_->m_audio = m_wlaudio_;//将音频播放对象设置到视频播放对象中，用于获取音频参数进行音视频时间戳同步操作
-    const char *codec_tag = (m_wlvideo_->m_avcodec_ctx->codec)->name;
-    LOGI("WLFFmpeg start codecName: %s", codec_tag);
-    if (support_mediacodec = m_call_java_->OnCallIsSupportMediaCodec(CHILD_THREAD, codec_tag)) {//回调Java函数，支持硬解，优先使用硬解
-        LOGI("当前设备支持硬解码当前视频!!!");
-        /**
-         *对于硬解视频，必须传入的码流头是annexb格式，所以需要转换数据，添加annexb格式头
-         */
-        const AVBitStreamFilter * bs_filter = NULL;
-        if (strcasecmp(codec_tag, "h264") == 0) {
-            bs_filter = av_bsf_get_by_name("h264_mp4toannexb");
-        } else if (strcasecmp(codec_tag, "hevc") == 0) {
-            bs_filter = av_bsf_get_by_name("hevc_mp4toannexb");
+    if (m_wlvideo_ != NULL) {
+        bool support_mediacodec = false;
+        m_wlvideo_->m_audio = m_wlaudio_;//将音频播放对象设置到视频播放对象中，用于获取音频参数进行音视频时间戳同步操作
+        const char *codec_tag = (m_wlvideo_->m_avcodec_ctx->codec)->name;
+        LOGI("WLFFmpeg start codecName: %s", codec_tag);
+        if (support_mediacodec = m_call_java_->OnCallIsSupportMediaCodec(CHILD_THREAD, codec_tag)) {//回调Java函数，支持硬解，优先使用硬解
+            LOGI("当前设备支持硬解码当前视频!!!");
+            /**
+             *对于硬解视频，必须传入的码流头是annexb格式，所以需要转换数据，添加annexb格式头
+             */
+            const AVBitStreamFilter * bs_filter = NULL;
+            if (strcasecmp(codec_tag, "h264") == 0) {
+                bs_filter = av_bsf_get_by_name("h264_mp4toannexb");
+            } else if (strcasecmp(codec_tag, "hevc") == 0) {
+                bs_filter = av_bsf_get_by_name("hevc_mp4toannexb");
+            }
+            if (bs_filter == NULL) {
+                support_mediacodec = false;
+                goto end;
+            }
+            if (av_bsf_alloc(bs_filter, &m_wlvideo_->m_abs_ctx) != 0) {
+                support_mediacodec = false;
+                goto end;
+            }
+            if (avcodec_parameters_copy(m_wlvideo_->m_abs_ctx->par_in, m_wlvideo_->m_codec_par) < 0) {
+                support_mediacodec = false;
+                av_bsf_free(&m_wlvideo_->m_abs_ctx);
+                goto end;
+            }
+            if (av_bsf_init(m_wlvideo_->m_abs_ctx) != 0) {
+                support_mediacodec = false;
+                av_bsf_free(&m_wlvideo_->m_abs_ctx);
+                goto end;
+            }
+            /**
+             * 在大多数情况下，正确地设置AVBSFContext的time_base_in是必要的，
+             * 因为比特流过滤器需要知道输入时间戳的时间基准，以便正确地处理时间戳。
+             * 例如，如果你正在使用一个比特流过滤器来处理视频或音频数据，
+             * 它需要知道输入数据的时间基准，以便正确地调整或生成输出数据的时间戳
+             */
+            m_wlvideo_->m_abs_ctx->time_base_in = m_wlvideo_->m_time_base;//时间基准
         }
-        if (bs_filter == NULL) {
-            support_mediacodec = false;
-            goto end;
-        }
-        if (av_bsf_alloc(bs_filter, &m_wlvideo_->m_abs_ctx) != 0) {
-            support_mediacodec = false;
-            goto end;
-        }
-        if (avcodec_parameters_copy(m_wlvideo_->m_abs_ctx->par_in, m_wlvideo_->m_codec_par) < 0) {
-            support_mediacodec = false;
-            av_bsf_free(&m_wlvideo_->m_abs_ctx);
-            goto end;
-        }
-        if (av_bsf_init(m_wlvideo_->m_abs_ctx) != 0) {
-            support_mediacodec = false;
-            av_bsf_free(&m_wlvideo_->m_abs_ctx);
-            goto end;
-        }
-        /**
-         * 在大多数情况下，正确地设置AVBSFContext的time_base_in是必要的，
-         * 因为比特流过滤器需要知道输入时间戳的时间基准，以便正确地处理时间戳。
-         * 例如，如果你正在使用一个比特流过滤器来处理视频或音频数据，
-         * 它需要知道输入数据的时间基准，以便正确地调整或生成输出数据的时间戳
-         */
-        m_wlvideo_->m_abs_ctx->time_base_in = m_wlvideo_->m_time_base;//时间基准
-    }
 
-    end:
-    if (support_mediacodec) {
-        m_wlvideo_->m_render_type = RENDER_MEDIACODEC;
-        /**
-         * 回调Java方法，传递ffmepg的extradata数据，用来初始化硬件解码器
-         * 为了方便查看extradata数据，这里打印一下
-         */
-        LOGI("native onCallInitMediaCodec extradata size: %d", m_wlvideo_->m_avcodec_ctx->extradata_size);
-        int size = m_wlvideo_->m_avcodec_ctx->extradata_size;
-        char output[4];
-        char buffer[1024] = {0};
-        for (size_t i = 0; i < size; ++i) {
-            sprintf(output, "%02X ", m_wlvideo_->m_avcodec_ctx->extradata[i]);
-            strcat(buffer, output);
-            if ((i + 1) % 16 == 0) {
+        end:
+        if (support_mediacodec) {
+            m_wlvideo_->m_render_type = RENDER_MEDIACODEC;
+            /**
+             * 回调Java方法，传递ffmepg的extradata数据，用来初始化硬件解码器
+             * 为了方便查看extradata数据，这里打印一下
+             */
+            LOGI("native onCallInitMediaCodec extradata size: %d", m_wlvideo_->m_avcodec_ctx->extradata_size);
+            int size = m_wlvideo_->m_avcodec_ctx->extradata_size;
+            char output[4];
+            char buffer[1024] = {0};
+            for (size_t i = 0; i < size; ++i) {
+                sprintf(output, "%02X ", m_wlvideo_->m_avcodec_ctx->extradata[i]);
+                strcat(buffer, output);
+                if ((i + 1) % 16 == 0) {
+                    strcat(buffer, "\n");
+                    LOGD("%s", buffer);
+                    memset(buffer, 0, sizeof(buffer));
+                }
+            }
+            if ((size % 16) != 0) {
                 strcat(buffer, "\n");
                 LOGD("%s", buffer);
-                memset(buffer, 0, sizeof(buffer));
             }
+            m_wlvideo_->m_call_java->OnCallInitMediaCodec(CHILD_THREAD,codec_tag, m_wlvideo_->m_avcodec_ctx->width, m_wlvideo_->m_avcodec_ctx->height);
         }
-        if ((size % 16) != 0) {
-            strcat(buffer, "\n");
-            LOGD("%s", buffer);
-        }
-        m_wlvideo_->m_call_java->OnCallInitMediaCodec(CHILD_THREAD,codec_tag, m_wlvideo_->m_avcodec_ctx->width, m_wlvideo_->m_avcodec_ctx->height);
     }
 
     if (m_wlaudio_ != NULL) {
@@ -273,8 +275,10 @@ void WLFFmpeg::StartFFmpegThread() {
             /**
              * 读取到文件尾，等待缓冲区中的数据消耗完
              */
-             m_wlvideo_->m_read_frame_finished = true;
             av_packet_free(&av_packet);
+            if (m_wlvideo_ != NULL) {
+                m_wlvideo_->m_read_frame_finished = true;
+            }
             while ((m_play_status != NULL) && !m_play_status->m_is_exit) {
                 /**
                  * seek状态下，直接退出,不再等待缓冲区数据消耗完,会重新读取数据
