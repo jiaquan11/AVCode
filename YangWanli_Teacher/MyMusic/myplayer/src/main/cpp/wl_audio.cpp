@@ -44,11 +44,11 @@ void _PcmBufferPlayCallBack(SLAndroidSimpleBufferQueueItf bf, void *arg) {
          */
         int sample_count = audio->GetSoundTouchData();//返回的是当前音频包解码后的PCM的采样点数(单通道音频采样点数)
         if (sample_count > 0) {
-            audio->m_clock += (sample_count * 2 * 2) / ((double) (audio->m_sample_rate * 2 * 2));//累加一下播放一段pcm所耗费的时间
-            if (audio->m_clock - audio->m_last_time >= 0.1) {//100毫秒上报一次当前的音频播放时间戳
-                audio->m_last_time = audio->m_clock;
-                audio->m_call_java->OnCallTimeInfo(CHILD_THREAD, audio->m_clock, audio->m_duration);
-            }
+//            audio->m_clock += (sample_count * 2 * 2) / ((double) (audio->m_sample_rate * 2 * 2));//累加一下播放一段pcm所耗费的时间
+//            if (audio->m_clock - audio->m_last_time >= 0.1) {//100毫秒上报一次当前的音频播放时间戳
+//                audio->m_last_time = audio->m_clock;
+//                audio->m_call_java->OnCallTimeInfo(CHILD_THREAD, audio->m_clock, audio->m_duration);
+//            }
 
             audio->m_buffer_queue->PutBuffer((char*)audio->m_sample_buffer, sample_count * 4);//将解码的Pcm数据放入缓冲区，用于另外一个线程获取用于上报
             audio->m_call_java->OnCallVolumeDB(CHILD_THREAD, audio->GetPCMDB(reinterpret_cast<char *>(audio->m_sample_buffer), sample_count * 2 * 2));//上报音频的分贝值
@@ -573,13 +573,18 @@ int WLAudio::_ResampleAudio(void **pcmbuf) {
             }
 
             /**
-             * 重采样，返回单个包的单通道采样点数:对于AAC，一般是1024个采样点
+             * 重采样，返回单个包的单通道采样点数:对于AAC，一般是1024个采样点.
              * 但是有可能m_nb_为0，因为有可能解码后的数据不够一个音频包的数据，所以需要继续获取
              */
             m_nb_ = swr_convert(m_swr_ctx_, &m_convert_buffer_, m_avframe_->nb_samples, (const uint8_t **) (m_avframe_->data), m_avframe_->nb_samples);
             int out_channels = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_STEREO);
             data_size = m_nb_ * out_channels * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);//计算得到一个音频包的pcm字节数
             *pcmbuf = m_convert_buffer_;
+            m_clock = m_avframe_->pts * av_q2d(m_time_base);//音频时间戳，用于音视频同步
+            if (m_clock - m_last_time >= 0.1) {//100毫秒上报一次当前的音频播放时间戳
+                m_last_time = m_clock;
+                m_call_java->OnCallTimeInfo(CHILD_THREAD, m_clock, m_duration);
+            }
             pthread_mutex_unlock(&m_codec_mutex);
             break;
         } else {//没有获取到解码后的数据，继续循环获取

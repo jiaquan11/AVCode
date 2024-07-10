@@ -729,6 +729,9 @@ public class WLPlayer {
     private void onCallPcmToAAC(byte[] pcmBuffer, int size) {
         synchronized (mALock_) {
             if ((pcmBuffer != null) && (size > 0) && (mAEncMediaCodec_ != null)) {
+                /**
+                 * 这里统计的录制时长，为实际通过pcm数据参数计算得到的时长.
+                 */
                 mRecordTime_ += size * 1.0 / (mAudioSamplerate_ * 2 * 2);//计算当前包的时长，并累加
                 if (mOnRecordTimeListener_ != null) {
                     mOnRecordTimeListener_.onAudioRecordTime((int) mRecordTime_);//回调当前录制时长,单位秒

@@ -360,7 +360,12 @@ void WLFFmpeg::Seek(int64_t secds) {
         m_play_status->m_seek = true;//设置为seek状态
         pthread_mutex_lock(&m_seek_mutex_);
         int64_t ts = secds * AV_TIME_BASE;
-        avformat_seek_file(m_avformat_ctx_, -1, INT64_MIN, ts, INT64_MAX, 0);//seek到指定的时间点，这里没有指定某个流进行seek，由ffmpeg内部去判断
+        LOGI("WLFFmpeg seek ts: %lld", ts);
+        int ret = avformat_seek_file(m_avformat_ctx_, -1, INT64_MIN, ts, INT64_MAX, AVSEEK_FLAG_BACKWARD);//seek到指定的时间点，这里没有指定某个流进行seek，由ffmpeg内部去判断
+        if (ret < 0) {
+            LOGE("Error seeking to timestamp %lld", ts);
+            return;
+        }
         if (m_wlaudio_ != NULL) {
             m_wlaudio_->m_packet_queue->ClearAvPacket();
             m_wlaudio_->m_buffer_queue->ClearBuffer();
@@ -375,8 +380,11 @@ void WLFFmpeg::Seek(int64_t secds) {
             m_wlvideo_->m_packet_queue->ClearAvPacket();
             m_wlvideo_->m_pts_queue->Clear();
             m_wlvideo_->m_clock = 0;
+            m_wlvideo_->m_last_time = 0;
             pthread_mutex_lock(&m_wlvideo_->m_codec_mutex);
-            avcodec_flush_buffers(m_wlvideo_->m_avcodec_ctx);
+            if (m_wlvideo_->m_render_type != RENDER_MEDIACODEC) {
+                avcodec_flush_buffers(m_wlvideo_->m_avcodec_ctx);
+            }
             pthread_mutex_unlock(&m_wlvideo_->m_codec_mutex);
             LOGI("WLFFmpeg m_wlvideo_ seek!!! ");
         }

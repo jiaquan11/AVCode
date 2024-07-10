@@ -20,6 +20,7 @@ void *_PlayVideo(void *arg) {
     WLVideo *video = static_cast<WLVideo *>(arg);
     while ((video->m_play_status != NULL) && !video->m_play_status->m_is_exit) {//音视频缓冲都无数据时，则会退出
         if (video->m_play_status->m_seek || video->m_play_status->m_pause) {//seek或者是pause时，无需从缓冲区中读取数据
+            LOGI("video seek or pause, please wait");
             av_usleep(1000 * 100);
             continue;
         }
@@ -53,7 +54,7 @@ void *_PlayVideo(void *arg) {
             }
 
             if (video->m_is_video_play_end) {
-                LOGI("flush MediaCodec image to render");
+                LOGI("Flush MediaCodec image to render");
                 video->m_call_java->OnCallDecodeVPacket(CHILD_THREAD, NULL, 0, 0);
                 av_usleep(5 * 1000);//休眠5毫秒
                 continue;
@@ -78,7 +79,7 @@ void *_PlayVideo(void *arg) {
                 int pts_ms = video->m_pts_queue->Popup();
                 double diff = video->GetFrameDiffTime(pts_ms);
                 av_usleep(video->GetDelayTime(diff) * 1000000);
-                video->m_call_java->OnCallDecodeVPacket(CHILD_THREAD, video->m_avpacket->data,video->m_avpacket->size, video->m_avpacket->pts * av_q2d(video->m_time_base));
+                video->m_call_java->OnCallDecodeVPacket(CHILD_THREAD, video->m_avpacket->data, video->m_avpacket->size, video->m_avpacket->pts * av_q2d(video->m_time_base));
                 if ((video->m_audio == NULL) && (video->m_clock - video->m_last_time >= 0.1)) {
                     video->m_last_time = video->m_clock;
                     video->m_call_java->OnCallTimeInfo(CHILD_THREAD, pts_ms * 1.0 / 1000, video->m_duration);
@@ -293,7 +294,6 @@ double WLVideo::GetFrameDiffTime(AVFrame *avframe, AVPacket *avpacket) {
     if (m_audio == NULL) {
         return 0;
     }
-
     double pts = 0;
     if (avframe != NULL) {
         pts = av_frame_get_best_effort_timestamp(avframe);
