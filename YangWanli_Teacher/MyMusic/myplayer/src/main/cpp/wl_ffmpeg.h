@@ -18,7 +18,7 @@ public:
     ~WLFFmpeg();
 
 public:
-    void DemuxFFmpegThread();
+    void PrepareFFmpegThread();
 
     void Prepare();
 
@@ -47,6 +47,8 @@ public:
     bool CutAudioPlay(int start_time, int end_time, bool show_pcm);
 
 private:
+    void _DemuxFFmpeg();
+    void _PrepareData();
     int _GetCodecContext(AVCodecParameters *codec_par, AVCodecContext** av_codec_ctx);
 
 public:

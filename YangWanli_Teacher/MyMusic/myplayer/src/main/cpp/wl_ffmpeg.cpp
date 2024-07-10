@@ -25,8 +25,8 @@ int avformat_callback(void *ctx) {
     return 0;
 }
 
-void WLFFmpeg::DemuxFFmpegThread() {
-    LOGI("WLFFmpeg DemuxFFmpegThread in");
+void WLFFmpeg::_DemuxFFmpeg() {
+    LOGI("WLFFmpeg _DemuxeFFmpeg in");
     pthread_mutex_lock(&m_init_mutex_);
     av_register_all();
     avformat_network_init();
@@ -107,64 +107,14 @@ void WLFFmpeg::DemuxFFmpegThread() {
             LOGI("video hevc max_b_frames: %d", m_wlvideo_->m_avcodec_ctx->max_b_frames);
         }
     }
-
-    if (m_call_java_ != NULL) {
-        m_call_java_->OnCallPrepared(CHILD_THREAD);
-    }
     pthread_mutex_unlock(&m_init_mutex_);
-    LOGI("WLFFmpeg DemuxFFmpegThread out");
+    LOGI("WLFFmpeg _DemuxeFFmpeg out");
 }
 
-void *_DemuxFFmpeg(void *arg) {
-    WLFFmpeg *wlffmpeg = (WLFFmpeg *) (arg);
-    wlffmpeg->DemuxFFmpegThread();
-
-    /**
-     * 使用return语句退出线程比使用pthread_exit()函数更简单和直观。
-     * 一般情况下，如果只需要退出当前线程，
-     * 而不需要精确的控制，使用return语句是更常见和推荐的做法。
-     * 只有在需要在任意位置立即终止线程执行的特殊情况下，才需要使用pthread_exit()函数。
-     *
-     * pthread_exit()函数的作用是终止当前线程，但是不会终止整个进程。
-     * 当线程调用pthread_exit()函数时，会将线程的退出状态返回给调用线程。
-     * 如果线程是由main()函数创建的，那么线程的退出状态将返回给主进程。
-     * 如果线程是由其他线程创建的，那么线程的退出状态将返回给创建线程。
-     */
-//    pthread_exit(&wlfFmpeg->m_demux_thread_);
-    return 0;
-}
-
-void WLFFmpeg::Prepare() {
-    int ret = pthread_create(&m_demux_thread_, NULL, _DemuxFFmpeg, this);
-    if (ret != 0) {
-        if (LOG_DEBUG) {
-            LOGE("WLFFmpeg pthread_create demux_thread_ failed");
-            m_call_java_->OnCallError(MAIN_THREAD, 1000, "pthread_create demux_thread_ failed");
-        }
-    }
-}
-
-void WLFFmpeg::StartFFmpegThread() {
-    LOGI("WLFFmpeg StartFFmpegThread in");
-    /**
-     * 只有音频或者只有视频,或者同时有音频和视频
-     * 都要需要支持播放
-     */
-//    if (m_wlaudio_ == NULL) {
-//        if (LOG_DEBUG) {
-//            LOGE("audio is NULL");
-//            m_call_java_->OnCallError(CHILD_THREAD, 1008, "audio is NULL");
-//        }
-//        return;
-//    }
-    //要求必须要有视频流
-//    if (m_wlvideo_ == NULL) {
-//        return;
-//    }
-
+void WLFFmpeg::_PrepareData() {
     if (m_wlvideo_ != NULL) {
-        bool support_mediacodec = false;
         m_wlvideo_->m_audio = m_wlaudio_;//将音频播放对象设置到视频播放对象中，用于获取音频参数进行音视频时间戳同步操作
+        bool support_mediacodec = false;
         const char *codec_tag = (m_wlvideo_->m_avcodec_ctx->codec)->name;
         LOGI("WLFFmpeg start codecName: %s", codec_tag);
         if (support_mediacodec = m_call_java_->OnCallIsSupportMediaCodec(CHILD_THREAD, codec_tag)) {//回调Java函数，支持硬解，优先使用硬解
@@ -233,11 +183,8 @@ void WLFFmpeg::StartFFmpegThread() {
         }
     }
 
-    if (m_wlaudio_ != NULL) {
-        m_wlaudio_->Play();//开启音频播放，内部创建子线程用于获取缓冲区的pacekt，解码为pcm并给到opengles播放
-    }
-    if (m_wlvideo_ != NULL) {
-        m_wlvideo_->Play();//开启视频播放,内部创建子线程用于获取缓冲区的pacekt,然后进行解码渲染
+    if (m_call_java_ != NULL) {
+        m_call_java_->OnCallPrepared(CHILD_THREAD);
     }
 
     LOGI("WLFFmpeg is start");
@@ -311,6 +258,52 @@ void WLFFmpeg::StartFFmpegThread() {
         LOGI("WLFFmpeg play call complete before");
         m_call_java_->OnCallComplete(CHILD_THREAD);
         LOGI("WLFFmpeg play call complete after");
+    }
+}
+
+void WLFFmpeg::PrepareFFmpegThread() {
+    LOGI("WLFFmpeg PrepareFFmpegThread in");
+    _DemuxFFmpeg();
+    _PrepareData();
+    LOGI("WLFFmpeg PrepareFFmpegThread out");
+}
+
+void *_PrepareFFmpeg(void *arg) {
+    WLFFmpeg *wlffmpeg = (WLFFmpeg *) (arg);
+    wlffmpeg->PrepareFFmpegThread();
+
+    /**
+     * 使用return语句退出线程比使用pthread_exit()函数更简单和直观。
+     * 一般情况下，如果只需要退出当前线程，
+     * 而不需要精确的控制，使用return语句是更常见和推荐的做法。
+     * 只有在需要在任意位置立即终止线程执行的特殊情况下，才需要使用pthread_exit()函数。
+     *
+     * pthread_exit()函数的作用是终止当前线程，但是不会终止整个进程。
+     * 当线程调用pthread_exit()函数时，会将线程的退出状态返回给调用线程。
+     * 如果线程是由main()函数创建的，那么线程的退出状态将返回给主进程。
+     * 如果线程是由其他线程创建的，那么线程的退出状态将返回给创建线程。
+     */
+//    pthread_exit(&wlfFmpeg->m_demux_thread_);
+    return 0;
+}
+
+void WLFFmpeg::Prepare() {
+    int ret = pthread_create(&m_demux_thread_, NULL, _PrepareFFmpeg, this);
+    if (ret != 0) {
+        if (LOG_DEBUG) {
+            LOGE("WLFFmpeg pthread_create demux_thread_ failed");
+            m_call_java_->OnCallError(MAIN_THREAD, 1000, "pthread_create demux_thread_ failed");
+        }
+    }
+}
+
+void WLFFmpeg::StartFFmpegThread() {
+    LOGI("WLFFmpeg StartFFmpegThread in");
+    if (m_wlaudio_ != NULL) {
+        m_wlaudio_->Play();//开启音频播放，内部创建子线程用于获取缓冲区的pacekt，解码为pcm并给到opengles播放
+    }
+    if (m_wlvideo_ != NULL) {
+        m_wlvideo_->Play();//开启视频播放,内部创建子线程用于获取缓冲区的pacekt,然后进行解码渲染
     }
     LOGI("WLFFmpeg StartFFmpegThread out");
 }
