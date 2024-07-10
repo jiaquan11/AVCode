@@ -13,7 +13,7 @@ FFmpeg打造Android万能音频播放器视频教程，移植FFmpeg到Android平
 FFmpeg+OpenGL ES+OpenSL ES打造Android视频播放器教程，该课程基于C++语言，用FFmpeg、OpenGL ES、OpenSL ES和MediaCodec打造Android视频播放器
 问题点汇总处理
 问题1:点击切换需要点击两次，如果先点击停止，点一次切换可以成功 true
-问题1:开始播放后，停止，再次点击播放，只有音频，没有视频  true
+问题2:开始播放后，停止，再次点击播放，只有音频，没有视频  true
 问题3:正常每次点击开始，可以自动先停止，然后重新播放  true
 问题4:部分变量置null会导致崩溃，需排查      true
 问题5:播放结束，子线程没有立即结束  true
@@ -21,16 +21,15 @@ FFmpeg+OpenGL ES+OpenSL ES打造Android视频播放器教程，该课程基于C+
 问题7:依然出现glUniformMatrix4fv的崩溃问题  true
 问题8:MediaCodec硬解音视频同步问题  true
 问题9:播放结束刷帧的问题   true
-问题10:软解音视频同步问题(轻微不同步) false  
+问题10:只有视频的播放  true
+问题11:只有音频的播放  true
+问题12:seek操作不生效  true
+问题13:裁剪音频会崩溃  true
+问题14:软解音视频同步问题(轻微不同步) false  
 备注:
 暂不处理，调试效果不佳,后续优化
 音频比视频的时间戳总是快300-500毫秒左右，难道是因为软解耗时比较大，跟不上?
 那是不是做个预解的缓冲可以解决？应该是可以的，改动会稍微大点，后续实现
-
-问题11:只有视频的播放  true
-问题12:只有音频的播放  true
-问题13:seek操作不生效  true
-问题14:裁剪音频会崩溃  false
 
 四、NativeOpenGLDemo项目(Android C++ OpenGL 教程)
 掌握Android中OpenGL的原理,学会Android中NDK开发流程,能用OpenGL渲染视频画面,学会OpenGL 中矩阵操作、投影等

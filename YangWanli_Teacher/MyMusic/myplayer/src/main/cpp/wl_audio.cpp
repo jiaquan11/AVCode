@@ -9,6 +9,7 @@ WLAudio::WLAudio(int sample_rate, WLPlayStatus *play_status, CallJava *call_java
     m_show_pcm = false;
 
     m_packet_queue = new WLQueue(m_play_status);
+    m_buffer_queue = new WLBufferQueue(m_play_status);
     m_convert_buffer_ = (uint8_t *) (av_malloc(sample_rate * 2 * 2));//分配了一秒的音频pcm数据内存
     memset(m_convert_buffer_, 0, sample_rate * 2 * 2);
     m_avpacket_ = av_packet_alloc();
@@ -147,7 +148,6 @@ void *_PlayAudio(void *arg) {
  */
 void *_PcmBufferReportCallBack(void *arg) {
     WLAudio *audio = (WLAudio *) arg;
-    audio->m_buffer_queue = new WLBufferQueue(audio->m_play_status);
     while ((audio->m_play_status != NULL) && !audio->m_play_status->m_is_exit) {
         WLPcmBean *pcm_bean = NULL;
         audio->m_buffer_queue->GetBuffer(&pcm_bean);

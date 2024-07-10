@@ -248,8 +248,9 @@ public class WLPlayer {
                     stopAudioRecord();
                     _nativeStop();
                     _releaseVMediaCodec();
-                    mWlglSurfaceView_.clearRender();
-
+                    if (mWlglSurfaceView_ != null) {
+                        mWlglSurfaceView_.clearRender();
+                    }
                     mTimeInfoBean_ = null;
                     mTotalTime_ = 0;//记录硬解耗时
                     mFrameCount_ = 0;//记录硬解播放的总帧数
