@@ -183,6 +183,10 @@ void WLFFmpeg::_PrepareData() {
         }
     }
 
+    if ((m_wlvideo_ != NULL) && (m_wlvideo_->m_render_type != RENDER_MEDIACODEC)) {
+        m_wlvideo_->Decode();//开启视频软解解码线程，提前预解
+    }
+
     if (m_call_java_ != NULL) {
         m_call_java_->OnCallPrepared(CHILD_THREAD);
     }
@@ -219,28 +223,41 @@ void WLFFmpeg::_PrepareData() {
                 av_packet_free(&av_packet);
             }
         } else {
+            LOGI("read file eof!");
             /**
              * 读取到文件尾，等待缓冲区中的数据消耗完
              */
             av_packet_free(&av_packet);
             if (m_wlvideo_ != NULL) {
-                m_wlvideo_->m_read_frame_finished = true;
+                m_wlvideo_->m_read_packet_finished = true;//用于后续解码器刷帧的时机
             }
             while ((m_play_status != NULL) && !m_play_status->m_is_exit) {
                 /**
                  * seek状态下，直接退出,不再等待缓冲区数据消耗完,会重新读取数据
                  */
-                if (m_play_status->m_seek) {
-                    m_wlvideo_->m_read_frame_finished = false;
+                if (m_play_status->m_seek || m_play_status->m_pause) {
+                    m_wlvideo_->m_read_packet_finished = false;
                     break;
                 }
                 /**
                  * 等待音频和视频缓冲都播放结束
                  */
-                if (((m_wlaudio_ != NULL) && (m_wlaudio_->m_packet_queue->GetQueueSize() > 0)) || (((m_wlvideo_ != NULL) && (m_wlvideo_->m_packet_queue->GetQueueSize() > 0)))) {
+                bool audio_no_finish = ((m_wlaudio_ != NULL) && (m_wlaudio_->m_packet_queue->GetQueueSize() > 0));
+                bool video_no_finish = false;
+                if (m_wlvideo_ != NULL) {
+                    if (m_wlvideo_->m_render_type == RENDER_MEDIACODEC) {
+                        video_no_finish = (m_wlvideo_->m_packet_queue->GetQueueSize() > 0);
+                    } else {
+                        video_no_finish = ((m_wlvideo_->m_packet_queue->GetQueueSize() > 0) || (m_wlvideo_->m_frame_queue->GetQueueSize() > 0));
+                    }
+                }
+                if (audio_no_finish || video_no_finish) {
                     av_usleep(100 * 1000);
                     continue;
+                } else {
+                    LOGI("all data is cost end");
                 }
+
                 av_usleep(100 * 1000);//继续延时100ms，主要是等待解码器缓存刷新
                 m_play_status->m_is_exit = true;
                 m_is_play_end_ = true;//完整播放结束
@@ -360,7 +377,7 @@ void WLFFmpeg::Seek(int64_t secds) {
             return;
         }
         if (m_wlaudio_ != NULL) {
-            m_wlaudio_->m_packet_queue->ClearAvPacket();
+            m_wlaudio_->m_packet_queue->ClearAVPacket();
             m_wlaudio_->m_buffer_queue->ClearBuffer();
             m_wlaudio_->m_clock = 0;
             m_wlaudio_->m_last_time = 0;
@@ -370,7 +387,8 @@ void WLFFmpeg::Seek(int64_t secds) {
             LOGI("WLFFmpeg m_wlaudio_ seek!!! ");
         }
         if (m_wlvideo_ != NULL) {
-            m_wlvideo_->m_packet_queue->ClearAvPacket();
+            m_wlvideo_->m_packet_queue->ClearAVPacket();
+            m_wlvideo_->m_frame_queue->ClearAVFrame();
             m_wlvideo_->m_pts_queue->Clear();
             m_wlvideo_->m_clock = 0;
             m_wlvideo_->m_last_time = 0;

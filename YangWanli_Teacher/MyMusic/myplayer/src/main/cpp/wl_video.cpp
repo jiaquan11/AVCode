@@ -5,7 +5,7 @@
 WLVideo::WLVideo(WLPlayStatus *play_status, CallJava *call_java) {
     m_play_status = play_status;
     m_call_java = call_java;
-    m_packet_queue = new WLQueue(play_status);
+    m_packet_queue = new WLPacketQueue(play_status);
     m_pts_queue = new WLLinkOrderQueue();
     m_avpacket = av_packet_alloc();
     pthread_mutex_init(&m_codec_mutex, NULL);
@@ -13,6 +13,124 @@ WLVideo::WLVideo(WLPlayStatus *play_status, CallJava *call_java) {
 
 WLVideo::~WLVideo() {
     pthread_mutex_destroy(&m_codec_mutex);
+}
+
+void* _SoftDecode(void *arg) {
+    LOGI("WLVideo _SoftDecode in");
+    WLVideo *video = static_cast<WLVideo *>(arg);
+    video->m_frame_queue = new WLFrameQueue(video->m_play_status);
+    while ((video->m_play_status != NULL) && !video->m_play_status->m_is_exit) {//音视频缓冲都无数据时，则会退出
+        if (video->m_play_status->m_seek || video->m_play_status->m_pause) {//seek或者是pause时，无需从缓冲区中读取数据
+            LOGI("video seek or pause, please wait");
+            av_usleep(1000 * 100);
+            continue;
+        }
+
+        if (video->m_packet_queue->GetQueueSize() == 0) {//视频缓冲区中数据读取完，回调缓冲中，等待数据
+            if (!video->m_read_packet_finished) {
+                if (!video->m_play_status->m_load) {
+                    video->m_play_status->m_load = true;
+                    video->m_call_java->OnCallLoad(CHILD_THREAD, true);
+                }
+                av_usleep(1000 * 100);
+                continue;
+            } else {
+                video->m_is_video_data_end = true;//视频packet缓冲消耗完，等待下面刷新解码器缓冲区
+            }
+        } else {
+            if (video->m_play_status->m_load) {
+                video->m_play_status->m_load = false;
+                video->m_call_java->OnCallLoad(CHILD_THREAD, false);
+            }
+        }
+
+        if (!video->m_is_video_data_end) {
+            video->m_packet_queue->GetAVPacket(video->m_avpacket);//数据没有结束才会从缓冲区中读取数据，否则会阻塞在这里，没法下面的解码器刷新
+        } else {
+            video->m_avpacket = NULL;//刷新解码器缓存，需要刷空帧
+            LOGI("flush ffmpeg decoder to yuv render");
+        }
+
+        pthread_mutex_lock(&video->m_codec_mutex);
+        /**
+         * 刷新解码器的时候也需要多次调用avcodec_send_packet，传值为NULL,然后多次调用
+         * avcodec_receive_frame，直到avcodec_receive_frame返回AVERROR(EAGAIN)或者AVERROR_EOF
+         */
+        if (avcodec_send_packet(video->m_avcodec_ctx, video->m_avpacket) != 0) {
+            LOGE("WLVideo avcodec_send_packet failed");
+            pthread_mutex_unlock(&video->m_codec_mutex);
+            continue;
+        }
+
+        video->m_temp_avframe = av_frame_alloc();
+        while (avcodec_receive_frame(video->m_avcodec_ctx, video->m_temp_avframe) == 0) {
+            if (video->m_temp_avframe->format == AV_PIX_FMT_YUV420P) {
+                video->m_frame_queue->PutAVFrame(video->m_temp_avframe);
+            } else {
+                AVFrame* scale_avframe = av_frame_alloc();
+                int size = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, video->m_avcodec_ctx->width, video->m_avcodec_ctx->height,1);
+                if (video->m_scale_buffer == NULL) {
+                    video->m_scale_buffer = static_cast<uint8_t *>(av_malloc(size * sizeof(uint8_t)));
+                }
+                av_image_fill_arrays(scale_avframe->data,
+                                     scale_avframe->linesize,
+                                     video->m_scale_buffer,
+                                     AV_PIX_FMT_YUV420P,
+                                     video->m_avcodec_ctx->width,
+                                     video->m_avcodec_ctx->height,
+                                     1);
+                video->m_sws_ctx = sws_getContext(
+                        video->m_avcodec_ctx->width,
+                        video->m_avcodec_ctx->height,
+                        video->m_avcodec_ctx->pix_fmt,
+                        video->m_avcodec_ctx->width,
+                        video->m_avcodec_ctx->height,
+                        AV_PIX_FMT_YUV420P,
+                        SWS_BICUBIC, NULL, NULL, NULL);
+                if (video->m_sws_ctx == NULL) {
+                    LOGE("WLVideo sws_getContext failed");
+                    av_frame_free(&video->m_temp_avframe);
+                    av_frame_free(&scale_avframe);
+                    pthread_mutex_unlock(&video->m_codec_mutex);
+                    break;
+                }
+                sws_scale(video->m_sws_ctx,
+                          video->m_temp_avframe->data,
+                          video->m_temp_avframe->linesize,
+                          0,
+                          video->m_temp_avframe->height,
+                          scale_avframe->data,
+                          scale_avframe->linesize);
+                //手动复制时间戳和其他元数据,用于音视频同步
+                scale_avframe->pts = video->m_temp_avframe->pts;
+                scale_avframe->pkt_dts = video->m_temp_avframe->pkt_dts;
+                scale_avframe->best_effort_timestamp = av_frame_get_best_effort_timestamp(video->m_temp_avframe);
+                scale_avframe->sample_aspect_ratio = video->m_temp_avframe->sample_aspect_ratio;
+                video->m_frame_queue->PutAVFrame(scale_avframe);
+                av_frame_free(&video->m_temp_avframe);
+            }
+            video->m_temp_avframe = av_frame_alloc();
+        }
+        av_frame_free(&video->m_temp_avframe);
+        pthread_mutex_unlock(&video->m_codec_mutex);
+
+        if (video->m_is_video_data_end) {
+            LOGI("video decode include flush all end");
+            break;
+        }
+    }
+    //    pthread_exit(&video->m_decode_thread);
+    LOGI("WLVideo _SoftDecode out");
+    return 0;
+}
+
+void WLVideo::Decode() {
+    if ((m_play_status != NULL) && !m_play_status->m_is_exit) {
+        int ret = pthread_create(&m_decode_thread_, NULL, _SoftDecode, this);
+        if (ret != 0) {
+            LOGE("Create Decode Video Thread failed!");
+        }
+    }
 }
 
 void *_PlayVideo(void *arg) {
@@ -25,35 +143,35 @@ void *_PlayVideo(void *arg) {
             continue;
         }
 
-        if (video->m_packet_queue->GetQueueSize() == 0) {//视频缓冲区中数据读取完，回调缓冲中，等待数据
-            if (!video->m_read_frame_finished) {
-                if (!video->m_play_status->m_load) {
-                    video->m_play_status->m_load = true;
-                    video->m_call_java->OnCallLoad(CHILD_THREAD, true);
-                }
-                av_usleep(1000 * 100);
-                continue;
-            } else {
-                video->m_is_video_play_end = true;//视频packet缓冲消耗完，等待下面刷新解码器缓冲区
-            }
-        } else {
-            if (video->m_play_status->m_load) {
-                video->m_play_status->m_load = false;
-                video->m_call_java->OnCallLoad(CHILD_THREAD, false);
-            }
-        }
-
         if (video->m_render_type == RENDER_MEDIACODEC) {
+            if (video->m_packet_queue->GetQueueSize() == 0) {//视频缓冲区中数据读取完，回调缓冲中，等待数据
+                if (!video->m_read_packet_finished) {
+                    if (!video->m_play_status->m_load) {
+                        video->m_play_status->m_load = true;
+                        video->m_call_java->OnCallLoad(CHILD_THREAD, true);
+                    }
+                    av_usleep(1000 * 100);
+                    continue;
+                } else {
+                    video->m_is_video_data_end = true;//视频packet缓冲消耗完，等待下面刷新解码器缓冲区
+                }
+            } else {
+                if (video->m_play_status->m_load) {
+                    video->m_play_status->m_load = false;
+                    video->m_call_java->OnCallLoad(CHILD_THREAD, false);
+                }
+            }
+
             /**
              * 这里根据是否有B帧的帧重排缓冲区大小来判断是否需要等待排序完成
              */
-            if ((video->m_b_frames > 0) && !video->m_read_frame_finished && (video->m_pts_queue->Size() < (video->m_b_frames + 1))) {
+            if ((video->m_b_frames > 0) && !video->m_read_packet_finished && (video->m_pts_queue->Size() < (video->m_b_frames + 1))) {
                 LOGI("video wait pts queue size is %d m_b_frames: %d", video->m_pts_queue->Size(), video->m_b_frames);
                 av_usleep(5 * 1000);//休眠5毫秒
                 continue;
             }
 
-            if (video->m_is_video_play_end) {
+            if (video->m_is_video_data_end) {
                 LOGI("Flush MediaCodec image to render");
                 video->m_call_java->OnCallDecodeVPacket(CHILD_THREAD, NULL, 0, 0);
                 av_usleep(5 * 1000);//休眠5毫秒
@@ -88,101 +206,33 @@ void *_PlayVideo(void *arg) {
                 LOGE("video av_bsf_receive_packet from filter failed");
             }
         } else if (video->m_render_type == RENDER_YUV) {
-            if (!video->m_is_video_play_end) {
-                video->m_packet_queue->GetAVPacket(video->m_avpacket);//数据没有结束才会从缓冲区中读取数据，否则会阻塞在这里，没法下面的解码器刷新
-            } else {
-                video->m_avpacket = NULL;//刷新解码器缓存，需要刷空帧
-                LOGI("flush ffmpeg decoder to yuv render");
-            }
-            pthread_mutex_lock(&video->m_codec_mutex);
-            /**
-             * 刷新解码器的时候也需要多次调用avcodec_send_packet，传值为NULL,然后多次调用
-             * avcodec_receive_frame，直到avcodec_receive_frame返回AVERROR(EAGAIN)或者AVERROR_EOF
-             */
-            if (avcodec_send_packet(video->m_avcodec_ctx, video->m_avpacket) != 0) {
-                LOGE("WLVideo avcodec_send_packet failed");
-                pthread_mutex_unlock(&video->m_codec_mutex);
+            if (video->m_frame_queue->GetQueueSize() == 0) {
+                LOGI("video frame queue is empty, please wait");
+                av_usleep(1000 * 100);
                 continue;
             }
 
             if (video->m_avframe == NULL) {
                 video->m_avframe = av_frame_alloc();
             }
-            while (avcodec_receive_frame(video->m_avcodec_ctx, video->m_avframe) == 0) {
-                if (video->m_avframe->format == AV_PIX_FMT_YUV420P) {
-                    LOGI("WLVideo avcodec_receive_frame success");
-                    double diff = video->GetFrameDiffTime(video->m_avframe,NULL);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
-                    av_usleep(video->GetDelayTime(diff) * 1000000);
-                    video->m_call_java->OnCallRenderYUV(CHILD_THREAD,
-                                                        video->m_avframe->width,
-                                                        video->m_avframe->height,
-                                                        video->m_avframe->linesize[0],
-                                                        video->m_avframe->data[0],
-                                                        video->m_avframe->data[1],
-                                                        video->m_avframe->data[2]);
-                    if ((video->m_audio == NULL) && (video->m_clock - video->m_last_time >= 0.1)) {
-                        video->m_last_time = video->m_clock;
-                        video->m_call_java->OnCallTimeInfo(CHILD_THREAD, video->m_clock, video->m_duration);
-                    }
-                } else {
-                    if (video->m_scale_avframe == NULL) {
-                        video->m_scale_avframe = av_frame_alloc();
-                    }
-                    int size = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, video->m_avcodec_ctx->width, video->m_avcodec_ctx->height,1);
-                    if (video->m_scale_buffer == NULL) {
-                        video->m_scale_buffer = static_cast<uint8_t *>(av_malloc(size * sizeof(uint8_t)));
-                    }
-                    av_image_fill_arrays(video->m_scale_avframe->data,
-                                         video->m_scale_avframe->linesize,
-                                         video->m_scale_buffer,
-                                         AV_PIX_FMT_YUV420P,
-                                         video->m_avcodec_ctx->width,
-                                         video->m_avcodec_ctx->height,
-                                         1);
-                    video->m_sws_ctx = sws_getContext(
-                            video->m_avcodec_ctx->width,
-                            video->m_avcodec_ctx->height,
-                            video->m_avcodec_ctx->pix_fmt,
-                            video->m_avcodec_ctx->width,
-                            video->m_avcodec_ctx->height,
-                            AV_PIX_FMT_YUV420P,
-                            SWS_BICUBIC, NULL, NULL, NULL);
-                    if (video->m_sws_ctx == NULL) {
-                        LOGE("WLVideo sws_getContext failed");
-                        pthread_mutex_unlock(&video->m_codec_mutex);
-                        break;
-                    }
-                    sws_scale(video->m_sws_ctx,
-                              video->m_avframe->data,
-                              video->m_avframe->linesize,
-                              0,
-                              video->m_avframe->height,
-                              video->m_scale_avframe->data,
-                              video->m_scale_avframe->linesize);
-                    //手动复制时间戳和其他元数据,用于音视频同步
-                    video->m_scale_avframe->pts = video->m_avframe->pts;
-                    video->m_scale_avframe->pkt_dts = video->m_avframe->pkt_dts;
-                    video->m_scale_avframe->best_effort_timestamp = av_frame_get_best_effort_timestamp(video->m_avframe);
-                    video->m_scale_avframe->sample_aspect_ratio = video->m_avframe->sample_aspect_ratio;
-                    double diff = video->GetFrameDiffTime(video->m_scale_avframe, NULL);
-                    av_usleep(video->GetDelayTime(diff) * 1000000);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
-                    video->m_call_java->OnCallRenderYUV(CHILD_THREAD,
-                                                        video->m_avcodec_ctx->width,
-                                                        video->m_avcodec_ctx->height,
-                                                        video->m_scale_avframe->linesize[0],
-                                                        video->m_scale_avframe->data[0],
-                                                        video->m_scale_avframe->data[1],
-                                                        video->m_scale_avframe->data[2]);
-                    if ((video->m_audio == NULL) && (video->m_clock - video->m_last_time >= 0.1)) {
-                        video->m_last_time = video->m_clock;
-                        video->m_call_java->OnCallTimeInfo(CHILD_THREAD, video->m_clock, video->m_duration);
-                    }
-                }
+            video->m_frame_queue->GetAVFrame(video->m_avframe);
+            double diff = video->GetFrameDiffTime(video->m_avframe,NULL);//获取音视频的当前时间戳差值进行延迟，控制视频渲染的速度，保证音视频播放对齐
+            av_usleep(video->GetDelayTime(diff) * 1000000);
+            video->m_call_java->OnCallRenderYUV(CHILD_THREAD,
+                                                video->m_avframe->width,
+                                                video->m_avframe->height,
+                                                video->m_avframe->linesize[0],
+                                                video->m_avframe->data[0],
+                                                video->m_avframe->data[1],
+                                                video->m_avframe->data[2]);
+            if ((video->m_audio == NULL) && (video->m_clock - video->m_last_time >= 0.1)) {
+                video->m_last_time = video->m_clock;
+                LOGI("video call m_clock: %lf, m_duration: %d", video->m_clock, video->m_duration);
+                video->m_call_java->OnCallTimeInfo(CHILD_THREAD, video->m_clock, video->m_duration);
             }
-            pthread_mutex_unlock(&video->m_codec_mutex);
         }
     }
-//    pthread_exit(&video->m_thread_play);
+//    pthread_exit(&video->m_play_thread);
     LOGI("WLVideo _PlayVideo out");
     return 0;
 }
@@ -200,8 +250,36 @@ void WLVideo::Release() {
     if (m_packet_queue != NULL) {
         m_packet_queue->NoticeQueue();
     }
+    if (m_frame_queue != NULL) {
+        m_frame_queue->NoticeQueue();
+    }
     void *thread_ret;
-    int result = pthread_join(m_play_thread_, &thread_ret);
+    int result = -1;
+    if (m_render_type != RENDER_MEDIACODEC) {
+        result = pthread_join(m_decode_thread_, &thread_ret);
+        LOGI("video m_decode_thread_ join result: %d", result);
+        if (result != 0) {
+            switch (result) {
+                case ESRCH:
+                    LOGE("video m_decode_thread_ pthread_join failed: Thread not found (ESRCH)");
+                    break;
+                case EINVAL:
+                    LOGE("video m_decode_thread_ pthread_join failed: Invalid thread or thread already detached (EINVAL)");
+                    break;
+                case EDEADLK:
+                    LOGE("video m_decode_thread_ pthread_join failed: Deadlock detected (EDEADLK)");
+                    break;
+                default:
+                    LOGE("video m_decode_thread_ pthread_join failed: Unknown error (%d)", result);
+            }
+            // Exit or perform additional actions if needed
+            exit(EXIT_FAILURE);
+        } else {
+            LOGI("video m_decode_thread_ Thread returned: %ld", (long) thread_ret);
+        }
+    }
+
+    result = pthread_join(m_play_thread_, &thread_ret);
     LOGI("video m_play_thread_ join result: %d", result);
     if (result != 0) {
         switch (result) {
@@ -227,6 +305,10 @@ void WLVideo::Release() {
         delete m_packet_queue;
         m_packet_queue = NULL;
     }
+    if (m_frame_queue != NULL) {
+        delete m_frame_queue;
+        m_frame_queue = NULL;
+    }
     if (m_pts_queue != NULL) {
         delete m_pts_queue;
         m_pts_queue = NULL;
@@ -239,10 +321,6 @@ void WLVideo::Release() {
     if (m_avframe != NULL) {
         av_frame_free(&m_avframe);
         m_avframe = NULL;
-    }
-    if (m_scale_avframe != NULL) {
-        av_frame_free(&m_scale_avframe);
-        m_scale_avframe = NULL;
     }
     if (m_scale_buffer != NULL) {
         av_free(m_scale_buffer);
@@ -277,6 +355,7 @@ void WLVideo::Release() {
 
 double WLVideo::GetFrameDiffTime(int pts_ms) {
     if ((m_audio == NULL) || (pts_ms < 0)) {
+        m_clock = pts_ms * 1.0 / 1000;
         return 0;
     }
     LOGI("GetFrameDiffTime pts_ms: %d", pts_ms);
@@ -291,9 +370,6 @@ double WLVideo::GetFrameDiffTime(int pts_ms) {
 }
 
 double WLVideo::GetFrameDiffTime(AVFrame *avframe, AVPacket *avpacket) {
-    if (m_audio == NULL) {
-        return 0;
-    }
     double pts = 0;
     if (avframe != NULL) {
         pts = av_frame_get_best_effort_timestamp(avframe);
@@ -307,6 +383,10 @@ double WLVideo::GetFrameDiffTime(AVFrame *avframe, AVPacket *avpacket) {
     pts *= av_q2d(m_time_base);//去掉时间基准，单位为秒
     if (pts >= 0) {
         m_clock = pts;
+        if (m_audio == NULL) {
+            LOGI("GetFrameDiffTime only video frame pts ms: %d", (int)(pts * 1000));
+            return 0;
+        }
     }
     LOGI("GetFrameDiffTime frame pts ms: %d", (int)(pts * 1000));
 

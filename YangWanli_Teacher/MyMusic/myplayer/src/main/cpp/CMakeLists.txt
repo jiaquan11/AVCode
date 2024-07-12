@@ -12,7 +12,8 @@ add_library(native-lib
             call_java.cpp
             wl_ffmpeg.cpp
             wl_audio.cpp
-            wl_queue.cpp
+            wl_packet_queue.cpp
+            wl_frame_queue.cpp
             wl_play_status.cpp
             wl_pcm_bean.cpp
             wl_buffer_queue.cpp

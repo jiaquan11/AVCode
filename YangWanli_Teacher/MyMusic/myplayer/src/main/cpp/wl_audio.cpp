@@ -8,7 +8,7 @@ WLAudio::WLAudio(int sample_rate, WLPlayStatus *play_status, CallJava *call_java
     m_end_time = 0;
     m_show_pcm = false;
 
-    m_packet_queue = new WLQueue(m_play_status);
+    m_packet_queue = new WLPacketQueue(m_play_status);
     m_buffer_queue = new WLBufferQueue(m_play_status);
     m_convert_buffer_ = (uint8_t *) (av_malloc(sample_rate * 2 * 2));//分配了一秒的音频pcm数据内存
     memset(m_convert_buffer_, 0, sample_rate * 2 * 2);

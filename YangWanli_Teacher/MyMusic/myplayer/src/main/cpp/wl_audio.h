@@ -14,7 +14,7 @@ extern "C" {
     #include <libavutil/time.h>
 }
 
-#include "wl_queue.h"
+#include "wl_packet_queue.h"
 #include "wl_play_status.h"
 #include "call_java.h"
 #include "wl_buffer_queue.h"
@@ -75,7 +75,7 @@ public:
     int m_end_time = 0;
     bool m_show_pcm = false;
 
-    WLQueue *m_packet_queue = NULL;
+    WLPacketQueue *m_packet_queue = NULL;
     WLBufferQueue *m_buffer_queue;
     const int kDefaultPcmSize = 4096;
 

@@ -9,7 +9,8 @@ extern "C" {
 #include <libavutil/imgutils.h>
 };
 
-#include "wl_queue.h"
+#include "wl_packet_queue.h"
+#include "wl_frame_queue.h"
 #include "wl_link_order_queue.h"
 #include "call_java.h"
 #include "wl_audio.h"
@@ -24,6 +25,8 @@ public:
     ~WLVideo();
 
 public:
+    void Decode();
+
     void Play();
 
     void Release();
@@ -49,10 +52,11 @@ public:
     AVBSFContext *m_abs_ctx = NULL;
     AVPacket *m_avpacket = NULL;
     AVFrame *m_avframe = NULL;
-    AVFrame *m_scale_avframe = NULL;
+    AVFrame *m_temp_avframe = NULL;
     uint8_t *m_scale_buffer = NULL;
     SwsContext *m_sws_ctx = NULL;
-    WLQueue *m_packet_queue = NULL;
+    WLPacketQueue *m_packet_queue = NULL;
+    WLFrameQueue* m_frame_queue = NULL;
     WLLinkOrderQueue *m_pts_queue = NULL;
     AVRational m_time_base;
     int m_duration = 0;
@@ -62,11 +66,12 @@ public:
     double m_default_delay_time = 0.04;
     int m_max_ref_frames = 0;
     int m_b_frames = 0;
-    bool m_read_frame_finished = false;
-    bool m_is_video_play_end = false;
+    bool m_read_packet_finished = false;
+    bool m_is_video_data_end = false;
 
 private:
     pthread_t m_play_thread_;
+    pthread_t m_decode_thread_;
     double m_delay_time_ = 0;
     double m_last_audio_clock_ = 0;
     double m_last_video_clock_ = 0;
