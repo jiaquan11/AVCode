@@ -25,11 +25,7 @@ FFmpeg+OpenGL ES+OpenSL ES打造Android视频播放器教程，该课程基于C+
 问题11:只有音频的播放  true
 问题12:seek操作不生效  true
 问题13:裁剪音频会崩溃  true
-问题14:软解音视频同步问题(轻微不同步) false  
-备注:
-暂不处理，调试效果不佳,后续优化
-音频比视频的时间戳总是快300-500毫秒左右，难道是因为软解耗时比较大，跟不上?
-那是不是做个预解的缓冲可以解决？应该是可以的，改动会稍微大点，后续实现
+问题14:软解音视频同步问题 true 
 
 四、NativeOpenGLDemo项目(Android C++ OpenGL 教程)
 掌握Android中OpenGL的原理,学会Android中NDK开发流程,能用OpenGL渲染视频画面,学会OpenGL 中矩阵操作、投影等
