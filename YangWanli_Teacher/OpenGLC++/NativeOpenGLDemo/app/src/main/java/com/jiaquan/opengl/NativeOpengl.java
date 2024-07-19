@@ -8,15 +8,17 @@ public class NativeOpengl {
     }
 
     //native方法
-    public native void surfaceCreate(Surface surface);
+    public native void nativeSurfaceCreate(Surface surface);
 
-    public native void surfaceChange(int width, int height);
+    public native void nativeSurfaceChange(int width, int height);
 
-    public native void surfaceChangeFilter();
+    public native void nativeSurfaceDestroy();
 
-    public native void imgData(int w, int h, int length, byte[] data);
+    public native void nativeSurfaceChangeFilter();
 
-    public native void setYuvData(byte[] y, byte[] u, byte[] v, int w, int h);
+    public native void nativeSetImgData(int width, int height, int size, byte[] imageData);
 
-    public native void surfaceDestroy();
+    public native void nativeSetYuvData(int width, int height, byte[] yData, byte[] uData, byte[] vData);
+
+
 }

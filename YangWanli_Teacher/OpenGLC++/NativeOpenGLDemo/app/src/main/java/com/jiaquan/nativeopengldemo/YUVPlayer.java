@@ -67,7 +67,7 @@ public class YUVPlayer extends AppCompatActivity {
                             int usize = mFileInputStream_.read(u);
                             int vsize = mFileInputStream_.read(v);
                             if ((ysize > 0) && (usize > 0) && (vsize > 0)) {
-                                mNativeOpengl_.setYuvData(y, u, v, w, h);
+                                mNativeOpengl_.nativeSetYuvData(w, h, y, u, v);
                                 Thread.sleep(40);
                             } else {
                                 mIsExit_ = true;

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "GLES2/gl2.h"
-#include "../log/androidLog.h"
+#include "../log/android_log.h"
 #include "../matrix/MatrixUtil.h"
 #include "../shaderutil/shaderUtil.h"
 

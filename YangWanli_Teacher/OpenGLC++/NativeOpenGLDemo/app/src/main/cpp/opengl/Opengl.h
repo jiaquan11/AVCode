@@ -1,14 +1,13 @@
-#ifndef _OPENGL_H_
-#define _OPENGL_H_
+#ifndef OPENGL_H_
+#define OPENGL_H_
 
-#include "../egl/EglThread.h"
 #include "android/native_window.h"
 #include "android/native_window_jni.h"
+#include "../egl/EglThread.h"
 #include "BaseOpengl.h"
 #include "FilterOne.h"
 #include "FilterTwo.h"
 #include "FilterYUV.h"
-#include <string>
 
 class Opengl {
 public:
@@ -17,17 +16,17 @@ public:
     ~Opengl();
 
 public:
-    void onCreateSurface(JNIEnv *env, jobject surface);
+    void OnSurfaceCreate(JNIEnv *env, jobject surface);
 
-    void onChangeSurface(int width, int height);
+    void OnSurfaceChange(int width, int height);
 
-    void onChangeSurfaceFilter();
+    void OnSurfaceDestroy();
 
-    void setPixel(void *data, int width, int height, int length);
+    void OnSurfaceChangeFilter();
 
-    void setYuvData(void *y, void *u, void *v, int w, int h);
+    void SetImgData(int width, int height, int size, void* data);
 
-    void onDestroySurface();
+    void SetYuvData(void *y, void *u, void *v, int w, int h);
 
 public:
     EglThread *eglThread = NULL;
@@ -40,5 +39,4 @@ public:
     int pic_height = 0;
 };
 
-
-#endif
+#endif //OPENGL_H_

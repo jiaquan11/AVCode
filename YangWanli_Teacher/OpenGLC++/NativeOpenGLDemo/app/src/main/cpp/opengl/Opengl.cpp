@@ -1,4 +1,4 @@
-#include "Opengl.h"
+#include "opengl.h"
 
 //函数指针的相关实现函数
 void callback_SurfaceCreate(void *ctx) {
@@ -71,8 +71,8 @@ Opengl::~Opengl() {
     }
 }
 
-void Opengl::onCreateSurface(JNIEnv *env, jobject surface) {
-    LOGI("Opengl::onCreateSurface in");
+void Opengl::OnSurfaceCreate(JNIEnv *env, jobject surface) {
+    LOGI("Opengl OnSurfaceCreate in");
     nativeWindow = ANativeWindow_fromSurface(env, surface);
 
     eglThread = new EglThread();
@@ -88,11 +88,11 @@ void Opengl::onCreateSurface(JNIEnv *env, jobject surface) {
 //    baseOpengl = new FilterYUV();//opengl绘制YUV视频
 
     eglThread->onSurfaceCreate(nativeWindow);//内部创建一个独立的子线程，用于EGL环境的操作
-    LOGI("Opengl::onCreateSurface end");
+    LOGI("Opengl OnSurfaceCreate end");
 }
 
-void Opengl::onChangeSurface(int width, int height) {//屏幕宽高
-    LOGI("Opengl::onChangeSurface in width:%d, height:%d", width, height);
+void Opengl::OnSurfaceChange(int width, int height) {
+    LOGI("Opengl OnSurfaceChange in width:%d, height:%d", width, height);
     if (eglThread != NULL) {
         if (baseOpengl != NULL) {
             baseOpengl->surface_width = width;
@@ -100,47 +100,11 @@ void Opengl::onChangeSurface(int width, int height) {//屏幕宽高
         }
         eglThread->onSurfaceChange(width, height);
     }
-    LOGI("Opengl::onChangeSurface end");
+    LOGI("Opengl OnSurfaceChange end");
 }
 
-void Opengl::onChangeSurfaceFilter() {
-    if (eglThread != NULL) {
-        eglThread->onSurfaceChangeFilter();
-    }
-}
-
-void Opengl::setPixel(void *data, int width, int height, int length) {
-    LOGI("Opengl::setPixel in");
-    pic_width = width;
-    pic_height = height;
-    if (pixels != NULL) {
-        free(pixels);
-        pixels = NULL;
-    }
-    pixels = malloc(length);
-    memcpy(pixels, data, length);
-    if (baseOpengl != NULL) {
-        baseOpengl->setPixel(pixels, width, height);
-    }
-
-    if (eglThread != NULL) {
-        eglThread->notifyRender();
-    }
-    LOGI("Opengl::setPixel end");
-}
-
-void Opengl::setYuvData(void *y, void *u, void *v, int w, int h) {
-    if (baseOpengl != NULL) {
-        baseOpengl->setYuvData(y, u, v, w, h);
-    }
-    if (eglThread != NULL) {
-        eglThread->notifyRender();
-    }
-}
-
-//销毁所有资源
-void Opengl::onDestroySurface() {
-    LOGI("Opengl::onDestroySurface in");
+void Opengl::OnSurfaceDestroy() {
+    LOGI("Opengl OnSurfaceDestroy in");
     if (eglThread != NULL) {
         eglThread->destroy();
         delete eglThread;
@@ -159,5 +123,38 @@ void Opengl::onDestroySurface() {
         free(pixels);
         pixels = NULL;
     }
-    LOGI("Opengl::onDestroySurface end");
+    LOGI("Opengl OnSurfaceDestroy end");
+}
+
+void Opengl::OnSurfaceChangeFilter() {
+    if (eglThread != NULL) {
+        eglThread->onSurfaceChangeFilter();
+    }
+}
+
+void Opengl::SetImgData(int width, int height, int size, void* data) {
+    pic_width = width;
+    pic_height = height;
+    if (pixels != NULL) {
+        free(pixels);
+        pixels = NULL;
+    }
+    pixels = malloc(size);
+    memcpy(pixels, data, size);
+    if (baseOpengl != NULL) {
+        baseOpengl->setPixel(pixels, width, height);
+    }
+
+    if (eglThread != NULL) {
+        eglThread->notifyRender();
+    }
+}
+
+void Opengl::SetYuvData(void *y, void *u, void *v, int w, int h) {
+    if (baseOpengl != NULL) {
+        baseOpengl->setYuvData(y, u, v, w, h);
+    }
+    if (eglThread != NULL) {
+        eglThread->notifyRender();
+    }
 }

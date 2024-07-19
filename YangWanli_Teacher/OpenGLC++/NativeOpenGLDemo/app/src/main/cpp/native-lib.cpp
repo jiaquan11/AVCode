@@ -1,59 +1,95 @@
-#include "log/androidLog.h"
+#include "log/android_log.h"
+#include "opengl/opengl.h"
 #include <string>
-#include "opengl/Opengl.h"
 
-Opengl *opengl = NULL;
+#define DELETE_LOCAL_REF(env, obj)  if(obj!=NULL){env->DeleteLocalRef(obj);obj=NULL;}
+static const char *const kClassPathName = "com/jiaquan/opengl/NativeOpengl";
 
-extern "C" JNIEXPORT void JNICALL
-Java_com_jiaquan_opengl_NativeOpengl_surfaceCreate(JNIEnv *env, jobject thiz, jobject surface) {
-    if (opengl == NULL) {
-        opengl = new Opengl();//Opengl类作为主流程类
+Opengl *g_opengl = NULL;
+JNIEXPORT void JNICALL SurfaceCreate(JNIEnv *env, jobject thiz, jobject surface) {
+    if (g_opengl == NULL) {
+        g_opengl = new Opengl();
     }
-    opengl->onCreateSurface(env, surface);
+    g_opengl->OnSurfaceCreate(env, surface);
 }
 
-extern "C" JNIEXPORT void JNICALL
-Java_com_jiaquan_opengl_NativeOpengl_surfaceChange(JNIEnv *env, jobject thiz, jint width, jint height) {
-    if (opengl != NULL) {
-        opengl->onChangeSurface(width, height);//传入屏幕宽高
-    }
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_com_jiaquan_opengl_NativeOpengl_surfaceChangeFilter(JNIEnv *env, jobject thiz) {
-    if (opengl != NULL) {
-        opengl->onChangeSurfaceFilter();
+JNIEXPORT void JNICALL SurfaceChange(JNIEnv *env, jobject thiz, jint width, jint height) {
+    if (g_opengl != NULL) {
+        g_opengl->OnSurfaceChange(width, height);
     }
 }
 
-extern "C" JNIEXPORT void JNICALL
-Java_com_jiaquan_opengl_NativeOpengl_imgData(JNIEnv *env, jobject thiz, jint width, jint height, jint length, jbyteArray dataArray) {//传入解码后的图像rgba数据
-    jbyte *data = env->GetByteArrayElements(dataArray, NULL);
-    if (opengl != NULL) {
-        opengl->setPixel(data, width, height, length);
+JNIEXPORT void JNICALL SurfaceDestroy(JNIEnv *env, jobject thiz) {
+    if (g_opengl != NULL) {
+        g_opengl->OnSurfaceDestroy();
+        delete g_opengl;
+        g_opengl = NULL;
     }
-    env->ReleaseByteArrayElements(dataArray, data, 0);
 }
 
-extern "C" JNIEXPORT void JNICALL
-Java_com_jiaquan_opengl_NativeOpengl_setYuvData(JNIEnv *env, jobject thiz, jbyteArray y_array, jbyteArray u_array, jbyteArray v_array, jint w, jint h) {
+JNIEXPORT void JNICALL SurfaceChangeFilter(JNIEnv *env, jobject thiz) {
+    if (g_opengl != NULL) {
+        g_opengl->OnSurfaceChangeFilter();
+    }
+}
+
+JNIEXPORT void JNICALL SetImgData(JNIEnv *env, jobject thiz, jint width, jint height, jint size, jbyteArray data_array) {//传入解码后的图像rgba数据
+    jbyte *data = env->GetByteArrayElements(data_array, NULL);
+    if (g_opengl != NULL) {
+        g_opengl->SetImgData(width, height, size, data);
+    }
+    env->ReleaseByteArrayElements(data_array, data, 0);
+}
+
+JNIEXPORT void JNICALL SetYuvData(JNIEnv *env, jobject thiz, jint w, jint h, jbyteArray y_array, jbyteArray u_array, jbyteArray v_array) {
     jbyte *ydata = env->GetByteArrayElements(y_array, NULL);
     jbyte *udata = env->GetByteArrayElements(u_array, NULL);
     jbyte *vdata = env->GetByteArrayElements(v_array, NULL);
-    if (opengl != NULL) {
-        opengl->setYuvData(ydata, udata, vdata, w, h);
+    if (g_opengl != NULL) {
+        g_opengl->SetYuvData(ydata, udata, vdata, w, h);
     }
     env->ReleaseByteArrayElements(y_array, ydata, 0);
     env->ReleaseByteArrayElements(u_array, udata, 0);
     env->ReleaseByteArrayElements(v_array, vdata, 0);
 }
 
-extern "C" JNIEXPORT void JNICALL
-Java_com_jiaquan_opengl_NativeOpengl_surfaceDestroy(JNIEnv *env, jobject thiz) {
-    if (opengl != NULL) {
-        opengl->onDestroySurface();
-        delete opengl;
-        opengl = NULL;
+static JNINativeMethod gMethods[] = {
+        {"nativeSurfaceCreate",         "(Landroid/view/Surface;)V",  (void *) SurfaceCreate},
+        {"nativeSurfaceChange",         "(II)V",                      (void *) SurfaceChange},
+        {"nativeSurfaceDestroy",        "()V",                        (void *) SurfaceDestroy},
+        {"nativeSurfaceChangeFilter",   "()V",                        (void *) SurfaceChangeFilter},
+        {"nativeSetImgData",            "(III[B)V",                   (void *) SetImgData},
+        {"nativeSetYuvData",            "(II[B[B[B)V",                (void *) SetYuvData},
+};
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+    JNIEnv *env;
+    if (vm->GetEnv((void **) (&env), JNI_VERSION_1_6) != JNI_OK) {
+        LOGE("JNI_OnLoad GetEnv failed!");
+        return -1;
     }
+    assert(env != NULL);
+
+    jclass clazz = env->FindClass(kClassPathName);
+    if (clazz == NULL) {
+        LOGE("class not found. %s", kClassPathName);
+        return -1;
+    }
+    if (env->RegisterNatives(clazz, gMethods, sizeof(gMethods) / sizeof(gMethods[0])) < 0) {
+        LOGE("RegisterNatives failed!");
+        return -1;
+    }
+    DELETE_LOCAL_REF(env, clazz);
+    return JNI_VERSION_1_6;
 }
 
+JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
+    LOGI("JNI_OnUnload in");
+    JNIEnv *env;
+    if (vm->GetEnv((void **) (&env), JNI_VERSION_1_6) != JNI_OK) {
+        LOGE("JNI_OnUnload GetEnv failed!");
+        return;
+    }
+    assert(env != NULL);
+    LOGI("JNI_OnUnload out");
+}

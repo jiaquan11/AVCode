@@ -2,7 +2,7 @@
 #define _EGLHELPER_H_
 
 #include "EGL/egl.h"
-#include "../log/androidLog.h"
+#include "../log/android_log.h"
 
 class EglHelper {
 public:

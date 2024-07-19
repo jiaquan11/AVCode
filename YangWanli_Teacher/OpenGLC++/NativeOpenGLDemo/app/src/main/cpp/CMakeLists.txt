@@ -3,12 +3,12 @@ cmake_minimum_required(VERSION 3.10.2)
 project("nativeopengldemo")
 
 add_library(native-lib
-             SHARED
-             native-lib.cpp
-             egl/EglHelper.cpp
-             egl/EglThread.cpp
+            SHARED
+            native-lib.cpp
+            egl/EglHelper.cpp
+            egl/EglThread.cpp
             opengl/BaseOpengl.cpp
-            opengl/Opengl.cpp
+            opengl/opengl.cpp
             opengl/FilterOne.cpp
             opengl/FilterTwo.cpp
             opengl/FilterYUV.cpp
@@ -17,10 +17,10 @@ add_library(native-lib
 include_directories(${CMAKE_SOURCE_DIR}/log/)
 
 find_library(log-lib
-              log )
+             log )
 
 target_link_libraries(native-lib
-                       android
-                       EGL
-                       GLESv2
-                       ${log-lib} )
+                      android
+                      EGL
+                      GLESv2
+                      ${log-lib} )

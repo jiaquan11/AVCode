@@ -2,7 +2,7 @@
 #define _SHADERUTIL_H_
 
 #include <GLES2/gl2.h>
-#include "../log/androidLog.h"
+#include "../log/android_log.h"
 
 static void CheckGLError() {
     GLenum error = glGetError();

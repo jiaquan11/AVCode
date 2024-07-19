@@ -137,18 +137,18 @@ JNIEXPORT jboolean JNICALL CutAudioPlay(JNIEnv *env, jobject thiz, jint start_ti
 
 static JNINativeMethod gMethods[] = {
          {"_nativePrepare",         "(Ljava/lang/String;)V",  (void *) Prepare},
-         {"_nativeStart",           "()V",                   (void *) Start},
-         {"_nativePause",           "()V",                   (void *) Pause},
-         {"_nativeResume",          "()V",                   (void *) Resume},
-         {"_nativeStop",            "()V",                   (void *) Stop},
-         {"_nativeSeek",            "(I)V",                  (void *) Seek},
-         {"_nativeDuration",        "()I",                   (void *) Duration},
-         {"_nativeVolume",          "(I)V",                  (void *) Volume},
-         {"_nativeChannelType",    "(I)V",                 (void *) ChannelType},
-         {"_nativePitch",          "(F)V",                 (void *) Pitch},
-        {"_nativeSpeed",           "(F)V",                  (void *) Speed},
-        {"_nativeStartstopRecord", "(Z)V",                  (void *) StartstopRecord},
-        {"_nativeCutAudioPlay",    "(IIZ)Z",                (void *) CutAudioPlay},
+         {"_nativeStart",           "()V",                    (void *) Start},
+         {"_nativePause",           "()V",                    (void *) Pause},
+         {"_nativeResume",          "()V",                    (void *) Resume},
+         {"_nativeStop",            "()V",                    (void *) Stop},
+         {"_nativeSeek",            "(I)V",                   (void *) Seek},
+         {"_nativeDuration",        "()I",                    (void *) Duration},
+         {"_nativeVolume",          "(I)V",                   (void *) Volume},
+         {"_nativeChannelType",     "(I)V",                   (void *) ChannelType},
+         {"_nativePitch",           "(F)V",                   (void *) Pitch},
+         {"_nativeSpeed",           "(F)V",                   (void *) Speed},
+         {"_nativeStartstopRecord", "(Z)V",                   (void *) StartstopRecord},
+         {"_nativeCutAudioPlay",    "(IIZ)Z",                 (void *) CutAudioPlay},
 };
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
