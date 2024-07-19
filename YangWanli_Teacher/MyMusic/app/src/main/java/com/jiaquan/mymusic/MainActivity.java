@@ -142,11 +142,14 @@ public class MainActivity extends AppCompatActivity {
         };
 
         /**
-         * 设置播放时间信息监听
+         * 设置播放时间信息监听,当前播放时间时间戳,总时长
+         * 这里上报的是音频的时间信息
          */
         mWlPlayer_.setOnTimeInfoListener(new OnTimeInfoListener() {
             @Override
             public void onTimeInfo(TimeInfoBean timeInfoBean) {
+                MyLog.i(timeInfoBean.toString());
+
                 Message message = Message.obtain();
                 message.what = 1;
                 message.obj = timeInfoBean;
@@ -224,15 +227,22 @@ public class MainActivity extends AppCompatActivity {
      */
     public void prepare(View view) {
 //        mWlPlayer_.prepared("http://mpge.5nd.com/2015/2015-11-26/69708/1.mp3");
-//        mWlPlayer_.prepared("/sdcard/testziliao/mydream.m4a");
+//        mWlPlayer_.prepare("/sdcard/testziliao/the_girl.m4a");
 //        mWlPlayer_.prepared("/sdcard/testziliao/fcrs.1080p.mp4");
 //        mWlPlayer_.prepared("/sdcard/testziliao/biterate9.mp4");
 //        mWlPlayer_.prepared("/sdcard/testziliao/biterate9noB.mp4");
 //        wmWlPlayer_.prepared("/sdcard/testziliao/chuqiaozhuan1.mp4");
 //        mWlPlayer_.prepared("/sdcard/testziliao/first-love-wangxinling.ape");
 //        mWlPlayer_.prepared("http://ngcdn004.cnr.cn/live/dszs/index.m3u8");
-//        mWlPlayer_.prepared("/sdcard/testziliao/yongqi-liangjingru.m4a");
-        mWlPlayer_.prepare("/sdcard/testziliao/hanleiVideo.mp4");
+//            mWlPlayer_.prepare("/sdcard/testziliao/yongqi-liangjingru.m4a");
+
+//        mWlPlayer_.prepare("/sdcard/testziliao/the_girl.m4a");
+//        mWlPlayer_.prepare("/sdcard/testziliao/hanleiVideo.mp4");
+//        mWlPlayer_.prepare("/sdcard/testziliao/h265Video720p_no_b.mp4");
+//        mWlPlayer_.prepare("/sdcard/testziliao/h265Video720p.mp4");
+        mWlPlayer_.prepare("/sdcard/testziliao/h265Video720p-na.mp4");
+//        mWlPlayer_.prepare("/sdcard/testziliao/demo_video.mp4");
+//        mWlPlayer_.prepare("/sdcard/testziliao/demo_video_no_b.mp4");
     }
 
     /**
@@ -257,10 +267,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * 固定seek 每次20s
+     * 固定seek 每次5s
      */
     public void seek(View view) {
-        mWlPlayer_.seek(20);
+        mWlPlayer_.seek(5);
     }
 
     /**

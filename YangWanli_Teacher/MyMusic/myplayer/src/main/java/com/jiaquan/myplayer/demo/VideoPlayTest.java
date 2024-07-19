@@ -9,94 +9,94 @@ import android.view.Surface;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-/*
- * 开启一个线程，执行视频文件的码流提取及硬件解码，
- * 只是测试流程，不进行画面渲染操作，并统计了平均解码耗时
- * 这里是使用MediaExtractor提取视频码流数据，只能针对视频文件
- * */
+/**
+ * 使用MediaExtractor提取视频文件中的码流数据，
+ * 使用MediaCodec解码视频数据，使用Surface显示解码后的视频数据
+ */
 public class VideoPlayTest extends Thread {
     private final String TAG = VideoPlayTest.class.getSimpleName();
 
-    private MediaExtractor extractor = null;
-    private MediaCodec decoder = null;
-    private long totalTime = 0;
-    private int frameCount = 0;
-    private Surface surface = null;
-    private MediaFormat mVideoFormat = null;
-    private String mMine = null;
+    private MediaExtractor mExtractor_ = null;
+    private MediaCodec mVideoDecoder_ = null;
+    private long mTotalTime_ = 0;
+    private int mFrameCount_ = 0;
+    private Surface mSurface_ = null;
+    private MediaFormat mVideoFormat_ = null;
+    private String mMine_ = null;
 
     public VideoPlayTest() {
-        extractor = new MediaExtractor();
+        mExtractor_ = new MediaExtractor();
         try {
-            extractor.setDataSource("/sdcard/testziliao/hanleiVideo.mp4");
+            mExtractor_.setDataSource("/sdcard/testziliao/hanleiVideo.mp4");
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        for (int i = 0; i < extractor.getTrackCount(); i++) {
-            MediaFormat format = extractor.getTrackFormat(i);
+        for (int i = 0; i < mExtractor_.getTrackCount(); i++) {
+            MediaFormat format = mExtractor_.getTrackFormat(i);
             String mime = format.getString(MediaFormat.KEY_MIME);
             Log.i(TAG, "mime is " + mime);
             if (mime.startsWith("video/")) {
-                extractor.selectTrack(i);
-                mVideoFormat = format;
-                mMine = mime;
+                mExtractor_.selectTrack(i);
+                mVideoFormat_ = format;
+                mMine_ = mime;
                 break;
             }
         }
     }
 
     public void setSurface(Surface s) {
-        surface = s;
+        mSurface_ = s;
     }
 
     public int getWidth() {
-        return mVideoFormat.getInteger(MediaFormat.KEY_WIDTH);
+        return mVideoFormat_.getInteger(MediaFormat.KEY_WIDTH);
     }
+
     public int getHeight() {
-        return mVideoFormat.getInteger(MediaFormat.KEY_HEIGHT);
+        return mVideoFormat_.getInteger(MediaFormat.KEY_HEIGHT);
     }
 
     @Override
     public void run() {
         try {
-            decoder = MediaCodec.createDecoderByType(mMine);
+            mVideoDecoder_ = MediaCodec.createDecoderByType(mMine_);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        if (decoder == null) {
+        if (mVideoDecoder_ == null) {
             return;
         }
 
-        decoder.configure(mVideoFormat, surface, null, 0);
-        decoder.start();
+        mVideoDecoder_.configure(mVideoFormat_, mSurface_, null, 0);
+        mVideoDecoder_.start();
 
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
         boolean isEOS = false;
         long startMs = System.currentTimeMillis();
         while (!Thread.interrupted()) {
             if (!isEOS) {
-                int inIndex = decoder.dequeueInputBuffer(10000);
+                int inIndex = mVideoDecoder_.dequeueInputBuffer(10000);
                 if (inIndex >= 0) {
                     ByteBuffer buffer = null;
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                        buffer = decoder.getInputBuffer(inIndex);
+                        buffer = mVideoDecoder_.getInputBuffer(inIndex);
                     }
-                    int sampleSize = extractor.readSampleData(buffer, 0);
+                    int sampleSize = mExtractor_.readSampleData(buffer, 0);
                     Log.i(TAG, "sampleSize is: " + sampleSize);
                     if (sampleSize <= 0) {
-                        decoder.queueInputBuffer(inIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                        mVideoDecoder_.queueInputBuffer(inIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                         isEOS = true;
+                        Log.i(TAG, "the end of the stream");
                     } else {
-                        decoder.queueInputBuffer(inIndex, 0, sampleSize, extractor.getSampleTime(), 0);
-                        extractor.advance();
+                        mVideoDecoder_.queueInputBuffer(inIndex, 0, sampleSize, mExtractor_.getSampleTime(), 0);
+                        mExtractor_.advance();
                     }
                 }
             }
 
-            int outIndex = decoder.dequeueOutputBuffer(info, 10000);
-//            Log.i(TAG, "outIndex: " + outIndex);
+            int outIndex = mVideoDecoder_.dequeueOutputBuffer(info, 10000);
             switch (outIndex) {
                 case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
                     break;
@@ -107,21 +107,22 @@ public class VideoPlayTest extends Thread {
                 default:
                     long decodeTime = System.currentTimeMillis() - startMs;
                     startMs = System.currentTimeMillis();
-                    frameCount++;
-                    totalTime += decodeTime;
-                    decoder.releaseOutputBuffer(outIndex, true);
+                    mFrameCount_++;
+                    mTotalTime_ += decodeTime;
+                    mVideoDecoder_.releaseOutputBuffer(outIndex, true);
                     break;
             }
 
             if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                Log.i(TAG, "the MediaCodec is all finished");
                 break;
             }
         }
 
-        decoder.stop();
-        decoder.release();
-        extractor.release();
-        Log.i(TAG, "All the Frames: " + frameCount + " Average decode time per frame: " + (totalTime / frameCount) + "ms");
+        mVideoDecoder_.stop();
+        mVideoDecoder_.release();
+        mExtractor_.release();
+        Log.i(TAG, "All the Frames: " + mFrameCount_ + " Average decode time per frame: " + (mTotalTime_ / mFrameCount_) + "ms");
     }
 }
 

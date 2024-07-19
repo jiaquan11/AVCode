@@ -18,12 +18,10 @@ import java.io.FileInputStream;
 
 @RequiresApi(api = VERSION_CODES.M)
 public class YUVPlayer extends AppCompatActivity {
-    private WlSurfaceView wlSurfaceView = null;
-    private NativeOpengl nativeOpengl = null;
-
-    private boolean isExit = false;
-
-    private FileInputStream fis = null;
+    private WlSurfaceView mWLSurfaceView_ = null;
+    private NativeOpengl mNativeOpengl_ = null;
+    private boolean mIsExit_ = false;
+    private FileInputStream mFileInputStream_ = null;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -33,19 +31,18 @@ public class YUVPlayer extends AppCompatActivity {
         // 要申请的权限
         String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE,
                 Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.CHANGE_NETWORK_STATE};
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissions(permissions, 321);
         }
 
-        wlSurfaceView = findViewById(R.id.wlSurfaceview);
-        nativeOpengl = new NativeOpengl();
-        wlSurfaceView.setNativeOpengl(nativeOpengl);
+        mWLSurfaceView_ = findViewById(R.id.wlSurfaceview);
+        mNativeOpengl_ = new NativeOpengl();
+        mWLSurfaceView_.setNativeOpengl(mNativeOpengl_);
     }
 
     public void play(View view) {
-        if (!isExit) {
-            isExit = false;
+        if (!mIsExit_) {
+            mIsExit_ = false;
 
             //创建一个子线程进行yuv数据的读取和渲染
             new Thread(new Runnable() {
@@ -55,25 +52,25 @@ public class YUVPlayer extends AppCompatActivity {
                     int h = 1280;
 
                     try {
-                        fis = new FileInputStream(new File("/sdcard/testziliao/biterate9.yuv"));
+                        mFileInputStream_ = new FileInputStream(new File("/sdcard/testziliao/biterate9.yuv"));
 
                         byte[] y = new byte[w * h];
                         byte[] u = new byte[w * h / 4];
                         byte[] v = new byte[w * h / 4];
 
                         while (true) {
-                            if (isExit) {
+                            if (mIsExit_) {
                                 break;
                             }
 
-                            int ysize = fis.read(y);
-                            int usize = fis.read(u);
-                            int vsize = fis.read(v);
+                            int ysize = mFileInputStream_.read(y);
+                            int usize = mFileInputStream_.read(u);
+                            int vsize = mFileInputStream_.read(v);
                             if ((ysize > 0) && (usize > 0) && (vsize > 0)) {
-                                nativeOpengl.setYuvData(y, u, v, w, h);
+                                mNativeOpengl_.setYuvData(y, u, v, w, h);
                                 Thread.sleep(40);
                             } else {
-                                isExit = true;
+                                mIsExit_ = true;
                             }
                         }
                     } catch (Exception e) {
@@ -85,6 +82,6 @@ public class YUVPlayer extends AppCompatActivity {
     }
 
     public void stop(View view) {
-        isExit = true;
+        mIsExit_ = true;
     }
 }

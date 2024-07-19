@@ -14,7 +14,7 @@ import com.jiaquan.myplayer.demo.VideoPlayTest;
 import com.jiaquan.myplayer.opengl.WLGLSurfaceView;
 import com.jiaquan.myplayer.opengl.WLRender;
 
-/*
+/**
  * 这个页面仅仅用于测试，测试视频播放渲染相关操作
  * 这里使用的是GLSurfaceView控件，使用GLSurfaceView的render线程，同时
  * 使用opengl创建一个OES纹理，并生成surface,配置给硬件解码器，然后更新surface使用openg进行绘制,
@@ -22,11 +22,11 @@ import com.jiaquan.myplayer.opengl.WLRender;
  * 下面操作用例包括两个：
  * 1.使用MediaExtrator提取视频文件码流，丢给解码器
  * 2.使用视频裸流文件，直接读取并丢给解码器
- * */
+ */
 public class VideoTestActivity extends AppCompatActivity {
-    private WLGLSurfaceView wlglSurfaceView = null;
-    private VideoPlayTest videoPlayTest = null;
-    private VideoDataPlayTest videoDataPlayTest = null;
+    private WLGLSurfaceView mWLglSurfaceView_ = null;
+    private VideoPlayTest mVideoPlayTest_ = null;
+    private VideoDataPlayTest mVideoDataPlayTest_ = null;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -39,25 +39,25 @@ public class VideoTestActivity extends AppCompatActivity {
             requestPermissions(permissions, 321);
         }
 
-//        videoPlayTest = new VideoPlayTest();
-        videoDataPlayTest = new VideoDataPlayTest(this);
+//        mVideoPlayTest_ = new VideoPlayTest();
+        mVideoDataPlayTest_ = new VideoDataPlayTest(this);
 
-        wlglSurfaceView = findViewById(R.id.WlglSurfaceView);
-        wlglSurfaceView.getWlRender().setOnSurfaceCreateListener(new WLRender.OnSurfaceCreateListener() {
+        mWLglSurfaceView_ = findViewById(R.id.WlglSurfaceView);
+        mWLglSurfaceView_.getWlRender().setOnSurfaceCreateListener(new WLRender.OnSurfaceCreateListener() {
             @Override
             public void onSurfaceCreate(Surface surface) {
-//                videoPlayTest.setSurface(surface);
-                videoDataPlayTest.setSurface(surface);
+//                mVideoPlayTest_.setSurface(surface);
+                mVideoDataPlayTest_.setSurface(surface);
             }
         });
 
-        wlglSurfaceView.getWlRender().setRenderType(WLRender.RENDER_MEDIACODEC);
-//        wlglSurfaceView.getWlRender().setVideoSize(videoPlayTest.getWidth(), videoPlayTest.getHeight());
-        wlglSurfaceView.getWlRender().setVideoSize(videoDataPlayTest.getWidth(), videoDataPlayTest.getHeight());
+        mWLglSurfaceView_.getWlRender().setRenderType(WLRender.RENDER_MEDIACODEC);
+//        mWLglSurfaceView_.getWlRender().setVideoSize(mVideoPlayTest_.getWidth(), mVideoPlayTest_.getHeight());
+        mWLglSurfaceView_.getWlRender().setVideoSize(mVideoDataPlayTest_.getWidth(), mVideoDataPlayTest_.getHeight());
     }
 
     public void play(View view) {
-//        videoPlayTest.start();
-        videoDataPlayTest.start();
+//        mVideoPlayTest_.start();
+        mVideoDataPlayTest_.start();
     }
 }

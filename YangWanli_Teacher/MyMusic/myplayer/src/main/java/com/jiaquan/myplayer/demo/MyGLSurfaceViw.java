@@ -11,7 +11,8 @@ import javax.microedition.khronos.opengles.GL10;
 
 public class MyGLSurfaceViw extends GLSurfaceView implements GLSurfaceView.Renderer{
     private static final String TAG = MyGLSurfaceViw.class.getSimpleName();
-    private Surface surface = null;
+
+    private Surface mSurface_ = null;
 
     public MyGLSurfaceViw(Context context) {
         this(context, null);
@@ -23,27 +24,24 @@ public class MyGLSurfaceViw extends GLSurfaceView implements GLSurfaceView.Rende
         setEGLContextClientVersion(2);//设置EGL上下文的版本号
         setRenderer(this);
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-
-//        surface = getHolder().getSurface();
-        Log.i(TAG, "MyGLSurfaceViw construct surface: " + surface);
     }
 
-    private OnSurfaceListener onSurfaceListener = null;
+    private OnSurfaceListener mOnSurfaceListener_ = null;
     public interface OnSurfaceListener {
         void init(Surface surface);
     }
     public void setOnSurfaceListener(OnSurfaceListener onSurfaceListener) {
-        this.onSurfaceListener = onSurfaceListener;
+        mOnSurfaceListener_ = onSurfaceListener;
     }
 
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        if (surface == null) {
-            surface = getHolder().getSurface();
-            if (onSurfaceListener != null) {
-                Log.i(TAG, "onSurfaceCreated surface is " + surface);
-                onSurfaceListener.init(surface);
+        if (mSurface_ == null) {
+            mSurface_ = getHolder().getSurface();
+            if (mOnSurfaceListener_ != null) {
+                Log.i(TAG, "onSurfaceCreated surface is " + mSurface_);
+                mOnSurfaceListener_.init(mSurface_);
             }
         }
     }

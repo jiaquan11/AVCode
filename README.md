@@ -29,8 +29,11 @@ FFmpeg+OpenGL ES+OpenSL ES打造Android视频播放器教程，该课程基于C+
 
 四、NativeOpenGLDemo项目(Android C++ OpenGL 教程)
 掌握Android中OpenGL的原理,学会Android中NDK开发流程,能用OpenGL渲染视频画面,学会OpenGL 中矩阵操作、投影等
-用纯C++实现Android的OpenGL渲染功能，包括EGL环境创建、EGL线程创建、OpenGL生命周期管理等，会结合SurfaceView和TextureView实现OpenGL的渲染，
-最终我们会实现一个YUV播放器实例，为音视频开发打下坚实的基础。
+用纯C++实现Android的OpenGL渲染功能，包括EGL环境创建、EGL线程创建、OpenGL生命周期管理等，
+会结合SurfaceView和TextureView实现OpenGL的渲染，最终我们会实现一个YUV播放器实例，为音视频开发打下坚实的基础。
+问题点汇总处理
+问题1：
+
 
 五、OpenGLDemo项目
 使用GLSurfaceView组件进行opengl绘制的demo
