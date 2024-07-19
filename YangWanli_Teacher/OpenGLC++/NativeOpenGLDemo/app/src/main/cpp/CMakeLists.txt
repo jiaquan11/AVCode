@@ -5,13 +5,13 @@ project("nativeopengldemo")
 add_library(native-lib
             SHARED
             native-lib.cpp
-            egl/EglHelper.cpp
-            egl/EglThread.cpp
-            opengl/BaseOpengl.cpp
+            egl/egl_helper.cpp
+            egl/egl_thread.cpp
+            opengl/base_opengl.cpp
             opengl/opengl.cpp
-            opengl/FilterOne.cpp
-            opengl/FilterTwo.cpp
-            opengl/FilterYUV.cpp
+            opengl/filter_one.cpp
+            opengl/filter_two.cpp
+            opengl/filter_yuv.cpp
         )
 
 include_directories(${CMAKE_SOURCE_DIR}/log/)

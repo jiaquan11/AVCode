@@ -20,17 +20,16 @@ import java.io.FileInputStream;
 public class YUVPlayer extends AppCompatActivity {
     private WlSurfaceView mWLSurfaceView_ = null;
     private NativeOpengl mNativeOpengl_ = null;
-    private boolean mIsExit_ = false;
+    private boolean mIsExit_ = true;
     private FileInputStream mFileInputStream_ = null;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_yuvplayer);
-
         // 要申请的权限
         String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.CHANGE_NETWORK_STATE};
+                                Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.CHANGE_NETWORK_STATE};
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissions(permissions, 321);
         }
@@ -38,31 +37,33 @@ public class YUVPlayer extends AppCompatActivity {
         mWLSurfaceView_ = findViewById(R.id.wlSurfaceview);
         mNativeOpengl_ = new NativeOpengl();
         mWLSurfaceView_.setNativeOpengl(mNativeOpengl_);
+        mWLSurfaceView_.setOnSurfaceListener(new WlSurfaceView.OnSurfaceListener() {
+            @Override
+            public void init() {
+                mIsExit_ = false;
+            }
+        });
     }
 
     public void play(View view) {
         if (!mIsExit_) {
-            mIsExit_ = false;
-
-            //创建一个子线程进行yuv数据的读取和渲染
+            /**
+             * 读取yuv数据
+             */
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     int w = 720;
                     int h = 1280;
-
                     try {
                         mFileInputStream_ = new FileInputStream(new File("/sdcard/testziliao/biterate9.yuv"));
-
                         byte[] y = new byte[w * h];
                         byte[] u = new byte[w * h / 4];
                         byte[] v = new byte[w * h / 4];
-
                         while (true) {
                             if (mIsExit_) {
                                 break;
                             }
-
                             int ysize = mFileInputStream_.read(y);
                             int usize = mFileInputStream_.read(u);
                             int vsize = mFileInputStream_.read(v);

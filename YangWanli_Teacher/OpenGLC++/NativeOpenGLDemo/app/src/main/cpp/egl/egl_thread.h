@@ -1,12 +1,13 @@
-#ifndef _EGLTHREAD_H_
-#define _EGLTHREAD_H_
+#ifndef EGL_THREAD_H_
+#define EGL_THREAD_H_
 
 #include <EGL/eglplatform.h>
 #include "pthread.h"
 #include "android/native_window.h"
-#include "EglHelper.h"
 #include <unistd.h>
 #include <GLES2/gl2.h>
+
+#include "egl_helper.h"
 
 #define OPENGL_RENDER_AUTO 1
 #define OPENGL_RENDER_HANDLE 2
@@ -79,4 +80,4 @@ public:
     void destroy();
 };
 
-#endif
+#endif //EGL_THREAD_H_

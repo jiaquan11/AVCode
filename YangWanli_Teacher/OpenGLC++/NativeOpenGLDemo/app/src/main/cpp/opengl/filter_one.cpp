@@ -1,19 +1,19 @@
-#include "FilterTwo.h"
+#include "filter_one.h"
 
-FilterTwo::FilterTwo() {
+FilterOne::FilterOne() {
     initMatrix(matrix);//初始化为单位矩阵
 }
 
-FilterTwo::~FilterTwo() {
+FilterOne::~FilterOne() {
 
 }
 
-void FilterTwo::onCreate() {
+void FilterOne::onCreate() {
     vertexStr = GET_STR(
             attribute vec4 v_Position;
             attribute vec2 f_Position;
             varying vec2 ft_Position;
-            uniform mat4 u_Matrix;
+            uniform mat4 u_Matrix;//4*4的矩阵
             void main() {
                 ft_Position = f_Position;
                 gl_Position = v_Position * u_Matrix;//将矩阵与顶点坐标进行相乘，用于图像旋转
@@ -24,13 +24,11 @@ void FilterTwo::onCreate() {
             varying vec2 ft_Position;
             uniform sampler2D sTexture;
             void main() {//texture2D表示GPU将输入得图像纹理像素进行读取，读取到GPU的管线中,最后渲染出来
-                lowp vec4 textureColor = texture2D(sTexture, ft_Position);
-                float gray = textureColor.r * 0.2125 + textureColor.g * 0.7154 + textureColor.b * 0.0721;//将RGB图像转为灰度图
-                gl_FragColor = vec4(gray, gray, gray, textureColor.w);
+                gl_FragColor = texture2D(sTexture, ft_Position);
             });
 
     program = createProgram(vertexStr, fragmentStr, &vShader, &fShader);
-    LOGI("FilterTwo callback_SurfaceCreate GET_STR opengl program: %d", program);
+    LOGI("FilterOne callback_SurfaceCreate GET_STR opengl program: %d", program);
 
     //获取着色器程序中的这个变量a_position，返回一个变量id，用于给这个变量赋值
     vPosition = glGetAttribLocation(program, "v_Position");//顶点坐标变量
@@ -40,25 +38,27 @@ void FilterTwo::onCreate() {
 
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);//绑定纹理
-    LOGI("FilterTwo textureID is %d", textureID);
+    LOGI("FilterOne textureID is %d", textureID);
+    //设置纹理参数
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);//解绑纹理
-    LOGI("FilterTwo::onCreate end");
+    LOGI("FilterOne::onCreate end");
 }
 
-void FilterTwo::onChange(int width, int height) {
-    LOGI("FilterTwo::onChange in");
+//指定屏幕显示界面的宽高
+void FilterOne::onChange(int width, int height) {
+    LOGI("FilterOne::onChange in surface_width:%d surface_height:%d", surface_width, surface_height);
     surface_width = width;
     surface_height = height;
     glViewport(0, 0, width, height);
-    LOGI("FilterTwo::onChange end");
+    LOGI("FilterOne::onChange end");
 }
 
-void FilterTwo::onDraw() {
-    LOGI("FilterTwo::onDraw in");
+void FilterOne::onDraw() {
+    LOGI("FilterOne::onDraw in");
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);//指定刷屏颜色  1:不透明  0：透明
     glClear(GL_COLOR_BUFFER_BIT);//将刷屏颜色进行刷屏，但此时仍然处于后台缓冲中，需要swapBuffers交换到前台界面显示
 
@@ -68,6 +68,7 @@ void FilterTwo::onDraw() {
     glBindTexture(GL_TEXTURE_2D, textureID);
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(sampler, 0);//GL_TEXTURE0表示就是第一层纹理
+
     glUniformMatrix4fv(u_matrix, 1, GL_FALSE, matrix);//给矩阵变量赋值
 
     if (pixels != NULL) {//为后台缓存显存中设置图片数据
@@ -93,48 +94,56 @@ void FilterTwo::onDraw() {
 //    glDrawArrays(GL_TRIANGLES, 0, 6);//绘制四边形
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);//绘制四边形
     glBindTexture(GL_TEXTURE_2D, 0);
-    LOGI("FilterTwo::onDraw end");
+    LOGI("FilterOne::onDraw end");
 }
 
-void FilterTwo::setMatrix(int width, int height) {
-    LOGI("FilterTwo::setMatrix in");
+//正交投影操作
+void FilterOne::setMatrix(int width, int height) {
+    LOGI("FilterOne::setMatrix in");
 //    initMatrix(matrix);
-//这里是矩阵投影操作
-    //屏幕720*1280 图片:517*685
+    //这里是矩阵投影操作   将图片投影到屏幕上
+    //屏幕1080*2000=0.54 图片:517*685=0.75
     float screen_r = 1.0 * width / height;
     float picture_r = 1.0 * w / h;
-    if (screen_r > picture_r) {//图片宽度缩放
+    if (screen_r > picture_r) {//图片宽度缩放，图片高铺满屏幕
         LOGI("pic scale width");
         float r = width / (1.0 * height / h * w);
         LOGI("pic scale width r: %f", r);
         orthoM(-r, r, -1, 1, matrix);
     } else {//图片宽的比率大于屏幕，则宽进行直接覆盖屏幕，而图片高度缩放
         LOGI("pic scale height");
+        /*
+         * 这里解释一下:这里是图片宽高比例大于屏幕宽高比例，则图片的宽进行平铺屏幕，图片高需要进行缩放。
+         * 为了正常显示图片，需要进行等比例缩放图片，所以根据图片的宽高等比例  图片宽/图片高=屏幕宽/图片需要占用屏幕的新高度，
+         * 通过这里计算就得到：图片需要占用屏幕的新高度，也即下面的(1.0 * width / w * h)，同时为了显示缩放，需要用
+         * 原屏幕实际高/图片需要占用屏幕的新高度，这里得到的比例值是大于1的，通过这个比例值映射到屏幕(-1,1)范围内，则会出现一个
+         * 实际的缩放的效果
+         * */
         float r = height / (1.0 * width / w * h);
         LOGI("pic scale height r: %f", r);
         orthoM(-1, 1, -r, r, matrix);
     }
-    LOGI("FilterTwo::setMatrix end");
+    LOGI("FilterOne::setMatrix end");
 }
 
-void FilterTwo::setPixel(void *data, int width, int height) {
-    LOGI("FilterTwo::setPixel in");
-    w = width;
-    h = height;
+void FilterOne::setPixel(void *data, int width, int height) {
+    LOGI("FilterOne::setPixel in");
+    w = width;//图片宽
+    h = height;//图片高
     pixels = data;
     if ((surface_width > 0) && (surface_height > 0)) {
         setMatrix(surface_width, surface_height);
     }
-    LOGI("FilterTwo::setPixel end");
+    LOGI("FilterOne::setPixel end");
 }
 
-void FilterTwo::destroySource() {
+void FilterOne::destroySource() {
     if (pixels != NULL) {
         pixels = NULL;
     }
 }
 
-void FilterTwo::destroy() {
+void FilterOne::destroy() {
     glDeleteTextures(1, &textureID);
     glDetachShader(program, vShader);
     glDetachShader(program, fShader);
@@ -142,5 +151,3 @@ void FilterTwo::destroy() {
     glDeleteShader(fShader);
     glDeleteProgram(program);
 }
-
-

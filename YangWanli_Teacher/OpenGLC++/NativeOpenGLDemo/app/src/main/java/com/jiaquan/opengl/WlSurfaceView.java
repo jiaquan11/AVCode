@@ -45,7 +45,9 @@ public class WlSurfaceView extends SurfaceView implements SurfaceHolder.Callback
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         if (mNativeOpengl_ != null) {
             mNativeOpengl_.nativeSurfaceChange(width, height);
-            //底层EGL环境已经全部搭建好，通知上层进行渲染
+            /**
+             * EGL环境已创建好,通知上层进行渲染
+             */
             if (mOnSurfaceListener_ != null) {
                 mOnSurfaceListener_.init();
             }

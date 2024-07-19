@@ -1,7 +1,7 @@
 #ifndef _FILTERONE_H_
 #define _FILTERONE_H_
 
-#include "BaseOpengl.h"
+#include "base_opengl.h"
 
 /*
  * 绘制纹理

@@ -1,4 +1,4 @@
-#include "EglThread.h"
+#include "egl_thread.h"
 
 EglThread::EglThread() {
     pthread_mutex_init(&pthread_mutex, NULL);
@@ -14,7 +14,7 @@ void *eglThreadImpl(void *context) {
     EglThread *eglThread = static_cast<EglThread *>(context);
     if (eglThread != NULL) {
         EglHelper *eglHelper = new EglHelper();
-        eglHelper->initEgl(eglThread->nativeWindow);
+        eglHelper->InitEgl(eglThread->nativeWindow);
         eglThread->isExit = false;
 
         while (true) {
@@ -44,7 +44,7 @@ void *eglThreadImpl(void *context) {
 
                 eglThread->onDraw(eglThread->onDrawCtx);
 
-                eglHelper->swapBuffers();
+                eglHelper->SwapBuffers();
                 LOGI("swapBuffers");
             }
 
@@ -60,7 +60,7 @@ void *eglThreadImpl(void *context) {
 
             if (eglThread->isExit) {
                 eglThread->onDestroy(eglThread->onDestroyCtx);
-                eglHelper->destroyEgl();
+                eglHelper->DestroyEgl();
                 delete eglHelper;
                 break;
             }

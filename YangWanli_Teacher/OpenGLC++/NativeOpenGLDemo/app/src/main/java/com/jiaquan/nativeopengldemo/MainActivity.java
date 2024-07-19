@@ -17,7 +17,6 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     private WlSurfaceView mWLSurfaceView_ = null;
     private NativeOpengl mNativeOpengl_ = null;
-    private byte[] mPixelsBuffer_ = null;
     private List<Integer> mImgList_ = new ArrayList<>();
     private int mIndex_ = -1;
 
@@ -64,11 +63,11 @@ public class MainActivity extends AppCompatActivity {
      */
     private void _readPixels() {
         final Bitmap bitmap = BitmapFactory.decodeResource(getResources(), _getImageIds());
-        ByteBuffer fcbuffer = ByteBuffer.allocate(bitmap.getHeight() * bitmap.getWidth() * 4);
-        bitmap.copyPixelsToBuffer(fcbuffer);
-        fcbuffer.flip();
-        mPixelsBuffer_ = fcbuffer.array();//转换为字节数组
-        mNativeOpengl_.nativeSetImgData(bitmap.getWidth(), bitmap.getHeight(), mPixelsBuffer_.length, mPixelsBuffer_);
+        ByteBuffer bmpBuffer = ByteBuffer.allocate(bitmap.getHeight() * bitmap.getWidth() * 4);
+        bitmap.copyPixelsToBuffer(bmpBuffer);
+        bmpBuffer.flip();
+        byte[] pixelsBuffer = bmpBuffer.array();
+        mNativeOpengl_.nativeSetImgData(bitmap.getWidth(), bitmap.getHeight(), pixelsBuffer.length, pixelsBuffer);
     }
 
     /**

@@ -1,7 +1,7 @@
-#ifndef _FILTERYUV_H_
-#define _FILTERYUV_H_
+#ifndef FILTER_YUV_H_
+#define FILTER_YUV_H_
 
-#include "BaseOpengl.h"
+#include "base_opengl.h"
 
 /*
  * 绘制YUV图像
@@ -48,4 +48,4 @@ public:
     int yuv_height = 0;
 };
 
-#endif
+#endif //FILTER_YUV_H_

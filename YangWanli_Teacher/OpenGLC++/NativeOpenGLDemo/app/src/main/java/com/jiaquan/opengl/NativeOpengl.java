@@ -19,6 +19,4 @@ public class NativeOpengl {
     public native void nativeSetImgData(int width, int height, int size, byte[] imageData);
 
     public native void nativeSetYuvData(int width, int height, byte[] yData, byte[] uData, byte[] vData);
-
-
 }

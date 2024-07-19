@@ -75,6 +75,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
         LOGE("class not found. %s", kClassPathName);
         return -1;
     }
+
     if (env->RegisterNatives(clazz, gMethods, sizeof(gMethods) / sizeof(gMethods[0])) < 0) {
         LOGE("RegisterNatives failed!");
         return -1;

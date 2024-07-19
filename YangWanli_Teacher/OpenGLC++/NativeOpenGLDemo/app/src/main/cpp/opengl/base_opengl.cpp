@@ -1,4 +1,4 @@
-#include "BaseOpengl.h"
+#include "base_opengl.h"
 
 BaseOpengl::BaseOpengl() {//顶点坐标，原点在中间，范围-1-1
     vertexs = new float[8];

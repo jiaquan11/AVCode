@@ -1,27 +1,27 @@
-#include "EglHelper.h"
+#include "egl_helper.h"
 
 EglHelper::EglHelper() {
-    mEglDisplay = EGL_NO_DISPLAY;
-    mEglSurface = EGL_NO_SURFACE;
-    mEglContext = EGL_NO_CONTEXT;
-    mEglConfig = NULL;
+    m_egl_display_ = EGL_NO_DISPLAY;
+    m_egl_surface_ = EGL_NO_SURFACE;
+    m_egl_config_ = NULL;
+    m_egl_context_ = EGL_NO_CONTEXT;
 }
 
 EglHelper::~EglHelper() {
 
 }
 
-int EglHelper::initEgl(EGLNativeWindowType window) {
+int EglHelper::InitEgl(EGLNativeWindowType window) {
     //1.得到默认的显示设备
-    mEglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-    if (mEglDisplay == EGL_NO_DISPLAY) {
+    m_egl_display_ = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    if (m_egl_display_ == EGL_NO_DISPLAY) {
         LOGE("eglGetDisplay error");
         return -1;
     }
 
     //2.初始化默认的显示设备，可以获取得到设备的版本号
     EGLint *version = new EGLint[2];
-    if (!eglInitialize(mEglDisplay, &version[0], &version[1])) {
+    if (!eglInitialize(m_egl_display_, &version[0], &version[1])) {
         LOGE("eglInitialize error");
         return -1;
     }
@@ -40,13 +40,13 @@ int EglHelper::initEgl(EGLNativeWindowType window) {
     };
     EGLint num_config;
     //查询最优config
-    if (!eglChooseConfig(mEglDisplay, attribs, NULL, 1, &num_config)) {
+    if (!eglChooseConfig(m_egl_display_, attribs, NULL, 1, &num_config)) {
         LOGE("eglChooseConfig error");
         return -1;
     }
 
     //4 以上已查询到config,现直接保存到mEglConfig中
-    if (!eglChooseConfig(mEglDisplay, attribs, &mEglConfig, num_config, &num_config)) {
+    if (!eglChooseConfig(m_egl_display_, attribs, &m_egl_config_, num_config, &num_config)) {
         LOGE("eglChooseConfig error22");
         return -1;
     }
@@ -56,22 +56,22 @@ int EglHelper::initEgl(EGLNativeWindowType window) {
             EGL_CONTEXT_CLIENT_VERSION, 2,
             EGL_NONE
     };
-    mEglContext = eglCreateContext(mEglDisplay, mEglConfig, EGL_NO_CONTEXT, attrib_list);
-    if (mEglContext == EGL_NO_CONTEXT) {
+    m_egl_context_ = eglCreateContext(m_egl_display_, m_egl_config_, EGL_NO_CONTEXT, attrib_list);
+    if (m_egl_context_ == EGL_NO_CONTEXT) {
         LOGE("eglCreateContext error");
         return -1;
     }
 
     //6.创建渲染的Surface   window:Android传递下来的SurfaceView的窗口，用于显示
     //而mEglSurface是后台缓存
-    mEglSurface = eglCreateWindowSurface(mEglDisplay, mEglConfig, window, NULL);
-    if (mEglSurface == EGL_NO_SURFACE) {
+    m_egl_surface_ = eglCreateWindowSurface(m_egl_display_, m_egl_config_, window, NULL);
+    if (m_egl_surface_ == EGL_NO_SURFACE) {
         LOGE("eglCreateWindowSurface error");
         return -1;
     }
 
     //7.绑定EglContext和Surface到显示设备中   显示上下文和显示界面绑定到显示设备中
-    if (!eglMakeCurrent(mEglDisplay, mEglSurface, mEglSurface, mEglContext)) {
+    if (!eglMakeCurrent(m_egl_display_, m_egl_surface_, m_egl_surface_, m_egl_context_)) {
         LOGE("eglMakeCurrent error");
         return -1;
     }
@@ -79,11 +79,11 @@ int EglHelper::initEgl(EGLNativeWindowType window) {
     return 0;
 }
 
-int EglHelper::swapBuffers() {
-    if ((mEglDisplay != EGL_NO_DISPLAY) && (mEglSurface != EGL_NO_SURFACE)) {
+int EglHelper::SwapBuffers() {
+    if ((m_egl_display_ != EGL_NO_DISPLAY) && (m_egl_surface_ != EGL_NO_SURFACE)) {
         //刷新数据，显示渲染场景
         //从后台缓冲mEglSurface将数据渲染到前台显示设备中
-        if (!eglSwapBuffers(mEglDisplay, mEglSurface)) {
+        if (!eglSwapBuffers(m_egl_display_, m_egl_surface_)) {
             LOGE("eglSwapBuffers error");
             return -1;
         }
@@ -91,20 +91,20 @@ int EglHelper::swapBuffers() {
     return 0;
 }
 
-void EglHelper::destroyEgl() {
-    if (mEglDisplay != EGL_NO_DISPLAY) {
-        eglMakeCurrent(mEglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+void EglHelper::DestroyEgl() {
+    if (m_egl_display_ != EGL_NO_DISPLAY) {
+        eglMakeCurrent(m_egl_display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     }
-    if ((mEglDisplay != EGL_NO_DISPLAY) && (mEglSurface != EGL_NO_SURFACE)) {
-        eglDestroySurface(mEglDisplay, mEglSurface);
-        mEglSurface = EGL_NO_SURFACE;
+    if ((m_egl_display_ != EGL_NO_DISPLAY) && (m_egl_surface_ != EGL_NO_SURFACE)) {
+        eglDestroySurface(m_egl_display_, m_egl_surface_);
+        m_egl_surface_ = EGL_NO_SURFACE;
     }
-    if ((mEglDisplay != EGL_NO_DISPLAY) && (mEglContext != EGL_NO_CONTEXT)) {
-        eglDestroyContext(mEglDisplay, mEglContext);
-        mEglContext = EGL_NO_CONTEXT;
+    if ((m_egl_display_ != EGL_NO_DISPLAY) && (m_egl_context_ != EGL_NO_CONTEXT)) {
+        eglDestroyContext(m_egl_display_, m_egl_context_);
+        m_egl_context_ = EGL_NO_CONTEXT;
     }
-    if (mEglDisplay != EGL_NO_DISPLAY) {
-        eglTerminate(mEglDisplay);
-        mEglDisplay = EGL_NO_DISPLAY;
+    if (m_egl_display_ != EGL_NO_DISPLAY) {
+        eglTerminate(m_egl_display_);
+        m_egl_display_ = EGL_NO_DISPLAY;
     }
 }

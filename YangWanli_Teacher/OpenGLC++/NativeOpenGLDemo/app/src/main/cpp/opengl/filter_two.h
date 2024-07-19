@@ -1,7 +1,7 @@
 #ifndef _FILTERTWO_H_
 #define _FILTERTWO_H_
 
-#include "BaseOpengl.h"
+#include "base_opengl.h"
 
 /*
  * 切换滤镜操作
