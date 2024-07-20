@@ -1,13 +1,13 @@
-#ifndef _BASEOPENGL_H_
-#define _BASEOPENGL_H_
+#ifndef BASE_OPENGL_H_
+#define BASE_OPENGL_H_
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "GLES2/gl2.h"
 #include "../log/android_log.h"
-#include "../matrix/MatrixUtil.h"
-#include "../shaderutil/shaderUtil.h"
+#include "../matrix/matrix_util.h"
+#include "../shaderutil/shader_util.h"
 
 #define GET_STR(x) #x
 
@@ -18,19 +18,19 @@ public:
     ~BaseOpengl();
 
 public:
-    virtual void onCreate();
+    virtual void OnCreate();
 
-    virtual void onChange(int w, int h);
+    virtual void OnChange(int w, int h);
 
-    virtual void onDraw();
+    virtual void OnDraw();
 
-    virtual void setPixel(void *data, int width, int height);
+    virtual void SetImagePixel(int image_width, int image_height, void *data);
 
-    virtual void setYuvData(void *y, void *u, void *v, int width, int height);
+    virtual void SetYuvData(int width, int height, void *y, void *u, void *v);
 
-    virtual void destroySource();
+    virtual void DestroySource();
 
-    virtual void destroy();
+    virtual void Destroy();
 
 public:
     int surface_width = 0;//屏幕宽
@@ -47,4 +47,4 @@ public:
     GLuint fShader = 0;
 };
 
-#endif
+#endif //BASE_OPENGL_H_

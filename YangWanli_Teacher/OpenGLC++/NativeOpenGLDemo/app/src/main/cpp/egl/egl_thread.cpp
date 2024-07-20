@@ -1,67 +1,88 @@
 #include "egl_thread.h"
+#include <stdlib.h>
+#include <errno.h>
 
 EglThread::EglThread() {
-    pthread_mutex_init(&pthread_mutex, NULL);
-    pthread_cond_init(&pthread_cond, NULL);
+    pthread_mutex_init(&m_pthread_mutex, NULL);
+    pthread_cond_init(&m_pthread_cond, NULL);
 }
 
 EglThread::~EglThread() {
-    pthread_mutex_destroy(&pthread_mutex);
-    pthread_cond_destroy(&pthread_cond);
+    pthread_mutex_destroy(&m_pthread_mutex);
+    pthread_cond_destroy(&m_pthread_cond);
 }
 
-void *eglThreadImpl(void *context) {
-    EglThread *eglThread = static_cast<EglThread *>(context);
-    if (eglThread != NULL) {
-        EglHelper *eglHelper = new EglHelper();
-        eglHelper->InitEgl(eglThread->nativeWindow);
-        eglThread->isExit = false;
+void EglThread::SetOnCreateCb(EglThread::OnCreateCb on_create_cb, void *arg) {
+    m_on_create_cb = on_create_cb;
+    m_on_create_arg = arg;
+}
+
+void EglThread::SetOnChangeCb(EglThread::OnChangeCb on_change_cb, void *arg) {
+    m_on_change_cb = on_change_cb;
+    m_on_change_arg = arg;
+}
+
+void EglThread::SetOnDrawCb(OnDrawCb on_draw_cb, void *arg) {
+    m_on_draw_cb = on_draw_cb;
+    m_on_draw_arg = arg;
+}
+
+void EglThread::SetOnChangeFilterCb(EglThread::OnChangeFilterCb on_change_filter_cb, void *arg) {
+    m_on_change_filter_cb = on_change_filter_cb;
+    m_on_change_filter_arg = arg;
+}
+
+void EglThread::SetOnDestroyCb(EglThread::OnDestroyCb on_destroy_cb, void *arg) {
+    m_on_destroy_cb = on_destroy_cb;
+    m_on_destroy_arg = arg;
+}
+
+void EglThread::SetRenderType(int render_type) {
+    m_render_type = render_type;
+}
+
+void *_EglThreadImpl(void *arg) {
+    EglThread *egl_thread = static_cast<EglThread *>(arg);
+    if (egl_thread != NULL) {
+        EglHelper *egl_helper = new EglHelper();
+        egl_helper->InitEgl(egl_thread->m_native_window);
+        egl_thread->m_is_exit = false;
 
         while (true) {
-            if (eglThread->isCreate) {
-                LOGI("eglThread call surface create!");
-                eglThread->isCreate = false;
-                eglThread->onCreate(eglThread->onCreateCtx);//创建opengl绘制程序
+            if (egl_thread->m_is_create) {
+                LOGI("egl_thread call surface create!");
+                egl_thread->m_is_create = false;
+                egl_thread->m_on_create_cb(egl_thread->m_on_create_arg);
             }
 
-            if (eglThread->isChange) {
-                LOGI("eglThread call surface change!");
-                eglThread->isChange = false;
-//                glViewport(0, 0, eglThread->surfaceWidth, eglThread->surfaceHeight);//指定显示窗口大小
-                eglThread->onChange(eglThread->surfaceWidth, eglThread->surfaceHeight, eglThread->onChangeCtx);
-                eglThread->isStart = true;
+            if (egl_thread->m_is_change) {
+                LOGI("egl_thread call surface change!");
+                egl_thread->m_is_change = false;
+                egl_thread->m_on_change_cb(egl_thread->m_surface_width, egl_thread->m_surface_height, egl_thread->m_on_change_arg);
+                egl_thread->m_is_start = true;
             }
 
-            if (eglThread->isChangeFilter) {
-                eglThread->isChangeFilter = false;
-                eglThread->onChangeFilter(eglThread->surfaceWidth, eglThread->surfaceHeight, eglThread->onChangeFilterCtx);
+            if (egl_thread->m_is_change_filter) {
+                egl_thread->m_is_change_filter = false;
+                egl_thread->m_on_change_filter_cb(egl_thread->m_surface_width, egl_thread->m_surface_height, egl_thread->m_on_change_filter_arg);
             }
 
-            //绘制
-            if (eglThread->isStart) {
-//                glClearColor(0.0f, 0.0f, 1.0f, 1.0f);//指定刷屏颜色
-//                glClear(GL_COLOR_BUFFER_BIT);//将刷屏颜色进行刷屏，但此时仍然处于后台缓冲中，需要swapBuffers交换到前台界面显示
-
-                eglThread->onDraw(eglThread->onDrawCtx);
-
-                eglHelper->SwapBuffers();
-                LOGI("swapBuffers");
+            if (egl_thread->m_is_start) {
+                egl_thread->m_on_draw_cb(egl_thread->m_on_draw_arg);
+                egl_helper->SwapBuffers();
             }
 
-            if (eglThread->renderType == OPENGL_RENDER_AUTO) {//自动渲染
+            if (egl_thread->m_render_type == OPENGL_RENDER_AUTO) {//自动渲染
                 usleep(1000000 / 60);//六十分之一秒  每秒60次渲染
             } else {//手动渲染
-                LOGI("before wait");
-                pthread_mutex_lock(&eglThread->pthread_mutex);
-                pthread_cond_wait(&eglThread->pthread_cond, &eglThread->pthread_mutex);
-                pthread_mutex_unlock(&eglThread->pthread_mutex);
-                LOGI("after wait");
+                pthread_mutex_lock(&egl_thread->m_pthread_mutex);
+                pthread_cond_wait(&egl_thread->m_pthread_cond, &egl_thread->m_pthread_mutex);
+                pthread_mutex_unlock(&egl_thread->m_pthread_mutex);
             }
-
-            if (eglThread->isExit) {
-                eglThread->onDestroy(eglThread->onDestroyCtx);
-                eglHelper->DestroyEgl();
-                delete eglHelper;
+            if (egl_thread->m_is_exit) {
+                egl_thread->m_on_destroy_cb(egl_thread->m_on_destroy_arg);
+                egl_helper->DestroyEgl();
+                delete egl_helper;
                 break;
             }
         }
@@ -69,67 +90,62 @@ void *eglThreadImpl(void *context) {
     return 0;
 }
 
-void EglThread::setRenderType(int renderType) {
-    this->renderType = renderType;
-}
-
-//设置的函数指针
-void EglThread::callBackOnCreate(EglThread::OnCreate onCreate, void *ctx) {
-    this->onCreate = onCreate;
-    this->onCreateCtx = ctx;
-}
-
-void EglThread::callBackOnChange(EglThread::OnChange onChange, void *ctx) {
-    this->onChange = onChange;
-    this->onChangeCtx = ctx;
-}
-
-void EglThread::callBackOnDraw(OnDraw onDraw, void *ctx) {
-    this->onDraw = onDraw;
-    this->onDrawCtx = ctx;
-}
-
-void EglThread::callBackOnChangeFilter(EglThread::OnChangeFilter onChangeFilter, void *ctx) {
-    this->onChangeFilter = onChangeFilter;
-    this->onChangeFilterCtx = ctx;
-}
-
-void EglThread::callBackOnDestroy(EglThread::OnDestroy onDestroy, void *ctx) {
-    this->onDestroy = onDestroy;
-    this->onDestroyCtx = ctx;
-}
-
-void EglThread::onSurfaceCreate(EGLNativeWindowType window) {
-    if (pEglThread == -1) {
-        isCreate = true;
-        nativeWindow = window;
-        //创建子线程，在子线程中进行EGL的初始化及渲染
-        pthread_create(&pEglThread, NULL, eglThreadImpl, this);
+void EglThread::OnSurfaceCreate(EGLNativeWindowType window) {
+    if (m_egl_thread_ == -1) {
+        m_is_create = true;
+        m_native_window = window;
+        int ret = pthread_create(&m_egl_thread_, NULL, _EglThreadImpl, this);
+        if (ret != 0) {
+            LOGE("pthread_create m_egl_thread_ error, ret = %d", ret);
+            m_egl_thread_ = -1;
+        }
     }
 }
 
-void EglThread::onSurfaceChange(int width, int height) {
-    isChange = true;
-    surfaceWidth = width;
-    surfaceHeight = height;
-    notifyRender();//主动通知线程可以进行渲染，否则阻塞状态
+void EglThread::OnSurfaceChange(int width, int height) {
+    m_is_change = true;
+    m_surface_width = width;
+    m_surface_height = height;
+    NotifyRender();
 }
 
-void EglThread::onSurfaceChangeFilter() {
-    isChangeFilter = true;
-    notifyRender();
+void EglThread::OnSurfaceDestroy() {
+    m_is_exit = true;
+    NotifyRender();
+
+    void *thread_ret;
+    int result = pthread_join(m_egl_thread_, &thread_ret);
+    LOGI("m_egl_thread_ join result: %d", result);
+    if (result != 0) {
+        switch (result) {
+            case ESRCH:
+                LOGE("m_egl_thread_ pthread_join failed: Thread not found (ESRCH)");
+                break;
+            case EINVAL:
+                LOGE("m_egl_thread_ pthread_join failed: Invalid thread or thread already detached (EINVAL)");
+                break;
+            case EDEADLK:
+                LOGE("m_egl_thread_ pthread_join failed: Deadlock detected (EDEADLK)");
+                break;
+            default:
+                LOGE("m_egl_thread_ pthread_join failed: Unknown error (%d)", result);
+        }
+        // Exit or perform additional actions if needed
+        exit(EXIT_FAILURE);
+    } else {
+        LOGI("m_egl_thread_ Thread returned: %ld", (long)thread_ret);
+    }
+    m_native_window = NULL;
+    m_egl_thread_ = -1;
 }
 
-void EglThread::notifyRender() {
-    pthread_mutex_lock(&pthread_mutex);
-    pthread_cond_signal(&pthread_cond);
-    pthread_mutex_unlock(&pthread_mutex);
+void EglThread::OnSurfaceChangeFilter() {
+    m_is_change_filter = true;
+    NotifyRender();
 }
 
-void EglThread::destroy() {
-    isExit = true;
-    notifyRender();
-    pthread_join(pEglThread, NULL);//等待子线程结束
-    nativeWindow = NULL;
-    pEglThread = -1;
+void EglThread::NotifyRender() {
+    pthread_mutex_lock(&m_pthread_mutex);
+    pthread_cond_signal(&m_pthread_cond);
+    pthread_mutex_unlock(&m_pthread_mutex);
 }

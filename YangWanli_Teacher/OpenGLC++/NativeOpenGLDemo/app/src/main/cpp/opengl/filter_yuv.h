@@ -13,20 +13,20 @@ public:
     ~FilterYUV();
 
 public:
-    void onCreate();
+    void OnCreate();
 
-    void onChange(int w, int h);
+    void OnChange(int w, int h);
 
-    void onDraw();
+    void OnDraw();
 
-    void setYuvData(void *Y, void *U, void *V, int width, int height);
+    void SetYuvData(int width, int height, void *y, void *u, void *v);
 
-    void destroySource();
+    void DestroySource();
 
-    void destroy();
+    void Destroy();
 
 private:
-    void setMatrix(int width, int height);
+    void _SetMatrix(int width, int height);
 
 public:
     GLint vPosition = 0;
@@ -40,9 +40,9 @@ public:
     GLuint samplers[3] = {0};
     float matrix[16] = {0};
 
-    void *y = NULL;
-    void *u = NULL;
-    void *v = NULL;
+    void *y_data = NULL;
+    void *u_data = NULL;
+    void *v_data = NULL;
 
     int yuv_width = 0;
     int yuv_height = 0;

@@ -1,5 +1,5 @@
-#ifndef _FILTERTWO_H_
-#define _FILTERTWO_H_
+#ifndef FILTERTWO_H_
+#define FILTERTWO_H_
 
 #include "base_opengl.h"
 
@@ -13,20 +13,20 @@ public:
     ~FilterTwo();
 
 public:
-    void onCreate();
+    void OnCreate();
 
-    void onChange(int w, int h);
+    void OnChange(int w, int h);
 
-    void onDraw();
+    void OnDraw();
 
-    void setPixel(void *data, int width, int height);
+    void SetImagePixel(int image_width, int image_height, void *data);
 
-    void destroySource();
+    void DestroySource();
 
-    void destroy();
+    void Destroy();
 
 private:
-    void setMatrix(int width, int height);
+    void _SetMatrix(int width, int height);
 
 public:
     GLint vPosition = 0;
@@ -42,4 +42,4 @@ public:
     float matrix[16] = {0};//用于存放单位矩阵
 };
 
-#endif
+#endif //FILTERTWO_H_

@@ -14,42 +14,25 @@
 
 class EglThread {
 public:
-    pthread_t pEglThread = -1;
-    ANativeWindow *nativeWindow = NULL;
+    typedef void(*OnCreateCb)(void *);
+    OnCreateCb m_on_create_cb;
+    void *m_on_create_arg;
 
-    bool isCreate = false;
-    bool isChange = false;
-    bool isExit = false;
-    bool isStart = false;
-    bool isChangeFilter = false;
+    typedef void(*OnChangeCb)(int width, int height, void *);
+    OnChangeCb m_on_change_cb;
+    void *m_on_change_arg;
 
-    int surfaceWidth = 0;
-    int surfaceHeight = 0;
+    typedef void(*OnDestroyCb)(void *);
+    OnDestroyCb m_on_destroy_cb;
+    void *m_on_destroy_arg;
 
-    typedef void(*OnCreate)(void *);//定义函数指针
-    OnCreate onCreate;
-    void *onCreateCtx;
+    typedef void(*OnDrawCb)(void *);
+    OnDrawCb m_on_draw_cb;
+    void *m_on_draw_arg;
 
-    typedef void(*OnChange)(int width, int height, void *);
-    OnChange onChange;
-    void *onChangeCtx;
-
-    typedef void(*OnDraw)(void *);
-    OnDraw onDraw;
-    void *onDrawCtx;
-
-    typedef void(*OnChangeFilter)(int width, int height, void *);
-    OnChangeFilter onChangeFilter;
-    void *onChangeFilterCtx;
-
-    typedef void(*OnDestroy)(void *);
-    OnDestroy onDestroy;
-    void *onDestroyCtx;
-
-    int renderType = OPENGL_RENDER_AUTO;
-
-    pthread_mutex_t pthread_mutex;
-    pthread_cond_t pthread_cond;
+    typedef void(*OnChangeFilterCb)(int width, int height, void *);
+    OnChangeFilterCb m_on_change_filter_cb;
+    void *m_on_change_filter_arg;
 
 public:
     EglThread();
@@ -57,27 +40,43 @@ public:
     ~EglThread();
 
 public:
-    void setRenderType(int renderType);
+    void SetOnCreateCb(OnCreateCb on_create_cb, void *arg);
 
-    void callBackOnCreate(OnCreate onCreate, void *ctx);
+    void SetOnChangeCb(OnChangeCb on_change_cb, void *arg);
 
-    void callBackOnChange(OnChange onChange, void *ctx);
+    void SetOnDrawCb(OnDrawCb on_draw_cb, void *arg);
 
-    void callBackOnDraw(OnDraw onDraw, void *ctx);
+    void SetOnChangeFilterCb(OnChangeFilterCb on_change_filter_cb, void *arg);
 
-    void callBackOnChangeFilter(OnChangeFilter onChangeFilter, void *ctx);
+    void SetOnDestroyCb(OnDestroyCb on_destroy_cb, void *arg);
 
-    void callBackOnDestroy(OnDestroy onDestroy, void *ctx);
+    void SetRenderType(int render_type);
 
-    void onSurfaceCreate(EGLNativeWindowType window);
+    void OnSurfaceCreate(EGLNativeWindowType window);
 
-    void onSurfaceChange(int width, int height);
+    void OnSurfaceChange(int width, int height);
 
-    void onSurfaceChangeFilter();
+    void OnSurfaceDestroy();
 
-    void notifyRender();
+    void OnSurfaceChangeFilter();
 
-    void destroy();
+    void NotifyRender();
+
+public:
+    pthread_mutex_t m_pthread_mutex;
+    pthread_cond_t m_pthread_cond;
+    ANativeWindow *m_native_window = NULL;
+    int m_render_type = OPENGL_RENDER_AUTO;
+    bool m_is_create = false;
+    bool m_is_change = false;
+    bool m_is_start = false;
+    bool m_is_change_filter = false;
+    bool m_is_exit = false;
+    int m_surface_width = 0;
+    int m_surface_height = 0;
+
+private:
+    pthread_t m_egl_thread_ = -1;
 };
 
 #endif //EGL_THREAD_H_

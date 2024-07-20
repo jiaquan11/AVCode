@@ -24,14 +24,14 @@ public:
 
     void OnSurfaceChangeFilter();
 
-    void SetImgData(int width, int height, int size, void* data);
+    void SetImgData(int image_width, int image_height, int size, void* data);
 
     void SetYuvData(void *y, void *u, void *v, int w, int h);
 
 public:
     EglThread *m_egl_thread = NULL;
     BaseOpengl *m_base_opengl = NULL;
-    void *m_pixels = NULL;
+    void *m_image_pixels = NULL;
     int m_pic_width = 0;
     int m_pic_height = 0;
 

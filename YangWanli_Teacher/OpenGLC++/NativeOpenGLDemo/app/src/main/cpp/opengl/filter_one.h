@@ -1,11 +1,11 @@
-#ifndef _FILTERONE_H_
-#define _FILTERONE_H_
+#ifndef FILTERONE_H_
+#define FILTERONE_H_
 
 #include "base_opengl.h"
 
-/*
+/**
  * 绘制纹理
- * */
+ */
 class FilterOne : public BaseOpengl {
 public:
     FilterOne();
@@ -13,20 +13,20 @@ public:
     ~FilterOne();
 
 public:
-    void onCreate();
+    void OnCreate();
 
-    void onChange(int w, int h);
+    void OnChange(int width, int height);
 
-    void onDraw();
+    void OnDraw();
 
-    void setPixel(void *data, int width, int height);
+    void SetImagePixel(int image_width, int image_height, void *data);
 
-    void destroySource();
+    void DestroySource();
 
-    void destroy();
+    void Destroy();
 
 private:
-    void setMatrix(int width, int height);
+    void _SetMatrix(int width, int height);
 
 public:
     GLint vPosition = 0;
@@ -42,4 +42,4 @@ public:
     float matrix[16] = {0};//用于存放单位矩阵
 };
 
-#endif
+#endif //FILTERONE_H_

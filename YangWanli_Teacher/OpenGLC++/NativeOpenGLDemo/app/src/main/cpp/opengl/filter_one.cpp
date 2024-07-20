@@ -1,14 +1,14 @@
 #include "filter_one.h"
 
 FilterOne::FilterOne() {
-    initMatrix(matrix);//初始化为单位矩阵
+    InitMatrix(matrix);//初始化为单位矩阵
 }
 
 FilterOne::~FilterOne() {
 
 }
 
-void FilterOne::onCreate() {
+void FilterOne::OnCreate() {
     vertexStr = GET_STR(
             attribute vec4 v_Position;
             attribute vec2 f_Position;
@@ -27,7 +27,7 @@ void FilterOne::onCreate() {
                 gl_FragColor = texture2D(sTexture, ft_Position);
             });
 
-    program = createProgram(vertexStr, fragmentStr, &vShader, &fShader);
+    program = CreateProgram(vertexStr, fragmentStr, &vShader, &fShader);
     LOGI("FilterOne callback_SurfaceCreate GET_STR opengl program: %d", program);
 
     //获取着色器程序中的这个变量a_position，返回一个变量id，用于给这个变量赋值
@@ -49,7 +49,7 @@ void FilterOne::onCreate() {
 }
 
 //指定屏幕显示界面的宽高
-void FilterOne::onChange(int width, int height) {
+void FilterOne::OnChange(int width, int height) {
     LOGI("FilterOne::onChange in surface_width:%d surface_height:%d", surface_width, surface_height);
     surface_width = width;
     surface_height = height;
@@ -57,7 +57,7 @@ void FilterOne::onChange(int width, int height) {
     LOGI("FilterOne::onChange end");
 }
 
-void FilterOne::onDraw() {
+void FilterOne::OnDraw() {
     LOGI("FilterOne::onDraw in");
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);//指定刷屏颜色  1:不透明  0：透明
     glClear(GL_COLOR_BUFFER_BIT);//将刷屏颜色进行刷屏，但此时仍然处于后台缓冲中，需要swapBuffers交换到前台界面显示
@@ -98,7 +98,7 @@ void FilterOne::onDraw() {
 }
 
 //正交投影操作
-void FilterOne::setMatrix(int width, int height) {
+void FilterOne::_SetMatrix(int width, int height) {
     LOGI("FilterOne::setMatrix in");
 //    initMatrix(matrix);
     //这里是矩阵投影操作   将图片投影到屏幕上
@@ -109,7 +109,7 @@ void FilterOne::setMatrix(int width, int height) {
         LOGI("pic scale width");
         float r = width / (1.0 * height / h * w);
         LOGI("pic scale width r: %f", r);
-        orthoM(-r, r, -1, 1, matrix);
+        OrthoM(-r, r, -1, 1, matrix);
     } else {//图片宽的比率大于屏幕，则宽进行直接覆盖屏幕，而图片高度缩放
         LOGI("pic scale height");
         /*
@@ -121,29 +121,32 @@ void FilterOne::setMatrix(int width, int height) {
          * */
         float r = height / (1.0 * width / w * h);
         LOGI("pic scale height r: %f", r);
-        orthoM(-1, 1, -r, r, matrix);
+        OrthoM(-1, 1, -r, r, matrix);
     }
     LOGI("FilterOne::setMatrix end");
 }
 
-void FilterOne::setPixel(void *data, int width, int height) {
+void FilterOne::SetImagePixel(int image_width, int image_height, void *data) {
     LOGI("FilterOne::setPixel in");
-    w = width;//图片宽
-    h = height;//图片高
+    w = image_width;
+    h = image_height;
     pixels = data;
     if ((surface_width > 0) && (surface_height > 0)) {
-        setMatrix(surface_width, surface_height);
+        _SetMatrix(surface_width, surface_height);
     }
     LOGI("FilterOne::setPixel end");
 }
 
-void FilterOne::destroySource() {
+void FilterOne::DestroySource() {
     if (pixels != NULL) {
         pixels = NULL;
     }
 }
 
-void FilterOne::destroy() {
+/**
+ * 释放opengl资源
+ */
+void FilterOne::Destroy() {
     glDeleteTextures(1, &textureID);
     glDetachShader(program, vShader);
     glDetachShader(program, fShader);

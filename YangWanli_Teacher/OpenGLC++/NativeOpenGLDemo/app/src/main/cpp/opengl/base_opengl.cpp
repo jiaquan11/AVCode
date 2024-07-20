@@ -26,31 +26,31 @@ BaseOpengl::~BaseOpengl() {
     delete[]fragments;
 }
 
-void BaseOpengl::onCreate() {
+void BaseOpengl::OnCreate() {
 
 }
 
-void BaseOpengl::onChange(int w, int h) {
+void BaseOpengl::OnChange(int width, int height) {
 
 }
 
-void BaseOpengl::onDraw() {
+void BaseOpengl::OnDraw() {
 
 }
 
-void BaseOpengl::setPixel(void *data, int width, int height) {
+void BaseOpengl::SetImagePixel(int image_width, int image_height, void *data) {
 
 }
 
-void BaseOpengl::setYuvData(void *y, void *u, void *v, int width, int height) {
+void BaseOpengl::SetYuvData(int width, int height, void *y, void *u, void *v) {
 
 }
 
-void BaseOpengl::destroySource() {
+void BaseOpengl::DestroySource() {
 
 }
 
-void BaseOpengl::destroy() {
+void BaseOpengl::Destroy() {
 
 }
 

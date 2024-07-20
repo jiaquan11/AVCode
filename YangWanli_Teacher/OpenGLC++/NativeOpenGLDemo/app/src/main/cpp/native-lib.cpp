@@ -1,6 +1,6 @@
+#include <string>
 #include "log/android_log.h"
 #include "opengl/opengl.h"
-#include <string>
 
 #define DELETE_LOCAL_REF(env, obj)  if(obj!=NULL){env->DeleteLocalRef(obj);obj=NULL;}
 static const char *const kClassPathName = "com/jiaquan/opengl/NativeOpengl";
@@ -33,10 +33,10 @@ JNIEXPORT void JNICALL SurfaceChangeFilter(JNIEnv *env, jobject thiz) {
     }
 }
 
-JNIEXPORT void JNICALL SetImgData(JNIEnv *env, jobject thiz, jint width, jint height, jint size, jbyteArray data_array) {//传入解码后的图像rgba数据
+JNIEXPORT void JNICALL SetImgData(JNIEnv *env, jobject thiz, jint image_width, jint image_height, jint size, jbyteArray data_array) {//传入解码后的图像rgba数据
     jbyte *data = env->GetByteArrayElements(data_array, NULL);
     if (g_opengl != NULL) {
-        g_opengl->SetImgData(width, height, size, data);
+        g_opengl->SetImgData(image_width, image_height, size, data);
     }
     env->ReleaseByteArrayElements(data_array, data, 0);
 }

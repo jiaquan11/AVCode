@@ -1,14 +1,14 @@
 #include "filter_yuv.h"
 
 FilterYUV::FilterYUV() {
-    initMatrix(matrix);//初始化为单位矩阵
+    InitMatrix(matrix);//初始化为单位矩阵
 }
 
 FilterYUV::~FilterYUV() {
 
 }
 
-void FilterYUV::onCreate() {
+void FilterYUV::OnCreate() {
     vertexStr = GET_STR(
             attribute vec4 v_Position;
             attribute vec2 f_Position;
@@ -40,7 +40,7 @@ void FilterYUV::onCreate() {
                 gl_FragColor = vec4(rgb, 1);
             });
 
-    program = createProgram(vertexStr, fragmentStr, &vShader, &fShader);
+    program = CreateProgram(vertexStr, fragmentStr, &vShader, &fShader);
     LOGI("FilterYUV callback_SurfaceCreate GET_STR opengl program: %d", program);
 
     //获取着色器程序中的这个变量a_position，返回一个变量id，用于给这个变量赋值
@@ -63,7 +63,7 @@ void FilterYUV::onCreate() {
     LOGI("FilterYUV::onCreate end");
 }
 
-void FilterYUV::onChange(int width, int height) {
+void FilterYUV::OnChange(int width, int height) {
     LOGI("FilterYUV::onChange in");
     surface_width = width;
     surface_height = height;
@@ -71,7 +71,7 @@ void FilterYUV::onChange(int width, int height) {
     LOGI("FilterYUV::onChange end");
 }
 
-void FilterYUV::onDraw() {
+void FilterYUV::OnDraw() {
     LOGI("FilterYUV::onDraw in");
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);//指定刷屏颜色  1:不透明  0：透明
     glClear(GL_COLOR_BUFFER_BIT);//将刷屏颜色进行刷屏，但此时仍然处于后台缓冲中，需要swapBuffers交换到前台界面显示
@@ -94,22 +94,22 @@ void FilterYUV::onDraw() {
     glVertexAttribPointer(fPosition, 2, GL_FLOAT, false, 8, fragments);
 
     if ((yuv_width > 0) && (yuv_height > 0)) {
-        if (y != NULL) {
+        if (y_data != NULL) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, samplers[0]);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width, yuv_height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width, yuv_height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, y_data);
             glUniform1i(sampler_y, 0);
         }
-        if (u != NULL) {
+        if (u_data != NULL) {
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, samplers[1]);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width / 2, yuv_height / 2, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, u);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width / 2, yuv_height / 2, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, u_data);
             glUniform1i(sampler_u, 1);
         }
-        if (v != NULL) {
+        if (v_data != NULL) {
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, samplers[2]);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width / 2, yuv_height / 2, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, v);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, yuv_width / 2, yuv_height / 2, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, v_data);
             glUniform1i(sampler_v, 2);
         }
 
@@ -124,7 +124,7 @@ void FilterYUV::onDraw() {
     }
 }
 
-void FilterYUV::setMatrix(int width, int height) {
+void FilterYUV::_SetMatrix(int width, int height) {
     LOGI("FilterYUV::setMatrix in");
 //    initMatrix(matrix);
     //这里是矩阵投影操作
@@ -136,64 +136,64 @@ void FilterYUV::setMatrix(int width, int height) {
             LOGI("pic scale width");
             float r = width / (1.0 * height / yuv_height * yuv_width);
             LOGI("pic scale width r: %f", r);
-            orthoM(-r, r, -1, 1, matrix);
+            OrthoM(-r, r, -1, 1, matrix);
         } else {//图片宽的比率大于屏幕，则宽进行直接覆盖屏幕，而图片高度缩放
             LOGI("pic scale height");
             float r = height / (1.0 * width / yuv_width * yuv_height);
             LOGI("pic scale height r: %f", r);
-            orthoM(-1, 1, -r, r, matrix);
+            OrthoM(-1, 1, -r, r, matrix);
         }
     }
     LOGI("FilterYUV::setMatrix end");
 }
 
-void FilterYUV::setYuvData(void *Y, void *U, void *V, int width, int height) {
+void FilterYUV::SetYuvData(int width, int height, void *y, void *u, void *v) {
     if ((width > 0) && (height > 0)) {
         if ((yuv_width != width) || (yuv_height != height)) {
             yuv_width = width;
             yuv_height = height;
-            if (y != NULL) {
-                free(y);
-                y = NULL;
+            if (y_data != NULL) {
+                free(y_data);
+                y_data = NULL;
             }
-            if (u != NULL) {
-                free(u);
-                u = NULL;
+            if (u_data != NULL) {
+                free(u_data);
+                u_data = NULL;
             }
-            if (v != NULL) {
-                free(v);
-                v = NULL;
+            if (v_data != NULL) {
+                free(v_data);
+                v_data = NULL;
             }
-            y = malloc(yuv_width * yuv_height);
-            u = malloc(yuv_width * yuv_height / 4);
-            v = malloc(yuv_width * yuv_height / 4);
+            y_data = malloc(yuv_width * yuv_height);
+            u_data = malloc(yuv_width * yuv_height / 4);
+            v_data = malloc(yuv_width * yuv_height / 4);
 
-            setMatrix(surface_width, surface_height);
+            _SetMatrix(surface_width, surface_height);
         }
-        memcpy(y, Y, yuv_width * yuv_height);
-        memcpy(u, U, yuv_width * yuv_height / 4);
-        memcpy(v, V, yuv_width * yuv_height / 4);
+        memcpy(y_data, y, yuv_width * yuv_height);
+        memcpy(u_data, u, yuv_width * yuv_height / 4);
+        memcpy(v_data, v, yuv_width * yuv_height / 4);
     }
 }
 
-void FilterYUV::destroySource() {
+void FilterYUV::DestroySource() {
     yuv_width = 0;
     yuv_height = 0;
-    if (y != NULL) {
-        free(y);
-        y = NULL;
+    if (y_data != NULL) {
+        free(y_data);
+        y_data = NULL;
     }
-    if (u != NULL) {
-        free(u);
-        u = NULL;
+    if (u_data != NULL) {
+        free(u_data);
+        u_data = NULL;
     }
-    if (v != NULL) {
-        free(v);
-        v = NULL;
+    if (v_data != NULL) {
+        free(v_data);
+        v_data = NULL;
     }
 }
 
-void FilterYUV::destroy() {
+void FilterYUV::Destroy() {
     glDeleteTextures(3, samplers);
     glDetachShader(program, vShader);
     glDetachShader(program, fShader);

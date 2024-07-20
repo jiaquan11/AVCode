@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
         mWLSurfaceView_.setOnSurfaceListener(new WlSurfaceView.OnSurfaceListener() {
             @Override
             public void init() {
-                _readPixels();
+                _readImagePixels();
             }
         });
     }
@@ -55,13 +55,13 @@ public class MainActivity extends AppCompatActivity {
      * 切换纹理
      */
     public void changeTexture(View view) {
-        _readPixels();
+        _readImagePixels();
     }
 
     /**
      * 读取图片像素数据
      */
-    private void _readPixels() {
+    private void _readImagePixels() {
         final Bitmap bitmap = BitmapFactory.decodeResource(getResources(), _getImageIds());
         ByteBuffer bmpBuffer = ByteBuffer.allocate(bitmap.getHeight() * bitmap.getWidth() * 4);
         bitmap.copyPixelsToBuffer(bmpBuffer);

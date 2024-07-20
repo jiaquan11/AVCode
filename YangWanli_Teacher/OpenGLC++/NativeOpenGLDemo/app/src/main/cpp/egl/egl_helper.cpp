@@ -23,11 +23,11 @@ int EglHelper::InitEgl(EGLNativeWindowType window) {
     EGLint *version = new EGLint[2];
     if (!eglInitialize(m_egl_display_, &version[0], &version[1])) {
         LOGE("eglInitialize error");
-        return -1;
+        return -2;
     }
 
     //3.查询并设置显示设备的属性，调用两次
-    const EGLint attribs[] = {//配置属性
+    const EGLint attribs[] = {
             EGL_RED_SIZE, 8,
             EGL_GREEN_SIZE, 8,
             EGL_BLUE_SIZE, 8,
@@ -41,25 +41,25 @@ int EglHelper::InitEgl(EGLNativeWindowType window) {
     EGLint num_config;
     //查询最优config
     if (!eglChooseConfig(m_egl_display_, attribs, NULL, 1, &num_config)) {
-        LOGE("eglChooseConfig error");
-        return -1;
+        LOGE("eglChooseConfig first error");
+        return -3;
     }
 
     //4 以上已查询到config,现直接保存到mEglConfig中
     if (!eglChooseConfig(m_egl_display_, attribs, &m_egl_config_, num_config, &num_config)) {
-        LOGE("eglChooseConfig error22");
-        return -1;
+        LOGE("eglChooseConfig twice error");
+        return -4;
     }
 
     //5.创建EGLContext
     int attrib_list[] = {
-            EGL_CONTEXT_CLIENT_VERSION, 2,
-            EGL_NONE
+        EGL_CONTEXT_CLIENT_VERSION, 2,
+        EGL_NONE
     };
     m_egl_context_ = eglCreateContext(m_egl_display_, m_egl_config_, EGL_NO_CONTEXT, attrib_list);
     if (m_egl_context_ == EGL_NO_CONTEXT) {
         LOGE("eglCreateContext error");
-        return -1;
+        return -5;
     }
 
     //6.创建渲染的Surface   window:Android传递下来的SurfaceView的窗口，用于显示
@@ -67,22 +67,26 @@ int EglHelper::InitEgl(EGLNativeWindowType window) {
     m_egl_surface_ = eglCreateWindowSurface(m_egl_display_, m_egl_config_, window, NULL);
     if (m_egl_surface_ == EGL_NO_SURFACE) {
         LOGE("eglCreateWindowSurface error");
-        return -1;
+        return -6;
     }
 
-    //7.绑定EglContext和Surface到显示设备中   显示上下文和显示界面绑定到显示设备中
+    //7.绑定EglContext和Surface到显示设备中,显示上下文和显示界面绑定到显示设备中
     if (!eglMakeCurrent(m_egl_display_, m_egl_surface_, m_egl_surface_, m_egl_context_)) {
         LOGE("eglMakeCurrent error");
-        return -1;
+        return -7;
     }
     LOGI("egl init success!");
     return 0;
 }
 
+/**
+ * 交换前后台缓存
+ */
 int EglHelper::SwapBuffers() {
     if ((m_egl_display_ != EGL_NO_DISPLAY) && (m_egl_surface_ != EGL_NO_SURFACE)) {
-        //刷新数据，显示渲染场景
-        //从后台缓冲mEglSurface将数据渲染到前台显示设备中
+        /**
+         * 前台显示设备和后台缓存交换数据
+         */
         if (!eglSwapBuffers(m_egl_display_, m_egl_surface_)) {
             LOGE("eglSwapBuffers error");
             return -1;
@@ -91,6 +95,9 @@ int EglHelper::SwapBuffers() {
     return 0;
 }
 
+/**
+ * 销毁EGL
+ */
 void EglHelper::DestroyEgl() {
     if (m_egl_display_ != EGL_NO_DISPLAY) {
         eglMakeCurrent(m_egl_display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
