@@ -28,37 +28,35 @@ void FilterOne::OnCreate() {
             });
 
     program = CreateProgram(vertexStr, fragmentStr, &vShader, &fShader);
-    LOGI("FilterOne callback_SurfaceCreate GET_STR opengl program: %d", program);
 
     //获取着色器程序中的这个变量a_position，返回一个变量id，用于给这个变量赋值
-    vPosition = glGetAttribLocation(program, "v_Position");//顶点坐标变量
-    fPosition = glGetAttribLocation(program, "f_Position");//纹理坐标变量
-    sampler = glGetUniformLocation(program, "sTexture");//2D纹理变量
-    u_matrix = glGetUniformLocation(program, "u_Matrix");//着色器矩阵变量
+    vPosition = glGetAttribLocation(program, "v_Position");
+    fPosition = glGetAttribLocation(program, "f_Position");
+    sampler = glGetUniformLocation(program, "sTexture");
+    u_matrix = glGetUniformLocation(program, "u_Matrix");
 
     glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_2D, textureID);//绑定纹理
-    LOGI("FilterOne textureID is %d", textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
     //设置纹理参数
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);//解绑纹理
-    LOGI("FilterOne::onCreate end");
+    glBindTexture(GL_TEXTURE_2D, 0);
+    LOGI("FilterOne OnCreate end");
 }
 
 //指定屏幕显示界面的宽高
-void FilterOne::OnChange(int width, int height) {
-    LOGI("FilterOne::onChange in surface_width:%d surface_height:%d", surface_width, surface_height);
-    surface_width = width;
-    surface_height = height;
-    glViewport(0, 0, width, height);
-    LOGI("FilterOne::onChange end");
+void FilterOne::OnChange(int surface_width, int surface_height) {
+    LOGI("FilterOne OnChange in surface_width:%d surface_height:%d", surface_width, surface_height);
+    m_surface_width = surface_width;
+    m_surface_height = surface_height;
+    glViewport(0, 0, surface_width, surface_height);
+    LOGI("FilterOne OnChange end");
 }
 
 void FilterOne::OnDraw() {
-    LOGI("FilterOne::onDraw in");
+    LOGI("FilterOne OnDraw in");
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);//指定刷屏颜色  1:不透明  0：透明
     glClear(GL_COLOR_BUFFER_BIT);//将刷屏颜色进行刷屏，但此时仍然处于后台缓冲中，需要swapBuffers交换到前台界面显示
 
@@ -72,7 +70,7 @@ void FilterOne::OnDraw() {
     glUniformMatrix4fv(u_matrix, 1, GL_FALSE, matrix);//给矩阵变量赋值
 
     if (pixels != NULL) {//为后台缓存显存中设置图片数据
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_image_width_, m_image_height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
     }
 
     //渲染时顶点赋值操作
@@ -94,47 +92,7 @@ void FilterOne::OnDraw() {
 //    glDrawArrays(GL_TRIANGLES, 0, 6);//绘制四边形
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);//绘制四边形
     glBindTexture(GL_TEXTURE_2D, 0);
-    LOGI("FilterOne::onDraw end");
-}
-
-//正交投影操作
-void FilterOne::_SetMatrix(int width, int height) {
-    LOGI("FilterOne::setMatrix in");
-//    initMatrix(matrix);
-    //这里是矩阵投影操作   将图片投影到屏幕上
-    //屏幕1080*2000=0.54 图片:517*685=0.75
-    float screen_r = 1.0 * width / height;
-    float picture_r = 1.0 * w / h;
-    if (screen_r > picture_r) {//图片宽度缩放，图片高铺满屏幕
-        LOGI("pic scale width");
-        float r = width / (1.0 * height / h * w);
-        LOGI("pic scale width r: %f", r);
-        OrthoM(-r, r, -1, 1, matrix);
-    } else {//图片宽的比率大于屏幕，则宽进行直接覆盖屏幕，而图片高度缩放
-        LOGI("pic scale height");
-        /*
-         * 这里解释一下:这里是图片宽高比例大于屏幕宽高比例，则图片的宽进行平铺屏幕，图片高需要进行缩放。
-         * 为了正常显示图片，需要进行等比例缩放图片，所以根据图片的宽高等比例  图片宽/图片高=屏幕宽/图片需要占用屏幕的新高度，
-         * 通过这里计算就得到：图片需要占用屏幕的新高度，也即下面的(1.0 * width / w * h)，同时为了显示缩放，需要用
-         * 原屏幕实际高/图片需要占用屏幕的新高度，这里得到的比例值是大于1的，通过这个比例值映射到屏幕(-1,1)范围内，则会出现一个
-         * 实际的缩放的效果
-         * */
-        float r = height / (1.0 * width / w * h);
-        LOGI("pic scale height r: %f", r);
-        OrthoM(-1, 1, -r, r, matrix);
-    }
-    LOGI("FilterOne::setMatrix end");
-}
-
-void FilterOne::SetImagePixel(int image_width, int image_height, void *data) {
-    LOGI("FilterOne::setPixel in");
-    w = image_width;
-    h = image_height;
-    pixels = data;
-    if ((surface_width > 0) && (surface_height > 0)) {
-        _SetMatrix(surface_width, surface_height);
-    }
-    LOGI("FilterOne::setPixel end");
+    LOGI("FilterOne OnDraw end");
 }
 
 void FilterOne::DestroySource() {
@@ -153,4 +111,44 @@ void FilterOne::Destroy() {
     glDeleteShader(vShader);
     glDeleteShader(fShader);
     glDeleteProgram(program);
+}
+
+void FilterOne::SetImagePixel(int image_width, int image_height, void *data) {
+    LOGI("FilterOne SetImagePixel in");
+    m_image_width_ = image_width;
+    m_image_height_ = image_height;
+    pixels = data;
+    if ((m_surface_width > 0) && (m_surface_height > 0)) {
+        _SetMatrix(m_surface_width, m_surface_height);
+    }
+    LOGI("FilterOne SetImagePixel end");
+}
+
+//正交投影操作
+void FilterOne::_SetMatrix(int surface_width, int surface_height) {
+    LOGI("FilterOne _SetMatrix in");
+//    initMatrix(matrix);
+    //这里是矩阵投影操作   将图片投影到屏幕上
+    //屏幕1080*2000=0.54 图片:517*685=0.75
+    float screen_r = 1.0 * surface_width / surface_height;
+    float picture_r = 1.0 * m_image_width_ / m_image_height_;
+    if (screen_r > picture_r) {//图片宽度缩放，图片高铺满屏幕
+        LOGI("pic scale width");
+        float r = surface_width / (1.0 * surface_height / m_image_height_ * m_image_width_);
+        LOGI("pic scale width r: %f", r);
+        OrthoM(-r, r, -1, 1, matrix);
+    } else {//图片宽的比率大于屏幕，则宽进行直接覆盖屏幕，而图片高度缩放
+        LOGI("pic scale height");
+        /*
+         * 这里解释一下:这里是图片宽高比例大于屏幕宽高比例，则图片的宽进行平铺屏幕，图片高需要进行缩放。
+         * 为了正常显示图片，需要进行等比例缩放图片，所以根据图片的宽高等比例  图片宽/图片高=屏幕宽/图片需要占用屏幕的新高度，
+         * 通过这里计算就得到：图片需要占用屏幕的新高度，也即下面的(1.0 * width / w * h)，同时为了显示缩放，需要用
+         * 原屏幕实际高/图片需要占用屏幕的新高度，这里得到的比例值是大于1的，通过这个比例值映射到屏幕(-1,1)范围内，则会出现一个
+         * 实际的缩放的效果
+         * */
+        float r = surface_height / (1.0 * surface_width / m_image_width_ * m_image_height_);
+        LOGI("pic scale height r: %f", r);
+        OrthoM(-1, 1, -r, r, matrix);
+    }
+    LOGI("FilterOne _SetMatrix end");
 }

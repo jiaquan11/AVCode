@@ -3,9 +3,9 @@
 
 #include "base_opengl.h"
 
-/*
+/**
  * 绘制YUV图像
- * */
+ */
 class FilterYUV : public BaseOpengl {
 public:
     FilterYUV();
@@ -15,15 +15,15 @@ public:
 public:
     void OnCreate();
 
-    void OnChange(int w, int h);
+    void OnChange(int surface_width, int surface_height);
 
     void OnDraw();
-
-    void SetYuvData(int width, int height, void *y, void *u, void *v);
 
     void DestroySource();
 
     void Destroy();
+
+    void SetYuvData(int yuv_width, int yuv_height, void *y_data, void *u_data, void *v_data);
 
 private:
     void _SetMatrix(int width, int height);
@@ -40,12 +40,14 @@ public:
     GLuint samplers[3] = {0};
     float matrix[16] = {0};
 
-    void *y_data = NULL;
-    void *u_data = NULL;
-    void *v_data = NULL;
 
-    int yuv_width = 0;
-    int yuv_height = 0;
+
+private:
+    int m_yuv_width_ = 0;
+    int m_yuv_height_ = 0;
+    void *m_y_data_ = NULL;
+    void *m_u_data_ = NULL;
+    void *m_v_data_ = NULL;
 };
 
 #endif //FILTER_YUV_H_

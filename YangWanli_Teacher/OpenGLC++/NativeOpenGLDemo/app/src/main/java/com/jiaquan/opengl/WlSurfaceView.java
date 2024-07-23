@@ -5,6 +5,8 @@ import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.jiaquan.utils.CalledByNative;
+
 public class WlSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
     private NativeOpengl mNativeOpengl_ = null;
 
@@ -45,12 +47,9 @@ public class WlSurfaceView extends SurfaceView implements SurfaceHolder.Callback
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         if (mNativeOpengl_ != null) {
             mNativeOpengl_.nativeSurfaceChange(width, height);
-            /**
-             * EGL环境已创建好,通知上层进行渲染
-             */
-            if (mOnSurfaceListener_ != null) {
-                mOnSurfaceListener_.init();
-            }
+        }
+        if (mOnSurfaceListener_ != null) {
+            mOnSurfaceListener_.init();
         }
     }
 
@@ -58,6 +57,16 @@ public class WlSurfaceView extends SurfaceView implements SurfaceHolder.Callback
     public void surfaceDestroyed(SurfaceHolder holder) {
         if (mNativeOpengl_ != null) {
             mNativeOpengl_.nativeSurfaceDestroy();
+        }
+    }
+
+    /**
+     * EGL环境已创建好,通知上层进行渲染
+     */
+    @CalledByNative
+    private void onCallEglPrepared() {
+        if (mOnSurfaceListener_ != null) {
+            mOnSurfaceListener_.init();
         }
     }
 }

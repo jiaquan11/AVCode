@@ -13,9 +13,9 @@ JNIEXPORT void JNICALL SurfaceCreate(JNIEnv *env, jobject thiz, jobject surface)
     g_opengl->OnSurfaceCreate(env, surface);
 }
 
-JNIEXPORT void JNICALL SurfaceChange(JNIEnv *env, jobject thiz, jint width, jint height) {
+JNIEXPORT void JNICALL SurfaceChange(JNIEnv *env, jobject thiz, jint surface_width, jint surface_height) {
     if (g_opengl != NULL) {
-        g_opengl->OnSurfaceChange(width, height);
+        g_opengl->OnSurfaceChange(surface_width, surface_height);
     }
 }
 
@@ -33,7 +33,7 @@ JNIEXPORT void JNICALL SurfaceChangeFilter(JNIEnv *env, jobject thiz) {
     }
 }
 
-JNIEXPORT void JNICALL SetImgData(JNIEnv *env, jobject thiz, jint image_width, jint image_height, jint size, jbyteArray data_array) {//传入解码后的图像rgba数据
+JNIEXPORT void JNICALL SetImgData(JNIEnv *env, jobject thiz, jint image_width, jint image_height, jint size, jbyteArray data_array) {
     jbyte *data = env->GetByteArrayElements(data_array, NULL);
     if (g_opengl != NULL) {
         g_opengl->SetImgData(image_width, image_height, size, data);
@@ -41,12 +41,12 @@ JNIEXPORT void JNICALL SetImgData(JNIEnv *env, jobject thiz, jint image_width, j
     env->ReleaseByteArrayElements(data_array, data, 0);
 }
 
-JNIEXPORT void JNICALL SetYuvData(JNIEnv *env, jobject thiz, jint w, jint h, jbyteArray y_array, jbyteArray u_array, jbyteArray v_array) {
+JNIEXPORT void JNICALL SetYuvData(JNIEnv *env, jobject thiz, jint yuv_w, jint yuv_h, jbyteArray y_array, jbyteArray u_array, jbyteArray v_array) {
     jbyte *ydata = env->GetByteArrayElements(y_array, NULL);
     jbyte *udata = env->GetByteArrayElements(u_array, NULL);
     jbyte *vdata = env->GetByteArrayElements(v_array, NULL);
     if (g_opengl != NULL) {
-        g_opengl->SetYuvData(ydata, udata, vdata, w, h);
+        g_opengl->SetYuvData(yuv_w, yuv_h, ydata, udata, vdata);
     }
     env->ReleaseByteArrayElements(y_array, ydata, 0);
     env->ReleaseByteArrayElements(u_array, udata, 0);

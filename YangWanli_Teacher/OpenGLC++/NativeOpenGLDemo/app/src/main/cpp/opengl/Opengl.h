@@ -18,7 +18,7 @@ public:
 public:
     void OnSurfaceCreate(JNIEnv *env, jobject surface);
 
-    void OnSurfaceChange(int width, int height);
+    void OnSurfaceChange(int surface_width, int surface_height);
 
     void OnSurfaceDestroy();
 
@@ -26,17 +26,17 @@ public:
 
     void SetImgData(int image_width, int image_height, int size, void* data);
 
-    void SetYuvData(void *y, void *u, void *v, int w, int h);
+    void SetYuvData(int yuv_width, int yuv_height, void *y_data, void *u_data, void *v_data);
 
 public:
     EglThread *m_egl_thread = NULL;
-    BaseOpengl *m_base_opengl = NULL;
+    BaseOpengl *m_base_opengl = NULL;//opengl渲染器的基类，可以派生出不同的渲染器
     void *m_image_pixels = NULL;
-    int m_pic_width = 0;
-    int m_pic_height = 0;
+    int m_image_width = 0;
+    int m_image_height = 0;
 
 private:
-    ANativeWindow *m_nativeWindow_ = NULL;
+    ANativeWindow *m_native_window_ = NULL;
 };
 
 #endif //OPENGL_H_

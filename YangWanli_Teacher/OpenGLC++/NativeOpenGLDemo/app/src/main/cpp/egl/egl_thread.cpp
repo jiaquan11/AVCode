@@ -12,12 +12,16 @@ EglThread::~EglThread() {
     pthread_cond_destroy(&m_pthread_cond);
 }
 
-void EglThread::SetOnCreateCb(EglThread::OnCreateCb on_create_cb, void *arg) {
+void EglThread::SetRenderType(int render_type) {
+    m_render_type = render_type;
+}
+
+void EglThread::SetOnCreateCb(OnCreateCb on_create_cb, void *arg) {
     m_on_create_cb = on_create_cb;
     m_on_create_arg = arg;
 }
 
-void EglThread::SetOnChangeCb(EglThread::OnChangeCb on_change_cb, void *arg) {
+void EglThread::SetOnChangeCb(OnChangeCb on_change_cb, void *arg) {
     m_on_change_cb = on_change_cb;
     m_on_change_arg = arg;
 }
@@ -27,18 +31,14 @@ void EglThread::SetOnDrawCb(OnDrawCb on_draw_cb, void *arg) {
     m_on_draw_arg = arg;
 }
 
-void EglThread::SetOnChangeFilterCb(EglThread::OnChangeFilterCb on_change_filter_cb, void *arg) {
-    m_on_change_filter_cb = on_change_filter_cb;
-    m_on_change_filter_arg = arg;
-}
-
-void EglThread::SetOnDestroyCb(EglThread::OnDestroyCb on_destroy_cb, void *arg) {
+void EglThread::SetOnDestroyCb(OnDestroyCb on_destroy_cb, void *arg) {
     m_on_destroy_cb = on_destroy_cb;
     m_on_destroy_arg = arg;
 }
 
-void EglThread::SetRenderType(int render_type) {
-    m_render_type = render_type;
+void EglThread::SetOnChangeFilterCb(OnChangeFilterCb on_change_filter_cb, void *arg) {
+    m_on_change_filter_cb = on_change_filter_cb;
+    m_on_change_filter_arg = arg;
 }
 
 void *_EglThreadImpl(void *arg) {
@@ -102,10 +102,10 @@ void EglThread::OnSurfaceCreate(EGLNativeWindowType window) {
     }
 }
 
-void EglThread::OnSurfaceChange(int width, int height) {
+void EglThread::OnSurfaceChange(int surface_width, int surface_height) {
     m_is_change = true;
-    m_surface_width = width;
-    m_surface_height = height;
+    m_surface_width = surface_width;
+    m_surface_height = surface_height;
     NotifyRender();
 }
 

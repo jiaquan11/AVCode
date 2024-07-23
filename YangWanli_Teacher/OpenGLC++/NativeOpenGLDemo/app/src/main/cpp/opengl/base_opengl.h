@@ -20,29 +20,29 @@ public:
 public:
     virtual void OnCreate();
 
-    virtual void OnChange(int w, int h);
+    virtual void OnChange(int surface_width, int surface_height);
 
     virtual void OnDraw();
-
-    virtual void SetImagePixel(int image_width, int image_height, void *data);
-
-    virtual void SetYuvData(int width, int height, void *y, void *u, void *v);
 
     virtual void DestroySource();
 
     virtual void Destroy();
 
+    virtual void SetImagePixel(int image_width, int image_height, void *data);
+
+    virtual void SetYuvData(int yuv_width, int yuv_height, void *y_data, void *u_data, void *v_data);
+
 public:
-    int surface_width = 0;//屏幕宽
-    int surface_height = 0;//屏幕高
+    int m_surface_width = 0;
+    int m_surface_height = 0;
 
-    char *vertexStr = NULL;//顶点着色器代码
-    char *fragmentStr = NULL;//片元着色器代码
+    char *vertexStr = NULL;
+    char *fragmentStr = NULL;
 
-    float *vertexs = NULL;//顶点坐标
-    float *fragments = NULL;//纹理坐标
+    float *vertexs = NULL;
+    float *fragments = NULL;
 
-    GLuint program = 0;//opengl程序id
+    GLuint program = 0;
     GLuint vShader = 0;
     GLuint fShader = 0;
 };
