@@ -19,6 +19,8 @@ BaseOpengl::BaseOpengl() {//顶点坐标，原点在中间，范围-1-1
         0, 0
     };
     memcpy(m_fragment_array, f, sizeof(f));
+
+    InitMatrix(m_matrix);//初始化为单位矩阵
 }
 
 BaseOpengl::~BaseOpengl() {
@@ -27,7 +29,6 @@ BaseOpengl::~BaseOpengl() {
 }
 
 void BaseOpengl::OnCreate() {
-
 }
 
 void BaseOpengl::OnChange(int surface_width, int surface_height) {

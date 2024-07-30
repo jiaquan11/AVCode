@@ -1,7 +1,7 @@
 #include "filter_yuv.h"
 
 FilterYUV::FilterYUV() {
-    InitMatrix(m_matrix);
+
 }
 
 FilterYUV::~FilterYUV() {
@@ -41,6 +41,7 @@ void FilterYUV::OnCreate() {
             });
 
     m_program = CreateProgram(m_vertex_str, m_fragment_str, &m_vshader, &m_fshader);
+    LOGI("FilterYUV CreateProgram: %d", m_program);
     m_v_position = glGetAttribLocation(m_program, "v_Position");
     m_f_position = glGetAttribLocation(m_program, "f_Position");
     m_u_matrix = glGetUniformLocation(m_program, "u_Matrix");
@@ -69,18 +70,17 @@ void FilterYUV::OnChange(int surface_width, int surface_height) {
 }
 
 void FilterYUV::OnDraw() {
-    LOGI("FilterYUV OnDraw in");
-    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);//指定刷屏颜色  1:不透明  0：透明
-    glClear(GL_COLOR_BUFFER_BIT);//将刷屏颜色进行刷屏，但此时仍然处于后台缓冲中，需要swapBuffers交换到前台界面显示
+    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
     glUseProgram(m_program);
 
     glUniformMatrix4fv(m_u_matrix, 1, GL_FALSE, m_matrix);
+
     glEnableVertexAttribArray(m_v_position);
     glVertexAttribPointer(m_v_position, 2, GL_FLOAT, false, 8, m_vertex_array);
     glEnableVertexAttribArray(m_f_position);
     glVertexAttribPointer(m_f_position, 2, GL_FLOAT, false, 8, m_fragment_array);
-
     if ((m_image_width > 0) && (m_image_height > 0)) {
         if (m_y_data_ != NULL) {
             glActiveTexture(GL_TEXTURE0);
@@ -102,13 +102,10 @@ void FilterYUV::OnDraw() {
         }
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         glBindTexture(GL_TEXTURE_2D, 0);
-        LOGI("FilterYUV OnDraw end");
     }
 }
 
 void FilterYUV::Destroy() {
-    m_image_width = 0;
-    m_image_height = 0;
     if (m_y_data_ != NULL) {
         free(m_y_data_);
         m_y_data_ = NULL;

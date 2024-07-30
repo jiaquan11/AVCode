@@ -1,7 +1,7 @@
 #include "filter_two.h"
 
 FilterTwo::FilterTwo() {
-    InitMatrix(m_matrix);
+
 }
 
 FilterTwo::~FilterTwo() {

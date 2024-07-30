@@ -1,7 +1,7 @@
 #include "filter_one.h"
 
 FilterOne::FilterOne() {
-    InitMatrix(m_matrix);
+
 }
 
 FilterOne::~FilterOne() {
