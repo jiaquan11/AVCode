@@ -32,6 +32,8 @@ public:
     EglThread *m_egl_thread = NULL;
     BaseOpengl *m_base_opengl = NULL;//opengl渲染器的基类，可以派生出不同的渲染器
     void *m_image_pixels = NULL;
+    int m_surface_width = 0;
+    int m_surface_height = 0;
     int m_image_width = 0;
     int m_image_height = 0;
 

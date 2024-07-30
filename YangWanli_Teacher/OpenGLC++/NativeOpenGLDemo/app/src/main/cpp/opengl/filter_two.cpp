@@ -1,7 +1,7 @@
 #include "filter_two.h"
 
 FilterTwo::FilterTwo() {
-    InitMatrix(matrix);
+    InitMatrix(m_matrix);
 }
 
 FilterTwo::~FilterTwo() {
@@ -9,7 +9,7 @@ FilterTwo::~FilterTwo() {
 }
 
 void FilterTwo::OnCreate() {
-    vertexStr = GET_STR(
+    m_vertex_str = GET_STR(
             attribute vec4 v_Position;
             attribute vec2 f_Position;
             varying vec2 ft_Position;
@@ -19,7 +19,7 @@ void FilterTwo::OnCreate() {
                 gl_Position = v_Position * u_Matrix;
             });
 
-    fragmentStr = GET_STR(
+    m_fragment_str = GET_STR(
             precision mediump float;
             varying vec2 ft_Position;
             uniform sampler2D sTexture;
@@ -29,19 +29,19 @@ void FilterTwo::OnCreate() {
                 gl_FragColor = vec4(gray, gray, gray, textureColor.w);
             });
 
-    program = CreateProgram(vertexStr, fragmentStr, &vShader, &fShader);
-    vPosition = glGetAttribLocation(program, "v_Position");
-    fPosition = glGetAttribLocation(program, "f_Position");
-    sampler = glGetUniformLocation(program, "sTexture");
-    u_matrix = glGetUniformLocation(program, "u_Matrix");
+    m_program = CreateProgram(m_vertex_str, m_fragment_str, &m_vshader, &m_fshader);
+    m_v_position = glGetAttribLocation(m_program, "v_Position");
+    m_f_position = glGetAttribLocation(m_program, "f_Position");
+    m_sampler_ = glGetUniformLocation(m_program, "sTexture");
+    m_u_matrix = glGetUniformLocation(m_program, "u_Matrix");
 
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_2D, textureID);//绑定纹理
+    glGenTextures(1, &m_texture_id_);
+    glBindTexture(GL_TEXTURE_2D, m_texture_id_);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);//解绑纹理
+    glBindTexture(GL_TEXTURE_2D, 0);
     LOGI("FilterTwo OnCreate end");
 }
 
@@ -58,82 +58,43 @@ void FilterTwo::OnDraw() {
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);//指定刷屏颜色  1:不透明  0：透明
     glClear(GL_COLOR_BUFFER_BIT);//将刷屏颜色进行刷屏，但此时仍然处于后台缓冲中，需要swapBuffers交换到前台界面显示
 
-    glUseProgram(program);
+    glUseProgram(m_program);
 
-    glBindTexture(GL_TEXTURE_2D, textureID);
+    glUniformMatrix4fv(m_u_matrix, 1, GL_FALSE, m_matrix);
+    glEnableVertexAttribArray(m_v_position);
+    glVertexAttribPointer(m_v_position, 2, GL_FLOAT, false, 8, m_vertex_array);
+    glEnableVertexAttribArray(m_f_position);
+    glVertexAttribPointer(m_f_position, 2, GL_FLOAT, false, 8, m_fragment_array);
+
+    glBindTexture(GL_TEXTURE_2D, m_texture_id_);
     glActiveTexture(GL_TEXTURE0);
-    glUniform1i(sampler, 0);
-    glUniformMatrix4fv(u_matrix, 1, GL_FALSE, matrix);
-
-    if (pixels != NULL) {//为后台缓存显存中设置图片数据
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_image_width_, m_image_height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    if (m_pixels_ != NULL) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_image_width, m_image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_pixels_);
     }
+    glUniform1i(m_sampler_, 0);
 
-    //渲染时顶点赋值操作
-    glEnableVertexAttribArray(vPosition);//使能这个着色器变量
-
-    /*给着色器的顶点顶点变量赋值
-     * 第一个参数是着色器的变量id,第二个参数是每个顶点两个值，第三个参数是值的类型，第四个参数表示是否
-    归一化，已经有顶点参数，无需自动归一化。第五个参数表示每个顶点的跨度(这里每个顶点跨8个字节)，
-     第六个参数表示顶点数组
-     */
-    glVertexAttribPointer(vPosition, 2, GL_FLOAT, false, 8, vertexs);
-
-    glEnableVertexAttribArray(fPosition);
-    glVertexAttribPointer(fPosition, 2, GL_FLOAT, false, 8, fragments);
-    /*opengl绘制
-     * 绘制三角形，第二个参数表示从索引0开始，绘制三个顶点
-     */
-//    glDrawArrays(GL_TRIANGLES, 0, 3);//绘制三角形
-//    glDrawArrays(GL_TRIANGLES, 0, 6);//绘制四边形
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);//绘制四边形
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindTexture(GL_TEXTURE_2D, 0);
     LOGI("FilterTwo OnDraw end");
 }
 
-void FilterTwo::DestroySource() {
-    if (pixels != NULL) {
-        pixels = NULL;
-    }
-}
-
 void FilterTwo::Destroy() {
-    glDeleteTextures(1, &textureID);
-    glDetachShader(program, vShader);
-    glDetachShader(program, fShader);
-    glDeleteShader(vShader);
-    glDeleteShader(fShader);
-    glDeleteProgram(program);
+    m_pixels_ = NULL;
+    glDeleteTextures(1, &m_texture_id_);
+    glDetachShader(m_program, m_vshader);
+    glDetachShader(m_program, m_fshader);
+    glDeleteShader(m_vshader);
+    glDeleteShader(m_fshader);
+    glDeleteProgram(m_program);
 }
 
-void FilterTwo::SetImagePixel(int image_width, int image_height, void *data) {
+void FilterTwo::SetImagePixel(int image_width, int image_height, void *pixels) {
     LOGI("FilterTwo SetImagePixel in");
-    m_image_width_ = image_width;
-    m_image_height_ = image_height;
-    pixels = data;
+    m_image_width = image_width;
+    m_image_height = image_height;
+    m_pixels_ = pixels;
     if ((m_surface_width > 0) && (m_surface_height > 0)) {
-        _SetMatrix(m_surface_width, m_surface_height);
+        SetMatrix();
     }
     LOGI("FilterTwo SetImagePixel end");
-}
-
-void FilterTwo::_SetMatrix(int width, int height) {
-    LOGI("FilterTwo _SetMatrix in");
-//    initMatrix(matrix);
-//这里是矩阵投影操作
-    //屏幕720*1280 图片:517*685
-    float screen_r = 1.0 * width / height;
-    float picture_r = 1.0 * m_image_width_ / m_image_height_;
-    if (screen_r > picture_r) {//图片宽度缩放
-        LOGI("pic scale width");
-        float r = width / (1.0 * height / m_image_height_ * m_image_width_);
-        LOGI("pic scale width r: %f", r);
-        OrthoM(-r, r, -1, 1, matrix);
-    } else {//图片宽的比率大于屏幕，则宽进行直接覆盖屏幕，而图片高度缩放
-        LOGI("pic scale height");
-        float r = height / (1.0 * width / m_image_width_ * m_image_height_);
-        LOGI("pic scale height r: %f", r);
-        OrthoM(-1, 1, -r, r, matrix);
-    }
-    LOGI("FilterTwo _SetMatrix end");
 }

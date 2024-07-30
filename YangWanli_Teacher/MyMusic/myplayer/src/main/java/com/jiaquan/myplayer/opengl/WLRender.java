@@ -214,9 +214,9 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
         String vertexSource = WLShaderUtil.readRawTxt(mContext_, R.raw.vertex_shader);
         String fragmentSource = WLShaderUtil.readRawTxt(mContext_, R.raw.fragment_yuv);
         mProgramYuv_ = WLShaderUtil.createProgram(vertexSource, fragmentSource);
-        mAvPositionYuv_ = GLES20.glGetAttribLocation(mProgramYuv_, "av_Position");//顶点坐标
-        mAfPositionYuv_ = GLES20.glGetAttribLocation(mProgramYuv_, "af_Position");//纹理坐标
-        mMatrixYuv_ = GLES20.glGetUniformLocation(mProgramYuv_, "u_Matrix");//矩阵变量
+        mAvPositionYuv_ = GLES20.glGetAttribLocation(mProgramYuv_, "av_Position");
+        mAfPositionYuv_ = GLES20.glGetAttribLocation(mProgramYuv_, "af_Position");
+        mMatrixYuv_ = GLES20.glGetUniformLocation(mProgramYuv_, "u_Matrix");
 
         mSamplerY_ = GLES20.glGetUniformLocation(mProgramYuv_, "sampler_y");
         mSamplerU_ = GLES20.glGetUniformLocation(mProgramYuv_, "sampler_u");

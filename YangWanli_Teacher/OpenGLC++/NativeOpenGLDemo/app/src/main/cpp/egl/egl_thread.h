@@ -18,7 +18,7 @@ public:
     OnCreateCb m_on_create_cb;
     void *m_on_create_arg;
 
-    typedef void(*OnChangeCb)(int surface_width, int surface_height, void *);
+    typedef void(*OnChangeCb)(void *);
     OnChangeCb m_on_change_cb;
     void *m_on_change_arg;
 
@@ -30,7 +30,7 @@ public:
     OnDestroyCb m_on_destroy_cb;
     void *m_on_destroy_arg;
 
-    typedef void(*OnChangeFilterCb)(int surface_width, int surface_height, void *);
+    typedef void(*OnChangeFilterCb)(void *);
     OnChangeFilterCb m_on_change_filter_cb;
     void *m_on_change_filter_arg;
 
@@ -54,7 +54,7 @@ public:
 
     void OnSurfaceCreate(EGLNativeWindowType window);
 
-    void OnSurfaceChange(int surface_width, int surface_height);
+    void OnSurfaceChange();
 
     void OnSurfaceDestroy();
 
@@ -72,8 +72,6 @@ public:
     bool m_is_start = false;
     bool m_is_change_filter = false;
     bool m_is_exit = false;
-    int m_surface_width = 0;
-    int m_surface_height = 0;
 
 private:
     pthread_t m_egl_thread_ = -1;

@@ -28,18 +28,17 @@ public class MainActivity extends AppCompatActivity {
         mWLSurfaceView_ = findViewById(R.id.wlSurfaceview);
         mNativeOpengl_ = new NativeOpengl();
         mWLSurfaceView_.setNativeOpengl(mNativeOpengl_);
-
-        mImgList_.add(R.drawable.mingren);
-        mImgList_.add(R.drawable.img_1);
-        mImgList_.add(R.drawable.img_2);
-        mImgList_.add(R.drawable.img_3);
-
-        mWLSurfaceView_.setOnSurfaceListener(new WlSurfaceView.OnSurfaceListener() {
+        mWLSurfaceView_.setOnSurfaceListener(new NativeOpengl.OnSurfaceListener() {
             @Override
             public void init() {
                 _readImagePixels();
             }
         });
+
+        mImgList_.add(R.drawable.mingren);
+        mImgList_.add(R.drawable.img_1);
+        mImgList_.add(R.drawable.img_2);
+        mImgList_.add(R.drawable.img_3);
     }
 
     /**

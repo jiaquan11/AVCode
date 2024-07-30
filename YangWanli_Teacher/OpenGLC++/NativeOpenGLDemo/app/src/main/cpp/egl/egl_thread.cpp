@@ -47,7 +47,6 @@ void *_EglThreadImpl(void *arg) {
         EglHelper *egl_helper = new EglHelper();
         egl_helper->InitEgl(egl_thread->m_native_window);
         egl_thread->m_is_exit = false;
-
         while (true) {
             if (egl_thread->m_is_create) {
                 LOGI("egl_thread call surface create!");
@@ -58,13 +57,13 @@ void *_EglThreadImpl(void *arg) {
             if (egl_thread->m_is_change) {
                 LOGI("egl_thread call surface change!");
                 egl_thread->m_is_change = false;
-                egl_thread->m_on_change_cb(egl_thread->m_surface_width, egl_thread->m_surface_height, egl_thread->m_on_change_arg);
+                egl_thread->m_on_change_cb(egl_thread->m_on_change_arg);
                 egl_thread->m_is_start = true;
             }
 
             if (egl_thread->m_is_change_filter) {
                 egl_thread->m_is_change_filter = false;
-                egl_thread->m_on_change_filter_cb(egl_thread->m_surface_width, egl_thread->m_surface_height, egl_thread->m_on_change_filter_arg);
+                egl_thread->m_on_change_filter_cb(egl_thread->m_on_change_filter_arg);
             }
 
             if (egl_thread->m_is_start) {
@@ -102,10 +101,8 @@ void EglThread::OnSurfaceCreate(EGLNativeWindowType window) {
     }
 }
 
-void EglThread::OnSurfaceChange(int surface_width, int surface_height) {
+void EglThread::OnSurfaceChange() {
     m_is_change = true;
-    m_surface_width = surface_width;
-    m_surface_height = surface_height;
     NotifyRender();
 }
 
@@ -141,7 +138,6 @@ void EglThread::OnSurfaceDestroy() {
 
 void EglThread::OnSurfaceChangeFilter() {
     m_is_change_filter = true;
-    NotifyRender();
 }
 
 void EglThread::NotifyRender() {

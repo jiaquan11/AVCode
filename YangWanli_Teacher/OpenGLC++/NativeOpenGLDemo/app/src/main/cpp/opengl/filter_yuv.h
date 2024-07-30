@@ -19,32 +19,15 @@ public:
 
     void OnDraw();
 
-    void DestroySource();
-
     void Destroy();
 
     void SetYuvData(int yuv_width, int yuv_height, void *y_data, void *u_data, void *v_data);
 
 private:
-    void _SetMatrix(int width, int height);
-
-public:
-    GLint vPosition = 0;
-    GLint fPosition = 0;
-    GLint u_matrix = 0;
-
-    GLint sampler_y = 0;
-    GLint sampler_u = 0;
-    GLint sampler_v = 0;
-
-    GLuint samplers[3] = {0};
-    float matrix[16] = {0};
-
-
-
-private:
-    int m_yuv_width_ = 0;
-    int m_yuv_height_ = 0;
+    GLint m_sampler_y_ = 0;
+    GLint m_sampler_u_ = 0;
+    GLint m_sampler_v_ = 0;
+    GLuint m_samplers_[3] = {0};
     void *m_y_data_ = NULL;
     void *m_u_data_ = NULL;
     void *m_v_data_ = NULL;

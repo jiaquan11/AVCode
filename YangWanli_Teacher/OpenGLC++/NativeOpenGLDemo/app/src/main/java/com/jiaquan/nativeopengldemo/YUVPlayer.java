@@ -40,7 +40,7 @@ public class YUVPlayer extends AppCompatActivity {
         mWLSurfaceView_ = findViewById(R.id.wlSurfaceview);
         mNativeOpengl_ = new NativeOpengl();
         mWLSurfaceView_.setNativeOpengl(mNativeOpengl_);
-        mWLSurfaceView_.setOnSurfaceListener(new WlSurfaceView.OnSurfaceListener() {
+        mWLSurfaceView_.setOnSurfaceListener(new NativeOpengl.OnSurfaceListener() {
             @Override
             public void init() {
                 mIsExit_ = false;

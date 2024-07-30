@@ -41,16 +41,16 @@ JNIEXPORT void JNICALL SetImgData(JNIEnv *env, jobject thiz, jint image_width, j
     env->ReleaseByteArrayElements(data_array, data, 0);
 }
 
-JNIEXPORT void JNICALL SetYuvData(JNIEnv *env, jobject thiz, jint yuv_w, jint yuv_h, jbyteArray y_array, jbyteArray u_array, jbyteArray v_array) {
-    jbyte *ydata = env->GetByteArrayElements(y_array, NULL);
-    jbyte *udata = env->GetByteArrayElements(u_array, NULL);
-    jbyte *vdata = env->GetByteArrayElements(v_array, NULL);
+JNIEXPORT void JNICALL SetYuvData(JNIEnv *env, jobject thiz, jint yuv_width, jint yuv_height, jbyteArray y_array, jbyteArray u_array, jbyteArray v_array) {
+    jbyte *y_data = env->GetByteArrayElements(y_array, NULL);
+    jbyte *u_data = env->GetByteArrayElements(u_array, NULL);
+    jbyte *v_data = env->GetByteArrayElements(v_array, NULL);
     if (g_opengl != NULL) {
-        g_opengl->SetYuvData(yuv_w, yuv_h, ydata, udata, vdata);
+        g_opengl->SetYuvData(yuv_width, yuv_height, y_data, u_data, v_data);
     }
-    env->ReleaseByteArrayElements(y_array, ydata, 0);
-    env->ReleaseByteArrayElements(u_array, udata, 0);
-    env->ReleaseByteArrayElements(v_array, vdata, 0);
+    env->ReleaseByteArrayElements(y_array, y_data, 0);
+    env->ReleaseByteArrayElements(u_array, u_data, 0);
+    env->ReleaseByteArrayElements(v_array, v_data, 0);
 }
 
 static JNINativeMethod gMethods[] = {

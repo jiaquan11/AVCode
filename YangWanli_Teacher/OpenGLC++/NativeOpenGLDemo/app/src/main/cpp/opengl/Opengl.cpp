@@ -14,10 +14,10 @@ void SurfaceCreateCb(void *arg) {
     }
 }
 
-void SurfaceChangeCb(int surface_width, int surface_height, void *arg) {
+void SurfaceChangeCb(void *arg) {
     Opengl *opengl = static_cast<Opengl *>(arg);
     if ((opengl != NULL) && (opengl->m_base_opengl != NULL)) {
-        opengl->m_base_opengl->OnChange(surface_width, surface_height);
+        opengl->m_base_opengl->OnChange(opengl->m_surface_width, opengl->m_surface_height);
     }
 }
 
@@ -38,11 +38,10 @@ void SurfaceDestroyCb(void *arg) {
 /**
  * 切换滤镜:先把上次的滤镜资源类销毁，然后重新创建新的滤镜绘制类
  */
-void SurfaceChangeFilterCb(int surface_width, int surface_height, void *arg) {
+void SurfaceChangeFilterCb(void *arg) {
     Opengl *opengl = static_cast<Opengl *>(arg);
     if (opengl != NULL) {
         if (opengl->m_base_opengl != NULL) {
-            opengl->m_base_opengl->DestroySource();
             opengl->m_base_opengl->Destroy();
             delete opengl->m_base_opengl;
             opengl->m_base_opengl = NULL;
@@ -50,9 +49,8 @@ void SurfaceChangeFilterCb(int surface_width, int surface_height, void *arg) {
         //切换滤镜实例对象
         opengl->m_base_opengl = new FilterTwo();
         opengl->m_base_opengl->OnCreate();
-        opengl->m_base_opengl->OnChange(surface_width, surface_height);
+        opengl->m_base_opengl->OnChange(opengl->m_surface_width, opengl->m_surface_height);
         opengl->m_base_opengl->SetImagePixel(opengl->m_image_width, opengl->m_image_height, opengl->m_image_pixels);
-
         opengl->m_egl_thread->NotifyRender();
     }
 }
@@ -82,14 +80,16 @@ void Opengl::OnSurfaceCreate(JNIEnv *env, jobject surface) {
 //    m_base_opengl = new FilterYUV();//opengl绘制YUV视频
 
     m_native_window_ = ANativeWindow_fromSurface(env, surface);
-    m_egl_thread->OnSurfaceCreate(m_native_window_);
+    m_egl_thread->OnSurfaceCreate(m_native_window_);//内部创建egl环境子线程
     LOGI("Opengl OnSurfaceCreate end");
 }
 
 void Opengl::OnSurfaceChange(int surface_width, int surface_height) {
     LOGI("Opengl OnSurfaceChange in surface width:%d, height:%d", surface_width, surface_height);
+    m_surface_width = surface_width;
+    m_surface_height = surface_height;
     if (m_egl_thread != NULL) {
-        m_egl_thread->OnSurfaceChange(surface_width, surface_height);
+        m_egl_thread->OnSurfaceChange();
     }
     LOGI("Opengl OnSurfaceChange end");
 }
@@ -102,7 +102,6 @@ void Opengl::OnSurfaceDestroy() {
         m_egl_thread = NULL;
     }
     if (m_base_opengl != NULL) {
-        m_base_opengl->DestroySource();
         delete m_base_opengl;
         m_base_opengl = NULL;
     }
@@ -124,6 +123,7 @@ void Opengl::OnSurfaceDestroy() {
 void Opengl::OnSurfaceChangeFilter() {
     if (m_egl_thread != NULL) {
         m_egl_thread->OnSurfaceChangeFilter();
+        m_egl_thread->NotifyRender();
     }
 }
 
@@ -137,6 +137,11 @@ void Opengl::SetImgData(int image_width, int image_height, int size, void* data)
     m_image_pixels = malloc(size);
     memcpy(m_image_pixels, data, size);
     if (m_base_opengl != NULL) {
+        /**
+         * 这里有个小问题：就是如果gl渲染子线程还未来得及渲染，而SetImgData调用太快，那么新的图片数据会覆盖旧的图片数据，
+         * 导致渲染出来的图片是最后一次调用SetImgData的图片数据，而不是上次调用SetImgData的图片数据
+         * 当然一般情况下，这个问题不大，因为图片渲染的速度一般比较快。
+         */
         m_base_opengl->SetImagePixel(image_width, image_height, m_image_pixels);
     }
     if (m_egl_thread != NULL) {
