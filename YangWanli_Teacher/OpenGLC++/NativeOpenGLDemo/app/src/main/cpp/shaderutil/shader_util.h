@@ -52,14 +52,25 @@ static int CreateProgram(const char *vertex, const char *fragment, GLuint *v_sha
     //2.创建一个渲染程序
     int program = glCreateProgram();
     glAttachShader(program, vertex_shader);
+    GLint status;
+    glGetShaderiv(program, GL_ATTACHED_SHADERS, &status);
+    if (status == 0) {
+        LOGE("glAttachShader vertex_shader failed!");
+        return 0;
+    }
     glAttachShader(program, fragment_shader);
+    glGetShaderiv(program, GL_ATTACHED_SHADERS, &status);
+    if (status == 0) {
+        LOGE("glAttachShader fragment_shader failed!");
+        return 0;
+    }
+
     //3.链接渲染程序
     glLinkProgram(program);
 
     *v_shader = vertex_shader;
     *f_shader = fragment_shader;
     //4.检查链接状态
-    GLint status;
     glGetShaderiv(program, GL_LINK_STATUS, &status);
     if (status == 0) {
         LOGE("glLinkProgram failed!");
