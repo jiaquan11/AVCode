@@ -8,6 +8,7 @@
 #include <GLES2/gl2.h>
 
 #include "egl_helper.h"
+#include "../call_java.h"
 
 #define OPENGL_RENDER_AUTO 1
 #define OPENGL_RENDER_HANDLE 2
@@ -35,7 +36,7 @@ public:
     void *m_on_change_filter_arg;
 
 public:
-    EglThread();
+    EglThread(CallJava *call_java);
 
     ~EglThread();
 
@@ -72,6 +73,7 @@ public:
     bool m_is_start = false;
     bool m_is_change_filter = false;
     bool m_is_exit = false;
+    CallJava *m_call_java = NULL;
 
 private:
     pthread_t m_egl_thread_ = -1;

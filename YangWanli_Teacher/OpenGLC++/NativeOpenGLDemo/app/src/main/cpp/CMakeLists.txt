@@ -5,6 +5,7 @@ project("nativeopengldemo")
 add_library(native-lib
             SHARED
             native-lib.cpp
+            call_java.cpp
             egl/egl_helper.cpp
             egl/egl_thread.cpp
             opengl/base_opengl.cpp

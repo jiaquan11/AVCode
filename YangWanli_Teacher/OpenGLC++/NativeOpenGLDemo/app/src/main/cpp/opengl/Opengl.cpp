@@ -66,9 +66,11 @@ Opengl::~Opengl() {
     }
 }
 
-void Opengl::OnSurfaceCreate(JNIEnv *env, jobject surface) {
+void Opengl::OnSurfaceCreate(JavaVM *vm, JNIEnv *env, jobject thiz, jobject surface) {
     LOGI("Opengl OnSurfaceCreate in");
-    m_egl_thread = new EglThread();
+    m_call_java_ = new CallJava(vm, env, thiz);
+
+    m_egl_thread = new EglThread(m_call_java_);
     m_egl_thread->SetRenderType(OPENGL_RENDER_HANDLE);//设置渲染类型
     m_egl_thread->SetOnCreateCb(SurfaceCreateCb, this);//设置函数指针
     m_egl_thread->SetOnChangeCb(SurfaceChangeCb, this);
@@ -116,6 +118,10 @@ void Opengl::OnSurfaceDestroy() {
     if (m_image_pixels != NULL) {
         free(m_image_pixels);
         m_image_pixels = NULL;
+    }
+    if (m_call_java_ != NULL) {
+        delete m_call_java_;
+        m_call_java_ = NULL;
     }
     LOGI("Opengl OnSurfaceDestroy end");
 }

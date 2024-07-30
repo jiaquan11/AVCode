@@ -2,14 +2,16 @@
 #include <stdlib.h>
 #include <errno.h>
 
-EglThread::EglThread() {
+EglThread::EglThread(CallJava *call_java) {
     pthread_mutex_init(&m_pthread_mutex, NULL);
     pthread_cond_init(&m_pthread_cond, NULL);
+    m_call_java = call_java;
 }
 
 EglThread::~EglThread() {
     pthread_mutex_destroy(&m_pthread_mutex);
     pthread_cond_destroy(&m_pthread_cond);
+    m_call_java = NULL;
 }
 
 void EglThread::SetRenderType(int render_type) {
@@ -58,6 +60,9 @@ void *_EglThreadImpl(void *arg) {
                 LOGI("egl_thread call surface change!");
                 egl_thread->m_is_change = false;
                 egl_thread->m_on_change_cb(egl_thread->m_on_change_arg);
+                if (egl_thread->m_call_java != NULL) {
+                    egl_thread->m_call_java->OnCallEglPrepared();
+                }
                 egl_thread->m_is_start = true;
             }
 

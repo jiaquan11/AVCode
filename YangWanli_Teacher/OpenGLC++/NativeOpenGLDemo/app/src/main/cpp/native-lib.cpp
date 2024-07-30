@@ -5,12 +5,13 @@
 #define DELETE_LOCAL_REF(env, obj)  if(obj!=NULL){env->DeleteLocalRef(obj);obj=NULL;}
 static const char *const kClassPathName = "com/jiaquan/opengl/NativeOpengl";
 
+JavaVM *g_java_vm = NULL;
 Opengl *g_opengl = NULL;
 JNIEXPORT void JNICALL SurfaceCreate(JNIEnv *env, jobject thiz, jobject surface) {
     if (g_opengl == NULL) {
         g_opengl = new Opengl();
     }
-    g_opengl->OnSurfaceCreate(env, surface);
+    g_opengl->OnSurfaceCreate(g_java_vm, env, thiz, surface);
 }
 
 JNIEXPORT void JNICALL SurfaceChange(JNIEnv *env, jobject thiz, jint surface_width, jint surface_height) {
@@ -63,8 +64,9 @@ static JNINativeMethod gMethods[] = {
 };
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+    g_java_vm = vm;
     JNIEnv *env;
-    if (vm->GetEnv((void **) (&env), JNI_VERSION_1_6) != JNI_OK) {
+    if (g_java_vm->GetEnv((void **) (&env), JNI_VERSION_1_6) != JNI_OK) {
         LOGE("JNI_OnLoad GetEnv failed!");
         return -1;
     }
@@ -92,5 +94,9 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
         return;
     }
     assert(env != NULL);
+
+    if (g_java_vm != NULL) {
+        g_java_vm = NULL;
+    }
     LOGI("JNI_OnUnload out");
 }

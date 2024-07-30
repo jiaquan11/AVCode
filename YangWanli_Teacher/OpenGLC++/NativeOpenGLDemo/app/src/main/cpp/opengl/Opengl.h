@@ -8,6 +8,7 @@
 #include "filter_one.h"
 #include "filter_two.h"
 #include "filter_yuv.h"
+#include "../call_java.h"
 
 class Opengl {
 public:
@@ -16,7 +17,7 @@ public:
     ~Opengl();
 
 public:
-    void OnSurfaceCreate(JNIEnv *env, jobject surface);
+    void OnSurfaceCreate(JavaVM *vm, JNIEnv *env, jobject thiz, jobject surface);
 
     void OnSurfaceChange(int surface_width, int surface_height);
 
@@ -36,6 +37,9 @@ public:
     int m_surface_height = 0;
     int m_image_width = 0;
     int m_image_height = 0;
+
+private:
+    CallJava* m_call_java_ = NULL;
 
 private:
     ANativeWindow *m_native_window_ = NULL;
