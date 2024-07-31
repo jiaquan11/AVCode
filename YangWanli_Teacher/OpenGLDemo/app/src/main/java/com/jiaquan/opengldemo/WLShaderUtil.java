@@ -8,12 +8,11 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-/*
-* Shader资源操作类
-* */
+/**
+ * Shader资源操作类
+ */
 public class WLShaderUtil {
     private final static String TAG = WLShaderUtil.class.getSimpleName();
-
     public static String readRawTxt(Context context, int rawId) {
         InputStream inputStream = context.getResources().openRawResource(rawId);
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));

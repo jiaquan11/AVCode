@@ -32,8 +32,7 @@ FFmpeg+OpenGL ES+OpenSL ES打造Android视频播放器教程，该课程基于C+
 用纯C++实现Android的OpenGL渲染功能，包括EGL环境创建、EGL线程创建、OpenGL生命周期管理等，
 会结合SurfaceView和TextureView实现OpenGL的渲染，最终我们会实现一个YUV播放器实例，为音视频开发打下坚实的基础。
 问题点汇总处理
-问题1：增加native层的环境创建准备好的回调 false
-
+问题1：增加native层的环境创建准备好的回调 true
 
 五、OpenGLDemo项目
 使用GLSurfaceView组件进行opengl绘制的demo

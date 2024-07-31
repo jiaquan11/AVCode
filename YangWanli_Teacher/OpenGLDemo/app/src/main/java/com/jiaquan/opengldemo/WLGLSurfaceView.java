@@ -13,5 +13,6 @@ public class WLGLSurfaceView extends GLSurfaceView {
         super(context, attrs);
         setEGLContextClientVersion(2);
         setRenderer(new WLRender(context));//设置GLSurfaceView的渲染器
+        setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
     }
 }
