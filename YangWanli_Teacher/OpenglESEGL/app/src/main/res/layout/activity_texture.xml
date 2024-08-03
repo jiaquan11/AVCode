@@ -8,7 +8,7 @@
         android:id="@+id/wlglsurfaceview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="1"/>
+        android:layout_weight="1"/><!--layout_weight="1" 表示LinerLayout剩余的空间都给这个View控件-->
 
     <LinearLayout
         android:id="@+id/ly_content"

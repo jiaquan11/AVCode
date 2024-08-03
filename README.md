@@ -36,9 +36,13 @@ FFmpeg+OpenGL ES+OpenSL ES打造Android视频播放器教程，该课程基于C+
 
 五、OpenGLDemo项目
 使用GLSurfaceView组件进行opengl绘制的demo
+问题点汇总处理：无
 
 六、OpenglESEGL项目
 学会自己搭建OpenGL ES的EGL环境和渲染线程控制，各种渲染功能实现（FBO、VBO），多个surface渲染同一个纹理，单个surface渲染多个纹理
+问题点汇总处理
+1、
+
 
 七、AudioRecord项目
 在Java层调用Android系统接口实现音频录音的测试代码

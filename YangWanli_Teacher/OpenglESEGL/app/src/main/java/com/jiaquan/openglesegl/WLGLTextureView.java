@@ -4,7 +4,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 
 public class WLGLTextureView extends WLEGLSurfaceView {
-    private WLTextureRender wlTextureRender = null;
+    private WLTextureRender mWlTextureRender_;
 
     public WLGLTextureView(Context context) {
         this(context, null);
@@ -16,13 +16,12 @@ public class WLGLTextureView extends WLEGLSurfaceView {
 
     public WLGLTextureView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-
-        wlTextureRender = new WLTextureRender(context);
-        setRender(wlTextureRender);//设置渲染器
+        mWlTextureRender_ = new WLTextureRender(context);
+        setRender(mWlTextureRender_);
+        setRenderMode(WLEGLSurfaceView.RENDERMODE_WHEN_DIRTY);
     }
 
-    //获取渲染器
     public WLTextureRender getWlTextureRender() {
-        return wlTextureRender;
+        return mWlTextureRender_;
     }
 }

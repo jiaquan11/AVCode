@@ -4,7 +4,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 
 public class WlMutiSurfaceView extends WLEGLSurfaceView{
-    private WLMutiRender wlMutiRender = null;
+    private WLMutiRender mWlMutiRender_ = null;
 
     public WlMutiSurfaceView(Context context) {
         this(context, null);
@@ -16,14 +16,14 @@ public class WlMutiSurfaceView extends WLEGLSurfaceView{
 
     public WlMutiSurfaceView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-
-        wlMutiRender = new WLMutiRender(context);
-        setRender(wlMutiRender);
+        mWlMutiRender_ = new WLMutiRender(context);
+        setRender(mWlMutiRender_);
+        setRenderMode(RENDERMODE_WHEN_DIRTY);
     }
 
-    public void setTextureId(int textureId, int index){
-        if (wlMutiRender != null){
-            wlMutiRender.setTextureId(textureId, index);
+    public void setTextureId(int textureId, int index) {
+        if (mWlMutiRender_ != null){
+            mWlMutiRender_.setTextureId(textureId, index);
         }
     }
 }

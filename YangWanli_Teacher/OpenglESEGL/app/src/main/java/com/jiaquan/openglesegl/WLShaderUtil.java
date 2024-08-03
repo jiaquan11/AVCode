@@ -16,7 +16,6 @@ public class WLShaderUtil {
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         StringBuffer sb = new StringBuffer();
         String line;
-
         try {
             while ((line = reader.readLine()) != null) {
                 sb.append(line).append("\n");
@@ -47,13 +46,14 @@ public class WLShaderUtil {
     public static int createProgram(String vertexSource, String fragmentSource) {
         int vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, vertexSource);
         if (vertexShader == 0) {
+            Log.e(TAG, "vertexShader is 0");
             return 0;
         }
         int fragmentShader = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentSource);
         if (fragmentShader == 0) {
+            Log.e(TAG, "fragmentShader is 0");
             return 0;
         }
-
         int program = GLES20.glCreateProgram();
         if (program != 0) {
             GLES20.glAttachShader(program, vertexShader);

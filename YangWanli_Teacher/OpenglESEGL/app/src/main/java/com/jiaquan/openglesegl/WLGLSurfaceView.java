@@ -14,7 +14,6 @@ public class WLGLSurfaceView extends WLEGLSurfaceView {
 
     public WLGLSurfaceView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-
         setRender(new WLRender());
         setRenderMode(WLEGLSurfaceView.RENDERMODE_WHEN_DIRTY);
     }
