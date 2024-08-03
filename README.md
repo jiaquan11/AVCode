@@ -40,15 +40,15 @@ FFmpeg+OpenGL ES+OpenSL ES打造Android视频播放器教程，该课程基于C+
 
 六、OpenglESEGL项目
 学会自己搭建OpenGL ES的EGL环境和渲染线程控制，各种渲染功能实现（FBO、VBO），多个surface渲染同一个纹理，单个surface渲染多个纹理
-问题点汇总处理
-1、
-
+问题点汇总处理:无
 
 七、AudioRecord项目
 在Java层调用Android系统接口实现音频录音的测试代码
+问题点汇总处理:无
 
 八、OpenSLESRecord项目
 在c++层调用OpenSLES的库接口实现音频录音的测试代码
+问题点汇总处理:无
 
 九、LivePusher项目
 摄像头画面方向纠正，摄像头画面编码为MP4视频

@@ -3,57 +3,52 @@ package com.jiaquan.audiorecord;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.util.Log;
 
 public class AudioRecordUtil {
-    private AudioRecord audioRecord = null;
-    private int bufferSizeInBytes = 0;
-    private boolean start = false;
-    private int readSize = 0;
+    private AudioRecord mAudioRecord_ = null;
+    private int mBufferSizeInBytes_ = 0;
+    private boolean mStart_ = false;
+    private int mReadSize_ = 0;
 
-    private OnRecordListener onRecordListener = null;
+    private OnRecordListener mOnRecordListener_ = null;
     public interface OnRecordListener {
         void recordByte(byte[] audioData, int readSize);
     }
     public void setOnRecordListener(OnRecordListener onRecordListener) {
-        this.onRecordListener = onRecordListener;
+        mOnRecordListener_ = onRecordListener;
     }
 
     public AudioRecordUtil() {
-        bufferSizeInBytes = AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-        this.audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                44100,
-                AudioFormat.CHANNEL_IN_STEREO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                bufferSizeInBytes);
+        mBufferSizeInBytes_ = AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+        Log.i("AudioRecordUtil", "mBufferSizeInBytes_: " + mBufferSizeInBytes_);
+        mAudioRecord_ = new AudioRecord(MediaRecorder.AudioSource.MIC, 44100,
+                                        AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT, mBufferSizeInBytes_);
     }
 
     public void startRecord() {
         new Thread() {
             @Override
             public void run() {
-                super.run();
-                start = true;
-                audioRecord.startRecording();
-
-                byte[] audioData = new byte[bufferSizeInBytes];
-
-                while (start) {
-                    readSize = audioRecord.read(audioData, 0, bufferSizeInBytes);
-                    if (onRecordListener != null) {
-                        onRecordListener.recordByte(audioData, readSize);
+                mStart_ = true;
+                mAudioRecord_.startRecording();
+                byte[] audioData = new byte[mBufferSizeInBytes_];
+                while (mStart_) {
+                    mReadSize_ = mAudioRecord_.read(audioData, 0, mBufferSizeInBytes_);
+                    if (mOnRecordListener_ != null) {
+                        mOnRecordListener_.recordByte(audioData, mReadSize_);
                     }
                 }
-
-                if (audioRecord != null) {
-                    audioRecord.stop();
-                    audioRecord.release();
-                    audioRecord = null;
+                if (mAudioRecord_ != null) {
+                    mAudioRecord_.stop();
+                    mAudioRecord_.release();
+                    mAudioRecord_ = null;
                 }
             }
         }.start();
     }
 
     public void stopRecord() {
-        start = false;
+        mStart_ = false;
     }
 }
