@@ -9,7 +9,6 @@ import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-    //加载so
     static {
         System.loadLibrary("native-lib");
     }
@@ -18,29 +17,30 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         // 要申请的权限
         String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE
                 , Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.CHANGE_NETWORK_STATE, Manifest.permission.CAMERA,
                 Manifest.permission.RECORD_AUDIO};
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissions(permissions, 321);
         }
     }
 
-    //开始音频录制,采集的是音频pcm数据
+    /**
+     * 开始音频录制
+     */
     public void start(View view) {
-        startRecord(Environment.getExternalStorageDirectory().getAbsolutePath() + "/testziliao/opensles_record.pcm");
+        _nativeStartRecord(Environment.getExternalStorageDirectory().getAbsolutePath() + "/testziliao/opensles_record.pcm");
     }
 
-    //结束音频录制
+    /**
+     * 停止音频录制
+     */
     public void stop(View view) {
-        stopRecord();
+        _nativeStopRecord();
     }
 
-    //native方法
-    public native void startRecord(String path);
+    private native void _nativeStartRecord(String path);
 
-    public native void stopRecord();
+    private native void _nativeStopRecord();
 }

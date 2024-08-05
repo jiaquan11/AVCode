@@ -9,7 +9,7 @@
     <Button
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:text="RecordAudio"
+        android:text="开始录音"
         android:onClick="recordAudio" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
