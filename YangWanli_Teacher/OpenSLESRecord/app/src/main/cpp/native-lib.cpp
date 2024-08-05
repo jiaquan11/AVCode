@@ -18,13 +18,13 @@ RecordSingleBuffer *g_record_single_buffer = NULL;
 std::thread record_process_thread;
 bool g_is_recording = false;
 bool g_is_exit = false;
+short* g_write_buffer = NULL;
 const int kBufferSize = 4096;
 SLObjectItf slObjectEngine = NULL;
 SLEngineItf engineItf = NULL;
 SLObjectItf recordObj = NULL;
 SLRecordItf recordItf = NULL;
 SLAndroidSimpleBufferQueueItf recordBufferQueue = NULL;
-
 /**
  * 音频录制回调
  */
@@ -47,38 +47,21 @@ void bqRecorderCallback(SLAndroidSimpleBufferQueueItf bq, void *context) {
 //    }
 //    (*recordBufferQueue)->Enqueue(recordBufferQueue, (char *) g_record_single_buffer->GetRecordBuffer(), kBufferSize * 2);
 
-    short *write_buffer = g_record_double_buffer->GetWriteBuffer();
-    if (write_buffer == NULL) {
+    /**
+     * 每次录制采集回来才能将数据提交到可读取的缓冲区，这样可以保证数据的完整性
+     */
+    g_record_double_buffer->CommitWriteBuffer(g_write_buffer);//提交已写入数据的缓冲区
+    g_write_buffer = g_record_double_buffer->GetWriteBuffer();
+    if (g_write_buffer == NULL) {
         LOGE("bqRecorderCallback write_buffer is NULL");
         return;
     }
     /**
      * 一次录制采样要求返回的数据buffer和大小，进行了固定设置:kBufferSize * 2字节
      */
-    SLresult result = (*recordBufferQueue)->Enqueue(recordBufferQueue, (char *) write_buffer, kBufferSize * 2);
+    SLresult result = (*recordBufferQueue)->Enqueue(recordBufferQueue, (char *) g_write_buffer, kBufferSize * 2);
     if (result != SL_RESULT_SUCCESS) {
         LOGE("bqRecorderCallback Enqueue failed, result: %d", result);
-    }
-    g_record_double_buffer->CommitWriteBuffer(write_buffer);//提交已写入数据的缓冲区
-}
-
-void _ApplyFadeInEffect(short *buffer, int buffer_size, int fade_in_duration) {
-    for (int i = 0; i < buffer_size && i < fade_in_duration; ++i) {
-        float multiplier = static_cast<float>(i) / fade_in_duration;
-        buffer[i] = static_cast<short>(buffer[i] * multiplier);
-    }
-}
-
-void
-_ApplyLowPassFilter(short *buffer, int buffer_size, int sample_rate, int cutoff_frequency = 3000) {
-    // 简单的低通滤波器实现
-    float rc = 1.0 / (cutoff_frequency * 2 * 3.14);
-    float dt = 1.0 / sample_rate;
-    float alpha = dt / (rc + dt);
-    short previous = buffer[0];
-    for (int i = 1; i < buffer_size; ++i) {
-        buffer[i] = previous + alpha * (buffer[i] - previous);
-        previous = buffer[i];
     }
 }
 
@@ -96,14 +79,6 @@ void _ProcessAudioData(RecordDoubleBuffer* recrod_buffer) {
             continue;
         }
 
-        // Apply fade-in effect once at the start
-//        if (!fade_in_applied) {
-//            _ApplyFadeInEffect(read_buffer, kBufferSize, fade_in_duration);
-//            fade_in_applied = true;
-//        }
-//
-//        // 应用低通滤波器，cutoff_frequency 设置为 3000
-//        _ApplyLowPassFilter(read_buffer, kBufferSize, 44100, 3000);
         if (g_pcm_file != NULL) {
             fwrite((char *) read_buffer, 1, kBufferSize * 2, g_pcm_file);
             fflush(g_pcm_file);
@@ -156,9 +131,8 @@ JNIEXPORT void JNICALL StartRecord(JNIEnv *env, jobject thiz, jstring path_jstr)
                                &recordBufferQueue);//获取缓冲队列接口
     (*recordBufferQueue)->RegisterCallback(recordBufferQueue, bqRecorderCallback, NULL);
     (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_RECORDING);
-    short *write_buffer = g_record_double_buffer->GetWriteBuffer();
-    (*recordBufferQueue)->Enqueue(recordBufferQueue, (char *) write_buffer, kBufferSize * 2);
-    g_record_double_buffer->CommitWriteBuffer(write_buffer);
+    g_write_buffer = g_record_double_buffer->GetWriteBuffer();
+    (*recordBufferQueue)->Enqueue(recordBufferQueue, (char *) g_write_buffer, kBufferSize * 2);
 //    (*recordBufferQueue)->Enqueue(recordBufferQueue, (char*)g_record_single_buffer->GetRecordBuffer(), kBufferSize * 2);
     env->ReleaseStringUTFChars(path_jstr, path);
 
@@ -194,6 +168,7 @@ JNIEXPORT void JNICALL StopRecord(JNIEnv *env, jobject thiz) {
         fclose(g_pcm_file);
         g_pcm_file = NULL;
     }
+    g_write_buffer = NULL;
     g_is_recording = false;
     g_is_exit = false;
     LOGI("StopRecord out");
