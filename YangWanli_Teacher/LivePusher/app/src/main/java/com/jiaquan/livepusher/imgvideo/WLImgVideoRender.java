@@ -6,6 +6,7 @@ import android.util.Log;
 
 import com.jiaquan.livepusher.R;
 import com.jiaquan.livepusher.egl.WLEGLSurfaceView;
+import com.jiaquan.livepusher.egl.WLImageUtil;
 import com.jiaquan.livepusher.egl.WLShaderUtil;
 
 import java.nio.ByteBuffer;
@@ -159,8 +160,7 @@ public class WLImgVideoRender implements WLEGLSurfaceView.WLGLRender {
 
     @Override
     public void onDrawFrame() {
-        imgTextureId = WLShaderUtil.loadTexture(srcImg, context);
-
+        imgTextureId = WLImageUtil.loadTexture(context, srcImg);
         Log.d("WLImgVideoRender", "imgTextureId is : " + imgTextureId);
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fboId);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);

@@ -22,7 +22,6 @@ public class ImageVideoActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_imagevideo);
-
         wlImgVideoView = findViewById(R.id.imgvideoview);
         wlImgVideoView.setCurrentImg(R.drawable.img_1);
 

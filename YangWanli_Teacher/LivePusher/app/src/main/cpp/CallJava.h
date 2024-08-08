@@ -6,7 +6,7 @@
 #define MYMUSIC_CALLJAVA_H
 
 #include "jni.h"
-#include "log/androidLog.h"
+#include "log/android_log.h"
 
 #define MAIN_THREAD 0
 #define CHILD_THREAD 1

@@ -38,7 +38,6 @@ public class WLMutiRender implements WLEGLSurfaceView.WLGLRender {
     int mIndex_ = -1;
     private int mTextureId_ = -1;
     private TextureInfo mBmpTextureInfo_ = null;
-
     public void setTextureId(int textureId, int index) {
         mTextureId_ = textureId;
         mIndex_ = index;
@@ -118,10 +117,9 @@ public class WLMutiRender implements WLEGLSurfaceView.WLGLRender {
         GLES20.glEnableVertexAttribArray(mFPosition_);
         GLES20.glVertexAttribPointer(mFPosition_, 2, GLES20.GL_FLOAT, false, 8, mVertexData_.length * 4);
 
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextureId_);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextureId_);
         GLES20.glUniform1i(mSTexture_, 0);
-
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         //第二个纹理绘制
         GLES20.glEnableVertexAttribArray(mVPosition_);
@@ -129,10 +127,9 @@ public class WLMutiRender implements WLEGLSurfaceView.WLGLRender {
         GLES20.glEnableVertexAttribArray(mFPosition_);
         GLES20.glVertexAttribPointer(mFPosition_, 2, GLES20.GL_FLOAT, false, 8, mVertexData_.length * 4);
 
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mBmpTextureInfo_.mTextureId);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mBmpTextureInfo_.mTextureId);
         GLES20.glUniform1i(mSTexture_, 0);
-
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 3);//只绘制图像纹理的一部分(顶点坐标控制)
 
         //解绑纹理id

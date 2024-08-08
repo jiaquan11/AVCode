@@ -16,9 +16,9 @@ import com.ywl5320.listener.OnCompleteListener;
 import com.ywl5320.listener.OnPreparedListener;
 import com.ywl5320.listener.OnShowPcmDataListener;
 
-/*
-* 摄像头预览及录制编码
-* */
+/**
+ * 摄像头预览及录制编码
+ */
 public class VideoActivity extends AppCompatActivity {
     private WLCameraView wlCameraView = null;
     private Button btnRecord = null;
@@ -47,7 +47,6 @@ public class VideoActivity extends AppCompatActivity {
             public void onComplete() {
                 wlMediaEncoder.stopRecord();
                 wlMediaEncoder = null;
-
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -72,7 +71,6 @@ public class VideoActivity extends AppCompatActivity {
                         Log.i("VideoActivity", "rec time is: " + times);
                     }
                 });
-
                 wlMediaEncoder.startRecord();
             }
 

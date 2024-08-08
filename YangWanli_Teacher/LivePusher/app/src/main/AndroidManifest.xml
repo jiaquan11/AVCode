@@ -2,8 +2,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.jiaquan.livepusher">
 
+    <!-- 特性声明，表示摄像头是可选的 -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 权限声明，用于访问摄像头 -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"></uses-permission>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"></uses-permission>
@@ -23,18 +29,22 @@
             </intent-filter>
         </activity>
 
+<!--        android:configChanges 属性用于指定 Activity 在特定配置变化时不需要重新创建，而是由应用自己处理-->
         <activity android:name=".CameraActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:theme="@style/AppThemeFullScreen"/>
+            android:theme="@style/AppThemeFullScreen" />
 
+<!--        android:screenOrientation="portrait"：这个属性值强制指定Activity只能以纵向模式显示，即使设备被旋转到横向模式，屏幕也不会跟随旋转-->
         <activity android:name=".VideoActivity"
             android:theme="@style/AppThemeFullScreen"
             android:screenOrientation="portrait"/>
 
         <activity android:name=".ImageVideoActivity"
+            android:theme="@style/AppThemeFullScreen"
             android:screenOrientation="portrait" />
 
         <activity android:name=".YuvActivity"
+            android:theme="@style/AppThemeFullScreen"
             android:screenOrientation="portrait"/>
 
         <activity android:name=".LivePushActivity"

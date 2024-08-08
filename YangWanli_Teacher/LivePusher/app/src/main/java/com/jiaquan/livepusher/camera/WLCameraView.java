@@ -11,12 +11,11 @@ import android.view.WindowManager;
 import com.jiaquan.livepusher.egl.WLEGLSurfaceView;
 
 public class WLCameraView extends WLEGLSurfaceView {
-    private static final String TAG = WLCameraView.class.getSimpleName();
-
-    private WLCameraRender wlCameraRender = null;
-    private WLCamera wlCamera = null;
-    private int cameraId = Camera.CameraInfo.CAMERA_FACING_BACK;
-    private int textureId = -1;
+    private WLCameraRender mWlCameraRender_ = null;
+    private WLCamera mWlCamera_ = null;
+    private int mCameraId_ = Camera.CameraInfo.CAMERA_FACING_BACK;
+    private int mTextureId_ = -1;
+    private Context mContext_;
 
     public WLCameraView(Context context) {
         this(context, null);
@@ -28,75 +27,93 @@ public class WLCameraView extends WLEGLSurfaceView {
 
     public WLCameraView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-
-        wlCameraRender = new WLCameraRender(context);
-        wlCamera = new WLCamera(context);
-
-        setRender(wlCameraRender);
-
-        previewAngle(context);
-
-        wlCameraRender.setOnSurfaceCreateListener(new WLCameraRender.OnSurfaceCreateListener() {
+        Log.i("LivePusherPlayer", "WLCameraView init");
+        mContext_ = context;
+        mWlCamera_ = new WLCamera();
+        mWlCameraRender_ = new WLCameraRender(context);
+        setRender(mWlCameraRender_);
+        setRenderMode(WLEGLSurfaceView.RENDERMODE_WHEN_DIRTY);
+        mWlCamera_.openCamera(mCameraId_);//默认打开后置摄像头
+        mWlCameraRender_.setOnSurfaceCreateListener(new WLCameraRender.OnSurfaceCreateListener() {
             @Override
-            public void onSurfaceCreate(SurfaceTexture surfaceTexture, int textureid) {
-                //opengl创建surfaceTexture用于给到摄像头进行传递数据，并在opengl中进行绘制
-                wlCamera.initCamera(surfaceTexture, cameraId);//默认打开后置摄像头
-                textureId = textureid;//回调回来的FBO最终渲染的窗口纹理id,这个是用于编码的
+            public void onSurfaceCreate(SurfaceTexture surfaceTexture, int textureid, int surfaceWidth, int surfaceHeight) {
+                Log.i("LivePusherPlayer", "WLCameraView onSurfaceCreate");
+                previewAngle(context);
+                mWlCamera_.startPreview(surfaceTexture, surfaceWidth, surfaceHeight);
+                mTextureId_ = textureid;
             }
         });
+        mWlCameraRender_.setOnRenderListener(new WLCameraRender.OnRenderListener() {
+            @Override
+            public void onRender() {
+                requestRender();
+            }
+        });
+        Log.i("LivePusherPlayer", "WLCameraView init end");
     }
 
     public void onDestroy() {
-        if (wlCamera != null) {
-            wlCamera.stopPreview();
+        if (mWlCamera_ != null) {
+            mWlCamera_.stopPreview();
+            mWlCamera_.closeCamera();
+        }
+        if (mWlCameraRender_ != null) {
+            mWlCameraRender_.onDestory();
         }
     }
 
     public void previewAngle(Context context) {
-        wlCameraRender.resetMatrix();//重置矩阵，后面会进行重新赋值
-
-        //获取acitvity真实的显示角度，然后调整摄像头的角度变化进行渲染
+        mWlCameraRender_.resetMatrix();
         int angle = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
-        Log.i(TAG, "angle is: " + angle);
+        Log.i("LivePusherPlayer", "previewAngle in, angle: " + angle);
         switch (angle) {
             case Surface.ROTATION_0:
-                if (cameraId == Camera.CameraInfo.CAMERA_FACING_BACK) {
-                    wlCameraRender.setAngle(90, 0, 0, 1);//先旋转Z轴
-                    wlCameraRender.setAngle(180, 1, 0, 0);//再旋转X轴
+                if (mCameraId_ == Camera.CameraInfo.CAMERA_FACING_BACK) {
+                    mWlCameraRender_.setAngle(90, 0, 0, 1);//先旋转Z轴
+                    mWlCameraRender_.setAngle(180, 1, 0, 0);//再旋转X轴
                 } else {
-                    wlCameraRender.setAngle(90, 0, 0, 1);
+                    mWlCameraRender_.setAngle(90, 0, 0, 1);
                 }
                 break;
-
             case Surface.ROTATION_90:
-                if (cameraId == Camera.CameraInfo.CAMERA_FACING_BACK) {
-                    wlCameraRender.setAngle(180, 0, 0, 1);
-                    wlCameraRender.setAngle(180, 0, 1, 0);
+                if (mCameraId_ == Camera.CameraInfo.CAMERA_FACING_BACK) {
+                    mWlCameraRender_.setAngle(180, 0, 0, 1);
+                    mWlCameraRender_.setAngle(180, 0, 1, 0);
                 } else {
-                    wlCameraRender.setAngle(90, 0, 0, 1);
+                    mWlCameraRender_.setAngle(90, 0, 0, 1);
                 }
                 break;
-
             case Surface.ROTATION_180:
-                if (cameraId == Camera.CameraInfo.CAMERA_FACING_BACK) {
-                    wlCameraRender.setAngle(90, 0, 0, 1);
-                    wlCameraRender.setAngle(180, 0, 1, 0);
+                if (mCameraId_ == Camera.CameraInfo.CAMERA_FACING_BACK) {
+                    mWlCameraRender_.setAngle(90, 0, 0, 1);
+                    mWlCameraRender_.setAngle(180, 0, 1, 0);
                 } else {
-                    wlCameraRender.setAngle(-90, 0, 0, 1);
+                    mWlCameraRender_.setAngle(-90, 0, 0, 1);
                 }
                 break;
-
             case Surface.ROTATION_270:
-                if (cameraId == Camera.CameraInfo.CAMERA_FACING_BACK) {
-                    wlCameraRender.setAngle(180, 0, 1, 0);
+                if (mCameraId_ == Camera.CameraInfo.CAMERA_FACING_BACK) {
+                    mWlCameraRender_.setAngle(180, 0, 1, 0);
                 } else {
-                    wlCameraRender.setAngle(0, 0, 0, 1);
+                    mWlCameraRender_.setAngle(0, 0, 0, 1);
                 }
                 break;
         }
+        Log.i("LivePusherPlayer", "previewAngle end");
     }
 
     public int getTextureId() {
-        return textureId;
+        return mTextureId_;
+    }
+
+    public void switchCamera() {
+        if (mCameraId_ == Camera.CameraInfo.CAMERA_FACING_BACK) {
+            mCameraId_ = Camera.CameraInfo.CAMERA_FACING_FRONT;
+        } else {
+            mCameraId_ = Camera.CameraInfo.CAMERA_FACING_BACK;
+        }
+        mWlCamera_.openCamera(mCameraId_);
+        previewAngle(mContext_);
+        mWlCamera_.startPreview(mWlCamera_.getSurfaceTexture(), mWlCamera_.getSurfaceWidth(), mWlCamera_.getSurfaceHeight());
     }
 }

@@ -6,7 +6,7 @@ import android.util.AttributeSet;
 import com.jiaquan.livepusher.egl.WLEGLSurfaceView;
 
 public class WLYuvView extends WLEGLSurfaceView {
-    private WLYuvRender wlYuvRender;
+    private WLYuvRender mWlYuvRender_ = null;
 
     public WLYuvView(Context context) {
         this(context, null);
@@ -18,14 +18,14 @@ public class WLYuvView extends WLEGLSurfaceView {
 
     public WLYuvView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        wlYuvRender = new WLYuvRender(context);
-        setRender(wlYuvRender);
+        mWlYuvRender_ = new WLYuvRender(context);
+        setRender(mWlYuvRender_);
         setRenderMode(WLEGLSurfaceView.RENDERMODE_WHEN_DIRTY);
     }
 
-    public void setFrameData(int w, int h, byte[] by, byte[] bu, byte[] bv) {
-        if (wlYuvRender != null) {
-            wlYuvRender.setFrameData(w, h, by, bu, bv);
+    public void setYuvData(int yuvWidth, int yuvHeight, byte[] ydata, byte[] udata, byte[] vdata) {
+        if (mWlYuvRender_ != null) {
+            mWlYuvRender_.setYuvData(yuvWidth, yuvHeight, ydata, udata, vdata);
             requestRender();
         }
     }

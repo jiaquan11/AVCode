@@ -7,6 +7,7 @@ import android.util.Log;
 
 import com.jiaquan.livepusher.R;
 import com.jiaquan.livepusher.egl.WLEGLSurfaceView;
+import com.jiaquan.livepusher.egl.WLImageUtil;
 import com.jiaquan.livepusher.egl.WLShaderUtil;
 
 import java.nio.ByteBuffer;
@@ -73,7 +74,7 @@ public class WLEncoderPushRender implements WLEGLSurfaceView.WLGLRender {
          *   rgba(255, 255, 255, 0)则表示完全透明的白色
          *      rgba(0, 0, 0,1 )则表示完全不透明度的黑色
          */
-        bitmap = WLShaderUtil.createTextImage("视频直播和推流:jiaquan", 50, "#ff0000", "#00000000", 0);
+        bitmap = WLImageUtil.createTextImage("视频直播和推流:jiaquan", 50, "#ff0000", "#00000000", 0);
 
         float r = 1.0f * bitmap.getWidth() / bitmap.getHeight();
         float w = r * 0.1f;//相当于正交投影，按照图片的真实比例投放到屏幕上，设置的图片在屏幕上的高为0.1，则可以计算得到在屏幕上的宽
@@ -141,8 +142,7 @@ public class WLEncoderPushRender implements WLEGLSurfaceView.WLGLRender {
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
             Log.i("WLTextureRender", "vertexData.length: " + vertexData.length);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-            bitmapTextureId = WLShaderUtil.loadBitmapTexture(bitmap);
+            bitmapTextureId = WLImageUtil.loadBitmapTexture(bitmap);
         }
     }
 

@@ -80,7 +80,6 @@ public abstract class WLBaseMediaEncoder {
         this.width = width;
         this.height = height;
         this.eglContext = eglContext;
-
         initMediaEncoder(savePath, width, height, sampleRate, channelCount);
     }
 

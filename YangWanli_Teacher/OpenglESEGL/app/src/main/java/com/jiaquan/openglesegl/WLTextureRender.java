@@ -23,11 +23,11 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
           -0.5f, 0.5f,
           0.5f, 0.5f
     };
-    private final float[] mFragmentData_ = {
-          0f, 1f,
-          1f, 1f,
-          0f, 0f,
-          1f, 0f
+    private final float[] mFragmentData_ = {//FBO坐标，以左下角为原点
+            0f, 0f,
+            1f, 0f,
+            0f, 1f,
+            1f, 1f
     };
     private Context mContext_ = null;
     private FloatBuffer mVertexBuffer_ = null;
@@ -68,6 +68,7 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
                                      .asFloatBuffer()
                                      .put(mFragmentData_);
         mFragmentBuffer_.position(0);
+        Matrix.setIdentityM(mMatrixArray_, 0);//初始化单位矩阵
     }
 
     @Override
@@ -138,7 +139,6 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
         GLES20.glUseProgram(mProgram_);
         //绑定FBO
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFboId_);
-        GLES20.glUniformMatrix4fv(mUmatrix_, 1, false, mMatrixArray_, 0);
         //绑定使用VB0
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mVboId_);
         //绘制第一张纹理
@@ -146,8 +146,8 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
         GLES20.glVertexAttribPointer(mVPosition_, 2, GLES20.GL_FLOAT, false, 8, 0);
         GLES20.glEnableVertexAttribArray(mFPosition_);
         GLES20.glVertexAttribPointer(mFPosition_, 2, GLES20.GL_FLOAT, false, 8, mVertexData_.length * 4);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mBmpTextureInfo_.mTextureId);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mBmpTextureInfo_.mTextureId);
         _setMatrix(mSurfaceWidth_, mSurfaceHeight_, mBmpTextureInfo_);//设置图片1的正交投影矩阵
         GLES20.glUniformMatrix4fv(mUmatrix_, 1, false, mMatrixArray_, 0);
         GLES20.glUniform1i(mSTexture_, 0);
@@ -157,8 +157,8 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
         GLES20.glVertexAttribPointer(mVPosition_, 2, GLES20.GL_FLOAT, false, 8, 32);//顶点坐标数组偏移
         GLES20.glEnableVertexAttribArray(mFPosition_);
         GLES20.glVertexAttribPointer(mFPosition_, 2, GLES20.GL_FLOAT, false, 8, mVertexData_.length * 4);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mBmpTextureInfo2_.mTextureId);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mBmpTextureInfo2_.mTextureId);
         _setMatrix(mSurfaceWidth_, mSurfaceHeight_, mBmpTextureInfo2_);//设置图片2的正交投影矩阵
         GLES20.glUniformMatrix4fv(mUmatrix_, 1, false, mMatrixArray_, 0);
         GLES20.glUniform1i(mSTexture_, 0);
@@ -224,10 +224,11 @@ public class WLTextureRender implements WLEGLSurfaceView.WLGLRender {
 
         /**
          * 旋转矩阵
-         * 在FBO帧缓冲区中，绘制的纹理图像是上下颠倒的，需要旋转180度，才能后续在屏幕上显示正常
          * FBO中的纹理坐标系是左下角为原点，而屏幕坐标系是左上角为原点
+         * 在FBO一开始设置的纹理坐标系按照左下角为原点，那么这里就不需要旋转，直接绘制即可，
+         * 都保持各自正确的坐标体系，就不需要额外操作
          */
-        Matrix.rotateM(mMatrixArray_, 0, 180, 1, 0, 0);//沿着X轴旋转180度，即上下翻转
+//        Matrix.rotateM(mMatrixArray_, 0, 180, 1, 0, 0);//沿着X轴旋转180度，即上下翻转
 //      Matrix.rotateM(matrix, 0, 180, 0, 0, 1);//沿着Z轴旋转180度，即逆时针旋转180度(效果不仅仅是上下翻转，还有左右翻转)
     }
 }

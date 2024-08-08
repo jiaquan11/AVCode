@@ -7,6 +7,7 @@ import android.util.Log;
 
 import com.jiaquan.livepusher.R;
 import com.jiaquan.livepusher.egl.WLEGLSurfaceView;
+import com.jiaquan.livepusher.egl.WLImageUtil;
 import com.jiaquan.livepusher.egl.WLShaderUtil;
 
 import java.nio.ByteBuffer;
@@ -15,16 +16,7 @@ import java.nio.FloatBuffer;
 
 public class WLEncoderRender implements WLEGLSurfaceView.WLGLRender {
     private Context context = null;
-
-    private final float[] vertexData = {//顶点坐标
-//            -1f, 0f,
-//            0f, -1f,
-//            0f, 1f,
-//
-//            0f, 1f,
-//            0f, -1f,
-//            1f, 0f
-
+    private final float[] vertexData = {
             -1f, -1f,
             1f, -1f,
             -1f, 1f,
@@ -35,21 +27,12 @@ public class WLEncoderRender implements WLEGLSurfaceView.WLGLRender {
             0f, 0f,
             0f, 0f
     };
-
-    private final float[] fragmentData = {//纹理坐标
+    private final float[] fragmentData = {
             0f, 1f,
             1f, 1f,
             0f, 0f,
             1f, 0f
-
-//            //纹理图像旋转操作
-//            1f, 0f,
-//            0f, 0f,
-//            1f, 1f,
-//            0f, 1f
     };
-
-
     private FloatBuffer vertexBuffer = null;
     private FloatBuffer fragmentBuffer = null;
     private int program;
@@ -57,9 +40,7 @@ public class WLEncoderRender implements WLEGLSurfaceView.WLGLRender {
     private int fPosition;
     private int sTexture;
     private int textureId;
-
     private int vboId;
-
     private Bitmap bitmap = null;
     private int bitmapTextureId;
 
@@ -70,11 +51,10 @@ public class WLEncoderRender implements WLEGLSurfaceView.WLGLRender {
         /**
          * 背景颜色为:#00000000,表示完全透明的黑色，使能opengl的透明功能，则会变成完全透明，否则是默认黑色
          * #000000表示纯黑色   #FFFFFF表示纯白色
-         *   rgba(255, 255, 255, 0)则表示完全透明的白色
-         *      rgba(0, 0, 0,1 )则表示完全不透明度的黑色
+         * rgba(255, 255, 255, 0)则表示完全透明的白色
+         * rgba(0, 0, 0,1 )则表示完全不透明度的黑色
          */
-        bitmap = WLShaderUtil.createTextImage("视频直播和推流:jiaquan", 50, "#ff0000", "#00000000", 0);
-
+        bitmap = WLImageUtil.createTextImage("视频直播和推流:jiaquan", 50, "#ff0000", "#00000000", 0);
         float r = 1.0f * bitmap.getWidth() / bitmap.getHeight();
         float w = r * 0.1f;//相当于正交投影，按照图片的真实比例投放到屏幕上，设置的图片在屏幕上的高为0.1，则可以计算得到在屏幕上的宽
         Log.i("WLEncoderRender", "w is " + w);
@@ -95,14 +75,11 @@ public class WLEncoderRender implements WLEGLSurfaceView.WLGLRender {
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(vertexData);
-
         vertexBuffer.position(0);
-
         fragmentBuffer = ByteBuffer.allocateDirect(fragmentData.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(fragmentData);
-
         fragmentBuffer.position(0);
     }
 
@@ -111,7 +88,6 @@ public class WLEncoderRender implements WLEGLSurfaceView.WLGLRender {
         //开启透明功能，如果开启此功能，设置有透明就会透明，否则默认是黑色
         GLES20.glEnable(GLES20.GL_BLEND);
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
-
         String vertexSource = WLShaderUtil.readRawTxt(context, R.raw.vertex_shader_screen);
         String fragmentSource = WLShaderUtil.readRawTxt(context, R.raw.fragment_shader_screen);
 
@@ -120,9 +96,6 @@ public class WLEncoderRender implements WLEGLSurfaceView.WLGLRender {
             vPosition = GLES20.glGetAttribLocation(program, "v_Position");
             fPosition = GLES20.glGetAttribLocation(program, "f_Position");
             sTexture = GLES20.glGetUniformLocation(program, "sTexture");
-
-            ////////////////////////////////////////////////////////////////////////////////
-            //VBO
             //1.创建VBO
             int[] vbos = new int[1];
             GLES20.glGenBuffers(1, vbos, 0);
@@ -131,17 +104,13 @@ public class WLEncoderRender implements WLEGLSurfaceView.WLGLRender {
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboId);
             //3.分配VBO需要的缓存大小
             GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, vertexData.length * 4 + fragmentData.length * 4, null, GLES20.GL_STATIC_DRAW);
-
             //4.为VBO设置顶点数据的值
             GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, 0, vertexData.length * 4, vertexBuffer);
             GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, vertexData.length * 4, fragmentData.length * 4, fragmentBuffer);
-
             //5.解绑VBO
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
             Log.i("WLTextureRender", "vertexData.length: " + vertexData.length);
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-            bitmapTextureId = WLShaderUtil.loadBitmapTexture(bitmap);
+            bitmapTextureId = WLImageUtil.loadBitmapTexture(bitmap);
         }
     }
 
@@ -159,17 +128,13 @@ public class WLEncoderRender implements WLEGLSurfaceView.WLGLRender {
 
         //绑定使用VBO
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboId);
-
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glUniform1i(sTexture, 0);
 
         GLES20.glEnableVertexAttribArray(vPosition);
-//        GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8, vertexBuffer);
         GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8, 0);
-
         GLES20.glEnableVertexAttribArray(fPosition);
-//        GLES20.glVertexAttribPointer(fPosition, 2, GLES20.GL_FLOAT, false, 8, textureBuffer);
         GLES20.glVertexAttribPointer(fPosition, 2, GLES20.GL_FLOAT, false, 8, vertexData.length * 4);
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
@@ -180,15 +145,12 @@ public class WLEncoderRender implements WLEGLSurfaceView.WLGLRender {
         GLES20.glUniform1i(sTexture, 0);
 
         GLES20.glEnableVertexAttribArray(vPosition);
-//        GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8, vertexBuffer);
         GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8, 32);
 
         GLES20.glEnableVertexAttribArray(fPosition);
-//        GLES20.glVertexAttribPointer(fPosition, 2, GLES20.GL_FLOAT, false, 8, textureBuffer);
         GLES20.glVertexAttribPointer(fPosition, 2, GLES20.GL_FLOAT, false, 8, vertexData.length * 4);
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-
         //解绑纹理id
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         //解绑VBO

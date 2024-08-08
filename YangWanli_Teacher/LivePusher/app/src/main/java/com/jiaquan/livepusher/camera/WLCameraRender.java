@@ -10,286 +10,251 @@ import android.util.Log;
 import com.jiaquan.livepusher.R;
 import com.jiaquan.livepusher.egl.WLEGLSurfaceView;
 import com.jiaquan.livepusher.egl.WLShaderUtil;
-import com.jiaquan.livepusher.util.DisplayUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTexture.OnFrameAvailableListener {
-    private static final String TAG = WLCameraRender.class.getSimpleName();
-
-    private Context context = null;
-
-    private final float[] vertexData = {//顶点坐标
-//            -1f, 0f,
-//            0f, -1f,
-//            0f, 1f,
-//
-//            0f, 1f,
-//            0f, -1f,
-//            1f, 0f
-
+    private final float[] mVertexData_ = {
             -1f, -1f,
             1f, -1f,
             -1f, 1f,
             1f, 1f,
     };
-
-    private final float[] fragmentData = {//FBO坐标
-//            0f, 0f,//FBO坐标
-//            1f, 0f,
-//            0f, 1f,
-//            1f, 1f,
-
-            0f, 1f,//纹理坐标
+    private final float[] mFragmentData_ = {
+            0f, 1f,
             1f, 1f,
             0f, 0f,
             1f, 0f
-            //纹理图像旋转操作
-//            1f, 0f,
-//            0f, 0f,
-//            1f, 1f,
-//            0f, 1f
     };
-
-    private FloatBuffer vertexBuffer = null;
-    private FloatBuffer fragmentBuffer = null;
-
-    private int program;
-    private int vPosition;
-    private int fPosition;
-    private int sTexture;
-    private int fboTextureid;
-    private int cameraTextureid;
-
-    private int umatrix;
-    private float[] matrix = new float[16];
-
-    private int vboId;
-    private int fboId;
-
-    private int screenWidth = -1;
-    private int screenHeight = -1;
-    private int surfaceWidth = -1;
-    private int surfaceHeight = -1;
-
-    private WLCameraFboRender wlCameraFboRender = null;
-    private SurfaceTexture surfaceTexture = null;
+    private Context mContext_ = null;
+    private FloatBuffer mVertexBuffer_ = null;
+    private FloatBuffer mFragmentBuffer_ = null;
+    private int mProgram_;
+    private int mVPosition_;
+    private int mFPosition_;
+    private int mSTexture_;
+    private int mFboTextureid_ = 0;
+    private int mCameraTextureid_ = 0;
+    private int mUmatrix_;
+    private float[] mMatrixArray_ = new float[16];
+    private int mVboId_ = 0;
+    private int mFboId_ = 0;
+    private WLCameraFboRender mWlCameraFboRender_ = null;
+    private SurfaceTexture mSurfaceTexture_ = null;
+    private int mSurfaceWidth_ = 0;
+    private int mSurfaceHeight_ = 0;
 
     public interface OnSurfaceCreateListener {
-        void onSurfaceCreate(SurfaceTexture surfaceTexture, int textureid);
+        void onSurfaceCreate(SurfaceTexture surfaceTexture, int textureid, int surfaceWditdh, int surfaceHeight);
     }
-    private OnSurfaceCreateListener onSurfaceCreateListener = null;
+
+    private OnSurfaceCreateListener mOnSurfaceCreateListener_ = null;
+
     public void setOnSurfaceCreateListener(OnSurfaceCreateListener onSurfaceCreateListener) {
-        this.onSurfaceCreateListener = onSurfaceCreateListener;
+        mOnSurfaceCreateListener_ = onSurfaceCreateListener;
+    }
+
+    public interface OnRenderListener {
+        void onRender();
+    }
+
+    private OnRenderListener mOnRenderListener_ = null;
+
+    public void setOnRenderListener(OnRenderListener onRenderListener) {
+        mOnRenderListener_ = onRenderListener;
     }
 
     public WLCameraRender(Context context) {
-        this.context = context;
-
-        //一开始就获取到屏幕宽高
-        screenWidth = DisplayUtil.getScreenWidth(context);
-        screenHeight = DisplayUtil.getScreenHeight(context);
-
-        wlCameraFboRender = new WLCameraFboRender(context);
-
-        vertexBuffer = ByteBuffer.allocateDirect(vertexData.length * 4)
+        mVertexBuffer_ = ByteBuffer.allocateDirect(mVertexData_.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
-                .put(vertexData);
-        vertexBuffer.position(0);
-
-        fragmentBuffer = ByteBuffer.allocateDirect(fragmentData.length * 4)
+                .put(mVertexData_);
+        mVertexBuffer_.position(0);
+        mFragmentBuffer_ = ByteBuffer.allocateDirect(mFragmentData_.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
-                .put(fragmentData);
-        fragmentBuffer.position(0);
+                .put(mFragmentData_);
+        mFragmentBuffer_.position(0);
+        mContext_ = context;
+        Matrix.setIdentityM(mMatrixArray_, 0);//初始化单位矩阵
+        mWlCameraFboRender_ = new WLCameraFboRender(context);
     }
 
     @Override
     public void onSurfaceCreated() {
-        Log.i(TAG, "onSurfaceCreated");
-        wlCameraFboRender.onCreate();
-
-        String vertexSource = WLShaderUtil.readRawTxt(context, R.raw.vertex_shader);
-        String fragmentSource = WLShaderUtil.readRawTxt(context, R.raw.fragment_shader);
-        program = WLShaderUtil.createProgram(vertexSource, fragmentSource);
-        if (program > 0) {
-            vPosition = GLES20.glGetAttribLocation(program, "v_Position");
-            fPosition = GLES20.glGetAttribLocation(program, "f_Position");
-            sTexture = GLES20.glGetUniformLocation(program, "sTexture");
-            umatrix = GLES20.glGetUniformLocation(program, "u_Matrix");
-
-            //////////////////////////////////////////////////////////////////////////////////////////////////////
-            //VBO
+        Log.i("LivePusherPlayer", "WLCameraRender onSurfaceCreated in");
+        String vertexSource = WLShaderUtil.readRawTxt(mContext_, R.raw.vertex_shader);
+        String fragmentSource = WLShaderUtil.readRawTxt(mContext_, R.raw.fragment_shader);
+        mProgram_ = WLShaderUtil.createProgram(vertexSource, fragmentSource);
+        if (mProgram_ > 0) {
+            mVPosition_ = GLES20.glGetAttribLocation(mProgram_, "v_Position");
+            mFPosition_ = GLES20.glGetAttribLocation(mProgram_, "f_Position");
+            mSTexture_ = GLES20.glGetUniformLocation(mProgram_, "sTexture");
+            mUmatrix_ = GLES20.glGetUniformLocation(mProgram_, "u_Matrix");
             //1.创建VBO
             int[] vbos = new int[1];
             GLES20.glGenBuffers(1, vbos, 0);
-            vboId = vbos[0];
+            mVboId_ = vbos[0];
             //2.绑定VBO
-            GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboId);
+            GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mVboId_);
             //3.分配VBO需要的缓存大小
-            GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, vertexData.length * 4 + fragmentData.length * 4, null, GLES20.GL_STATIC_DRAW);
-
+            GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, mVertexData_.length * 4 + mFragmentData_.length * 4, null, GLES20.GL_STATIC_DRAW);
             //4.为VBO设置顶点数据的值
-            GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, 0, vertexData.length * 4, vertexBuffer);
-            GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, vertexData.length * 4, fragmentData.length * 4, fragmentBuffer);
-
+            GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, 0, mVertexData_.length * 4, mVertexBuffer_);
+            GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, mVertexData_.length * 4, mFragmentData_.length * 4, mFragmentBuffer_);
             //5.解绑VBO
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
-            Log.i(TAG, "vertexData.length: " + vertexData.length);
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-            //////////////////////////////////////////////
-            //FBO
-            //1.创建FBO
-            int[] fbos = new int[1];
-            GLES20.glGenBuffers(1, fbos, 0);
-            fboId = fbos[0];
-            //2.绑定FBO
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fboId);
-
-            //纹理id生成操作
-            int[] textureIds = new int[1];
-            GLES20.glGenTextures(1, textureIds, 0);
-            fboTextureid = textureIds[0];
-
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, fboTextureid);
-
-//            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-//            GLES20.glUniform1i(sTexture, 0);
-
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_REPEAT);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_REPEAT);
-
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-
-            //3.设置FBO分配内存大小
-            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, screenWidth, screenHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
-            //////////////////////////////////////////////
-
-            //4.将纹理绑定到FBO
-            GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, fboTextureid, 0);
-
-            //5.检查FBO绑定是否成功
-            if (GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER) != GLES20.GL_FRAMEBUFFER_COMPLETE) {
-                Log.e(TAG, "fbo is wrong!!!");
-            } else {
-                Log.i(TAG, "fbo is successed!!!");
-            }
-
-//            bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.mingren);
-//            if (bitmap == null) {
-//                Log.e("WLTextureRender", "bitmap decodeResource error!");
-//                return;
-//            }
-
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-            //解绑FBO
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-
-            ///////////////////////////////////////////////////////////////////////////
-            //生成摄像头预览所需的OES纹理SurfaceTexture
-            int[] textureIdsoes = new int[1];
-            GLES20.glGenTextures(1, textureIdsoes, 0);
-            cameraTextureid = textureIdsoes[0];
-
-            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, cameraTextureid);
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glUniform1i(sTexture, 0);
-
+            //创建OES扩展纹理
+            int[] textureIdsOES = new int[1];
+            GLES20.glGenTextures(1, textureIdsOES, 0);
+            mCameraTextureid_ = textureIdsOES[0];
+            GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mCameraTextureid_);
             GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_REPEAT);
             GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_REPEAT);
-
             GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
             GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-
-            surfaceTexture = new SurfaceTexture(cameraTextureid);
-            surfaceTexture.setOnFrameAvailableListener(this);//当前对象监听摄像头的数据到来
-
-            if (onSurfaceCreateListener != null) {
-                onSurfaceCreateListener.onSurfaceCreate(surfaceTexture, fboTextureid);
-            }
             GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+            mSurfaceTexture_ = new SurfaceTexture(mCameraTextureid_);
+            mSurfaceTexture_.setOnFrameAvailableListener(this);
         }
-    }
 
-    public void resetMatrix() {
-        Matrix.setIdentityM(matrix, 0);
-    }
-
-    //设置角度旋转
-    public void setAngle(float angle, float x, float y, float z) {
-        Matrix.rotateM(matrix, 0, angle, x, y, z);
+        mWlCameraFboRender_.onCreate();
+        Log.i("LivePusherPlayer", "WLCameraRender onSurfaceCreated end");
     }
 
     @Override
-    public void onSurfaceChanged(int width, int height) {//显示预览的宽高变化
-        Log.i(TAG, "onSurfaceChanged width: " + width + " height: " + height);
-//        wlCameraFboRender.onChange(width, height);
-//
-//        GLES20.glViewport(0, 0, width, height);
-
-        //这是实际预览窗口的尺寸(即surface显示宽高)
-        this.surfaceWidth = width;
-        this.surfaceHeight = height;
+    public void onSurfaceChanged(int width, int height) {
+        Log.i("LivePusherPlayer", "WLCameraRender onSurfaceChanged width: " + width + " height: " + height);
+        GLES20.glViewport(0, 0, width, height);
+        if (mSurfaceWidth_ != width || mSurfaceHeight_ != height) {
+            _recreateFBO(width, height);
+        }
+        mSurfaceWidth_ = width;
+        mSurfaceHeight_ = height;
+        mWlCameraFboRender_.onChange(width, height);
     }
 
     @Override
     public void onDrawFrame() {
-        //这里持续不断的有摄像头数据过来，并更新，后面就是绘制的摄像头数据
-        surfaceTexture.updateTexImage();
-
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        mSurfaceTexture_.updateTexImage();
         GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        GLES20.glUseProgram(mProgram_);
 
-        GLES20.glUseProgram(program);
-
-        //注意：这里FBO中绘制的是摄像头图像数据，之后再绘制到窗口中
-        //在FBO中使用屏幕宽高进行渲染
-        GLES20.glViewport(0, 0, screenWidth, screenHeight);
-
-        GLES20.glUniformMatrix4fv(umatrix, 1, false, matrix, 0);
-
-        //绑定使用FBO
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fboId);
-
-        //绑定使用VBO
-        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vboId);
-
-        GLES20.glEnableVertexAttribArray(vPosition);
-//        GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8, vertexBuffer);
-        GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8, 0);
-
-        GLES20.glEnableVertexAttribArray(fPosition);
-//        GLES20.glVertexAttribPointer(fPosition, 2, GLES20.GL_FLOAT, false, 8, textureBuffer);
-        GLES20.glVertexAttribPointer(fPosition, 2, GLES20.GL_FLOAT, false, 8, vertexData.length * 4);
-
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFboId_);
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mVboId_);
+        GLES20.glEnableVertexAttribArray(mVPosition_);
+        GLES20.glVertexAttribPointer(mVPosition_, 2, GLES20.GL_FLOAT, false, 8, 0);
+        GLES20.glEnableVertexAttribArray(mFPosition_);
+        GLES20.glVertexAttribPointer(mFPosition_, 2, GLES20.GL_FLOAT, false, 8, mVertexData_.length * 4);
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mCameraTextureid_);
+        GLES20.glUniform1i(mSTexture_, 0);
+        GLES20.glUniformMatrix4fv(mUmatrix_, 1, false, mMatrixArray_, 0);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-
-        //解绑纹理
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-        //解绑VBO
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
-
-        //解绑FBO
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
-        //FBO处理完成后，绘制到窗口时，使用实际的窗口大小进行显示
-        wlCameraFboRender.onChange(surfaceWidth, surfaceHeight);
-        //将FBO输出纹理id绘制到窗口
-        wlCameraFboRender.onDraw(fboTextureid);
+        mWlCameraFboRender_.onDraw(mFboTextureid_);
     }
 
-    //这个摄像头预览的案例中设置的是RENDERMODE_CONTINUOUSLY，持续渲染
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-
+        if (mOnRenderListener_ != null) {
+            mOnRenderListener_.onRender();
+        }
     }
 
-    public int getFboTextureid() {
-        return fboTextureid;
+    public void onDestory() {
+        Log.i("LivePusherPlayer", "WLCameraRender onDestory in");
+        GLES20.glDeleteProgram(mProgram_);
+        GLES20.glDeleteBuffers(1, new int[]{mFboId_}, 0);
+        GLES20.glDeleteBuffers(1, new int[]{mVboId_}, 0);
+        GLES20.glDeleteTextures(1, new int[]{mCameraTextureid_}, 0);
+        GLES20.glDeleteTextures(1, new int[]{mFboTextureid_}, 0);
+        mProgram_ = 0;
+        mFboId_ = 0;
+        mVboId_ = 0;
+        mCameraTextureid_ = 0;
+        mFboTextureid_ = 0;
+        mWlCameraFboRender_.onDestory();
+        Log.i("LivePusherPlayer", "WLCameraRender onDestory end");
+    }
+
+    /**
+     * 重置为单位矩阵
+     */
+    public void resetMatrix() {
+        Matrix.setIdentityM(mMatrixArray_, 0);
+    }
+
+    /**
+     * 设置旋转角度
+     */
+    public void setAngle(float angle, float x, float y, float z) {
+        Matrix.rotateM(mMatrixArray_, 0, angle, x, y, z);
+    }
+
+    private void _initFBO() {
+        Log.i("LivePusherPlayer", "initFBO in");
+        int[] fbos = new int[1];
+        GLES20.glGenBuffers(1, fbos, 0);
+        mFboId_ = fbos[0];
+        //纹理id生成操作
+        int[] textureIds = new int[1];
+        GLES20.glGenTextures(1, textureIds, 0);
+        mFboTextureid_ = textureIds[0];
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mFboTextureid_);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_REPEAT);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_REPEAT);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        Log.i("LivePusherPlayer", "initFBO end");
+    }
+
+    private void _mallocFBOBuffer(int surfaceWidth, int surfaceHeight) {
+        Log.i("LivePusherPlayer", "mallocFBOBuffer in");
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFboId_);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mFboTextureid_);
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, surfaceWidth, surfaceHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, mFboTextureid_, 0);
+        if (GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER) != GLES20.GL_FRAMEBUFFER_COMPLETE) {
+            Log.e("LivePusherPlayer", "WLCameraRender FBO is wrong!!!");
+        }
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+        Log.i("LivePusherPlayer", "mallocFBOBuffer end");
+        if (mOnSurfaceCreateListener_ != null) {
+            mOnSurfaceCreateListener_.onSurfaceCreate(mSurfaceTexture_, mFboTextureid_, surfaceWidth, surfaceHeight);
+        }
+    }
+
+    private void _recreateFBO(int width, int height) {
+        Log.i("LivePusherPlayer", "recreateFBO in");
+        // Release current FBO resources
+        _releaseOldFBO();
+        _initFBO();
+        // Allocate new FBO and texture resources
+        _mallocFBOBuffer(width, height);
+        Log.i("LivePusherPlayer", "recreateFBO end");
+    }
+
+    private void _releaseOldFBO() {
+        Log.i("LivePusherPlayer", "releaseOldFBO in, mFboTextureid_: " + mFboTextureid_ + " mFboId_: " + mFboId_);
+        if (mFboTextureid_ != 0) {
+            int[] textures = {mFboTextureid_};
+            GLES20.glDeleteTextures(1, textures, 0);
+            mFboTextureid_ = 0;
+        }
+        if (mFboId_ != 0) {
+            int[] fbos = {mFboId_};
+            GLES20.glDeleteFramebuffers(1, fbos, 0);
+            mFboId_ = 0;
+        }
+        Log.i("LivePusherPlayer", "releaseOldFBO end");
     }
 }

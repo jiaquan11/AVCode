@@ -1,9 +1,9 @@
-#ifndef LIVEPUSHER_WLQUEUE_H
-#define LIVEPUSHER_WLQUEUE_H
+#ifndef LIVEPUSHER_WLQUEUE_H_
+#define LIVEPUSHER_WLQUEUE_H_
 
 #include <queue>
 #include <pthread.h>
-#include "log/androidLog.h"
+#include "log/android_log.h"
 
 extern "C" {
 #include "librtmp/rtmp.h"
@@ -28,4 +28,5 @@ public:
     pthread_mutex_t mutexPacket;
     pthread_cond_t condPacket;
 };
-#endif
+
+#endif //LIVEPUSHER_WLQUEUE_H_
