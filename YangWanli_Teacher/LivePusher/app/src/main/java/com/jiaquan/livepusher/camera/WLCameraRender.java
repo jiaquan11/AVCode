@@ -45,6 +45,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
     private SurfaceTexture mSurfaceTexture_ = null;
     private int mSurfaceWidth_ = 0;
     private int mSurfaceHeight_ = 0;
+    private boolean mCanDrawFrame_ = false;
 
     public interface OnSurfaceCreateListener {
         void onSurfaceCreate(SurfaceTexture surfaceTexture, int textureid, int surfaceWditdh, int surfaceHeight);
@@ -134,11 +135,17 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
         mSurfaceWidth_ = width;
         mSurfaceHeight_ = height;
         mWlCameraFboRender_.onChange(width, height);
+        mCanDrawFrame_ = true;
     }
 
     @Override
     public void onDrawFrame() {
+        Log.i("LivePusherPlayer", "WLCameraRender onDrawFrame in");
         mSurfaceTexture_.updateTexImage();
+        if (!mCanDrawFrame_) {
+            Log.w("LivePusherPlayer", "WLCameraRender now can't draw frame");
+            return;
+        }
         GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         GLES20.glUseProgram(mProgram_);
@@ -159,11 +166,13 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 
         mWlCameraFboRender_.onDraw(mFboTextureid_);
+        Log.i("LivePusherPlayer", "WLCameraRender onDrawFrame end");
     }
 
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
         if (mOnRenderListener_ != null) {
+            Log.i("LivePusherPlayer", "WLCameraRender onFrameAvailable");
             mOnRenderListener_.onRender();
         }
     }
@@ -181,7 +190,13 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
         mCameraTextureid_ = 0;
         mFboTextureid_ = 0;
         mWlCameraFboRender_.onDestory();
+        mWlCameraFboRender_ = null;
         Log.i("LivePusherPlayer", "WLCameraRender onDestory end");
+    }
+
+    public void enableDraw(boolean enable) {
+        Log.i("LivePusherPlayer", "WLCameraRender setFrameListenerEnable enable: " + enable);
+        mCanDrawFrame_ = enable;
     }
 
     /**
@@ -235,10 +250,8 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
 
     private void _recreateFBO(int width, int height) {
         Log.i("LivePusherPlayer", "recreateFBO in");
-        // Release current FBO resources
         _releaseOldFBO();
         _initFBO();
-        // Allocate new FBO and texture resources
         _mallocFBOBuffer(width, height);
         Log.i("LivePusherPlayer", "recreateFBO end");
     }

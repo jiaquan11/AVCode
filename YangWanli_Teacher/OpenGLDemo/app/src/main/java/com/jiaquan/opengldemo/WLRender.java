@@ -21,14 +21,6 @@ import javax.microedition.khronos.opengles.GL10;
 public class WLRender implements GLSurfaceView.Renderer {
     private Context mContext_ = null;
     private final float[] mVertexData_ = {
-//      -1f, 0f,
-//      0f, -1f,
-//      0f, 1f,
-//
-//      0f, 1f,
-//      0f, -1f,
-//      1f, 0f
-
         -1f, -1f,
         1f, -1f,
         -1f, 1f,
@@ -36,12 +28,6 @@ public class WLRender implements GLSurfaceView.Renderer {
     };
 
     private final float[] mTextureData_ = {
-//      0f, 1f,
-//      1f, 1f,
-//      0f, 0f,
-//      1f,0f
-
-        //纹理图像旋转操作
         1f, 0f,
         0f, 0f,
         1f, 1f,
@@ -55,7 +41,6 @@ public class WLRender implements GLSurfaceView.Renderer {
     private int mSTexture_;
     private int mTextureId_;
     private Bitmap mBitmap_ = null;
-
     public WLRender(Context ctx) {
         mContext_ = ctx;
         mVertexBuffer_ = ByteBuffer.allocateDirect(mVertexData_.length * 4)

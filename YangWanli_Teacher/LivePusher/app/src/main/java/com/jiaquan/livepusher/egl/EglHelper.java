@@ -15,23 +15,19 @@ public class EglHelper {
     private EGLDisplay mEglDisplay = null;
     private EGLContext mEglContext = null;
     private EGLSurface mEglSurface = null;
-
     public void initEgl(Surface surface, EGLContext eglContext) {
         //1.得到Egl实例
         mEgl = (EGL10) EGLContext.getEGL();
-
         //2.得到默认的显示设备(就是窗口)
         mEglDisplay = mEgl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
         if (mEglDisplay == EGL10.EGL_NO_DISPLAY) {
             throw new RuntimeException("eglGetDisplay failed!");
         }
-
         //3.初始化默认显示设备
         int[] version = new int[2];
         if (!mEgl.eglInitialize(mEglDisplay, version)) {
             throw new RuntimeException("eglGetDisplay failed!");
         }
-
         //4.设置显示设备的属性
         int[] attributes = new int[]{
                 EGL10.EGL_RED_SIZE, 8,
@@ -52,13 +48,11 @@ public class EglHelper {
         if (numConfigs <= 0) {
             throw new IllegalArgumentException("No configs match configSpec!");
         }
-
         //5.从系统中获取对应属性的配置
         EGLConfig[] configs = new EGLConfig[numConfigs];
         if (!mEgl.eglChooseConfig(mEglDisplay, attributes, configs, numConfigs, num_config)) {
             throw new IllegalArgumentException("eglChooseConfig2 failed!");
         }
-
         //6.创建EglContext
         int[] attrib_list = {EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE};
         Log.i("EglHelper", "eglContext: " + eglContext);
@@ -67,10 +61,8 @@ public class EglHelper {
         } else {
             mEglContext = mEgl.eglCreateContext(mEglDisplay, configs[0], EGL10.EGL_NO_CONTEXT, attrib_list);
         }
-
         //7.创建渲染的surface
         mEglSurface = mEgl.eglCreateWindowSurface(mEglDisplay, configs[0], surface, null);
-
         //8.绑定EglContext和Surface到显示设备中
         if (!mEgl.eglMakeCurrent(mEglDisplay, mEglSurface, mEglSurface, mEglContext)) {
             throw new RuntimeException("eglMakeCurrent failed!");

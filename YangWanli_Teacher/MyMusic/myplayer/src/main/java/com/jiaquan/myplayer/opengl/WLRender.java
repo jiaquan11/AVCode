@@ -143,10 +143,6 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
 
     /**
      * 屏幕尺寸发生变化时调用，例如横竖屏切换
-     * @param gl the GL interface. Use <code>instanceof</code> to
-     * test if the interface supports GL11 or higher interfaces.
-     * @param width
-     * @param height
      */
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
@@ -182,7 +178,6 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
 
     /**
      * 设置渲染类型
-     * @param renderType
      */
     public void setRenderType(int renderType) {
         mRenderType_ = renderType;
@@ -190,8 +185,6 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
 
     /**
      * 设置视频宽高
-     * @param width
-     * @param height
      */
     public void setVideoSize(int width, int height) {
         mPicWdith_ = width;

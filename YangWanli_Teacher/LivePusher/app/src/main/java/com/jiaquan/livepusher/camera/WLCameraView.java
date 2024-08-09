@@ -59,6 +59,7 @@ public class WLCameraView extends WLEGLSurfaceView {
         }
         if (mWlCameraRender_ != null) {
             mWlCameraRender_.onDestory();
+            mWlCameraRender_ = null;
         }
     }
 
@@ -69,10 +70,10 @@ public class WLCameraView extends WLEGLSurfaceView {
         switch (angle) {
             case Surface.ROTATION_0:
                 if (mCameraId_ == Camera.CameraInfo.CAMERA_FACING_BACK) {
-                    mWlCameraRender_.setAngle(90, 0, 0, 1);//先旋转Z轴
-                    mWlCameraRender_.setAngle(180, 1, 0, 0);//再旋转X轴
+                    mWlCameraRender_.setAngle(90, 0, 0, 1);//先旋转Z轴90度，横屏变成竖屏
+                    mWlCameraRender_.setAngle(180, 1, 0, 0);//然后再旋转X轴180度，变成正的
                 } else {
-                    mWlCameraRender_.setAngle(90, 0, 0, 1);
+                    mWlCameraRender_.setAngle(90, 0, 0, 1);//前置摄像头只需要Z轴旋转90度，横屏变成竖屏
                 }
                 break;
             case Surface.ROTATION_90:
@@ -107,13 +108,34 @@ public class WLCameraView extends WLEGLSurfaceView {
     }
 
     public void switchCamera() {
+        Log.i("LivePusherPlayer", "switchCamera in");
         if (mCameraId_ == Camera.CameraInfo.CAMERA_FACING_BACK) {
             mCameraId_ = Camera.CameraInfo.CAMERA_FACING_FRONT;
         } else {
             mCameraId_ = Camera.CameraInfo.CAMERA_FACING_BACK;
         }
+        mWlCameraRender_.enableDraw(false);
         mWlCamera_.openCamera(mCameraId_);
         previewAngle(mContext_);
-        mWlCamera_.startPreview(mWlCamera_.getSurfaceTexture(), mWlCamera_.getSurfaceWidth(), mWlCamera_.getSurfaceHeight());
+        Log.i("LivePusherPlayer", "switchCamera previewAngle has been called");
+        /**
+         * 这里必须得开启一个线程去调用startPreview,否则会出现切换摄像头时，先短暂倒立当前摄像头的画面，然后再正立新摄像头的画面
+         * 有点奇怪的时候，即使不sleep,也是正常的，但是为了保险起见，还是sleep一下
+         * 暂时不知道为什么，后续再研究
+         * 直接调用startPreview就会出现上述问题
+         */
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(1);
+                    mWlCamera_.startPreview(mWlCamera_.getSurfaceTexture(), mWlCamera_.getSurfaceWidth(), mWlCamera_.getSurfaceHeight());
+                    mWlCameraRender_.enableDraw(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        Log.i("LivePusherPlayer", "switchCamera end");
     }
 }
