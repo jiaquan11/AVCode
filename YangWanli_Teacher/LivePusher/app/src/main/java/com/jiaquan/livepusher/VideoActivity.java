@@ -29,16 +29,14 @@ public class VideoActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.avtivity_video);
-
-        wlCameraView = findViewById(R.id.cameraview);//开启摄像头预览界面
+        wlCameraView = findViewById(R.id.cameraview);
         btnRecord = findViewById(R.id.btn_record);
-
         wlMusic = WlMusic.getInstance();
-        wlMusic.setCallBackPcmData(true);//设置可回调数据的标识
+        wlMusic.setCallBackPcmData(true);
         wlMusic.setOnPreparedListener(new OnPreparedListener() {
             @Override
             public void onPrepared() {
-                wlMusic.playCutAudio(24, 44);//裁剪音频，seek到目标位置
+                wlMusic.playCutAudio(24, 44);
             }
         });
 
@@ -60,11 +58,11 @@ public class VideoActivity extends AppCompatActivity {
             @Override
             public void onPcmInfo(int samplerate, int bit, int channels) {
                 Log.i("VideoActivity", "textureId is " + wlCameraView.getTextureId());//回调回来的FBO最终渲染的窗口纹理id
-                wlMediaEncoder = new WLMediaEncoder(VideoActivity.this, wlCameraView.getTextureId());//使用摄像头预览最终渲染到窗口的纹理进行编码
-//            String destPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/testziliao/yangwlVideo.mp4";
+                wlMediaEncoder = new WLMediaEncoder(VideoActivity.this);//使用摄像头预览最终渲染到窗口的纹理进行编码
+                wlMediaEncoder.setTexture(wlCameraView.getTextureId(), wlCameraView.getFboWidth(), wlCameraView.getFboHeight());
                 String destPath = "/sdcard/testziliao/yangwlVideo.mp4";
-                //传入摄像头预览的eglContext给到编码器
-                wlMediaEncoder.initEncoder(wlCameraView.getEglContext(), destPath, 720, 1280, samplerate, channels);
+                wlMediaEncoder.initEncoder(destPath, 720, 1280, samplerate, channels);
+                wlMediaEncoder.setSurfaceAndEglContext(null, wlCameraView.getEglContext());
                 wlMediaEncoder.setOnMediaInfoListener(new WLBaseMediaEncoder.OnMediaInfoListener() {
                     @Override
                     public void onMediaTime(int times) {
@@ -77,7 +75,7 @@ public class VideoActivity extends AppCompatActivity {
             @Override
             public void onPcmData(byte[] pcmdata, int size, long clock) {
                 if (wlMediaEncoder != null) {
-                    wlMediaEncoder.putPCMData(pcmdata, size);//用于音频编码
+                    wlMediaEncoder.putPCMData(pcmdata, size);
                 }
             }
         });

@@ -34,13 +34,13 @@ public class WLCameraFboRender {
     private Context mContext_ = null;
     private FloatBuffer mVertexBuffer_ = null;
     private FloatBuffer mFragmentBuffer_ = null;
-    private int mProgram_;
+    private int mProgram_ = -1;
     private int mVPosition_;
     private int mFPosition_;
     private int mSTexture_;
-    private int mVboId_;
+    private int mVboId_ = -1;
     private Bitmap mBitmap_ = null;
-    private int mBitmapTextureId_;
+    private int mBitmapTextureId_ = -1;
 
     public WLCameraFboRender(Context context) {
         mContext_ = context;
@@ -143,9 +143,8 @@ public class WLCameraFboRender {
         GLES20.glDeleteProgram(mProgram_);
         GLES20.glDeleteBuffers(1, new int[]{mVboId_}, 0);
         GLES20.glDeleteTextures(1, new int[]{mBitmapTextureId_}, 0);
-        mProgram_ = 0;
-        mVboId_ = 0;
-        mBitmapTextureId_ = 0;
-        mBitmap_.recycle();
+        mProgram_ = -1;
+        mVboId_ = -1;
+        mBitmapTextureId_ = -1;
     }
 }

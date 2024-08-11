@@ -65,6 +65,9 @@ public class WLShaderUtil {
                 program = 0;
             }
         }
+        // 删除着色器对象，因为它们已经链接到程序
+        GLES20.glDeleteShader(vertexShader);
+        GLES20.glDeleteShader(fragmentShader);
         return program;
     }
 }

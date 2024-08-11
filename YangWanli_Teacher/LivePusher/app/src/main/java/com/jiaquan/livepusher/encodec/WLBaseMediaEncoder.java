@@ -18,105 +18,102 @@ import java.nio.ByteBuffer;
 import javax.microedition.khronos.egl.EGLContext;
 
 public abstract class WLBaseMediaEncoder {
-    private static final String TAG = WLBaseMediaEncoder.class.getSimpleName();
-
-    private Surface surface = null;
-    private EGLContext eglContext = null;
-
-    private int width = -1;
-    private int height = -1;
-
-    private MediaCodec videoEncoder = null;
-    private MediaFormat videoFormat = null;
-    private MediaCodec.BufferInfo videoBufferInfo = null;
-
-    private MediaCodec audioEncoder = null;
-    private MediaFormat audioFormat = null;
-    private MediaCodec.BufferInfo audioBufferInfo = null;
-    private long audioPts = 0;
-    private int sampleRate = 0;
-
-    private MediaMuxer mediaMuxer = null;
-    private boolean encoderStart;
-    private boolean audioExit;
-    private boolean videoExit;
-
-    private WLEGLMediaThread wleglMediaThread = null;
-    private VideoEncoderThread videoEncoderThread = null;
-    private AudioEncoderThread audioEncoderThread = null;
-
-    private WLEGLSurfaceView.WLGLRender wlglRender = null;
-
-    private int mRenderMode = RENDERMODE_CONTINUOUSLY;
-
     public final static int RENDERMODE_WHEN_DIRTY = 0;
     public final static int RENDERMODE_CONTINUOUSLY = 1;
+    private Surface mSurface_ = null;
+    private EGLContext mEglContext_ = null;
+    private int mWidth_ = -1;
+    private int mHeight_ = -1;
+    private MediaCodec mVideoEncoder_ = null;
+    private MediaFormat mVideoFormat_ = null;
+    private MediaCodec.BufferInfo mVideoBufferInfo_ = null;
+    private MediaCodec mAudioEncoder_ = null;
+    private MediaFormat mAudioFormat_ = null;
+    private MediaCodec.BufferInfo mAudioBufferInfo_ = null;
+    private long mAudioPts_ = 0;
+    private int mSampleRate_ = 0;
+    private MediaMuxer mMediaMuxer_ = null;
+    private boolean mEncoderStart_;
+    private boolean mAudioExit_;
+    private boolean mVideoExit_;
+    private WLEGLMediaThread mWleglMediaThread_ = null;
+    private VideoEncoderThread mVideoEncoderThread_ = null;
+    private AudioEncoderThread mAudioEncoderThread_ = null;
+    private WLEGLSurfaceView.WLGLRender mWlglRender_ = null;
+    private int mRenderMode_ = RENDERMODE_CONTINUOUSLY;
 
     public interface OnMediaInfoListener {
         void onMediaTime(int times);
     }
-    private OnMediaInfoListener onMediaInfoListener = null;
+    private OnMediaInfoListener mOnMediaInfoListener_ = null;
     public void setOnMediaInfoListener(OnMediaInfoListener onMediaInfoListener) {
-        this.onMediaInfoListener = onMediaInfoListener;
+        mOnMediaInfoListener_ = onMediaInfoListener;
     }
 
     public WLBaseMediaEncoder(Context context) {
 
     }
 
-    public void setRender(WLEGLSurfaceView.WLGLRender wlglRender) {
-        this.wlglRender = wlglRender;
+    public void setSurfaceAndEglContext(Surface surface, EGLContext eglContext) {
+        mSurface_ = surface;
+        mEglContext_ = eglContext;
     }
 
-    public void setmRenderMode(int renderMode) {
-        if (wlglRender == null) {
+    public void setRender(WLEGLSurfaceView.WLGLRender wlglRender) {
+        mWlglRender_ = wlglRender;
+    }
+
+    public void setRenderMode(int renderMode) {
+        if (mWlglRender_ == null) {
             throw new RuntimeException("must set render before");
         }
-
-        this.mRenderMode = renderMode;
+        mRenderMode_ = renderMode;
     }
 
-    public void initEncoder(EGLContext eglContext, String savePath, int width, int height, int sampleRate, int channelCount) {
-        this.width = width;
-        this.height = height;
-        this.eglContext = eglContext;
+    public void requestRender() {
+        if (mWleglMediaThread_ != null) {
+            mWleglMediaThread_.requestRender();
+        }
+    }
+
+    public void initEncoder(String savePath, int width, int height, int sampleRate, int channelCount) {
+        mWidth_ = width;
+        mHeight_ = height;
         initMediaEncoder(savePath, width, height, sampleRate, channelCount);
     }
 
     public void startRecord() {
-        if ((surface != null) && (eglContext != null)) {
-            audioExit = false;
-            videoExit = false;
-            encoderStart = false;
-            audioPts = 0;
+        if ((mSurface_ != null) && (mEglContext_ != null)) {
+            mAudioExit_ = false;
+            mVideoExit_ = false;
+            mEncoderStart_ = false;
+            mAudioPts_ = 0;
+            mWleglMediaThread_ = new WLEGLMediaThread(new WeakReference<WLBaseMediaEncoder>(this));
+            mVideoEncoderThread_ = new VideoEncoderThread(new WeakReference<WLBaseMediaEncoder>(this));
+            mAudioEncoderThread_ = new AudioEncoderThread(new WeakReference<WLBaseMediaEncoder>(this));
+            mWleglMediaThread_.mIsCreate_ = true;
+            mWleglMediaThread_.mIsChange_ = true;
 
-            wleglMediaThread = new WLEGLMediaThread(new WeakReference<WLBaseMediaEncoder>(this));
-            videoEncoderThread = new VideoEncoderThread(new WeakReference<WLBaseMediaEncoder>(this));
-            audioEncoderThread = new AudioEncoderThread(new WeakReference<WLBaseMediaEncoder>(this));
-            wleglMediaThread.isCreate = true;
-            wleglMediaThread.isChange = true;
-
-            wleglMediaThread.start();
-            videoEncoderThread.start();
-            audioEncoderThread.start();
+            mWleglMediaThread_.start();
+            mVideoEncoderThread_.start();
+            mAudioEncoderThread_.start();
         }
     }
 
     public void stopRecord() {
-        if ((wleglMediaThread != null) && (videoEncoderThread != null) && (audioEncoderThread != null)) {
-            videoEncoderThread.exit();
-            audioEncoderThread.exit();
-            wleglMediaThread.onDestroy();
-            videoEncoderThread = null;
-            audioEncoderThread = null;
-            wleglMediaThread = null;
+        if ((mWleglMediaThread_ != null) && (mVideoEncoderThread_ != null) && (mAudioEncoderThread_ != null)) {
+            mVideoEncoderThread_.exit();
+            mAudioEncoderThread_.exit();
+            mWleglMediaThread_.onDestroy();
+            mVideoEncoderThread_ = null;
+            mAudioEncoderThread_ = null;
+            mWleglMediaThread_ = null;
         }
     }
 
     private void initMediaEncoder(String savePath, int width, int height, int sampleRate, int channelCount) {
         try {
-            mediaMuxer = new MediaMuxer(savePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-
+            mMediaMuxer_ = new MediaMuxer(savePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
             initVideoEncoder(MediaFormat.MIMETYPE_VIDEO_AVC, width, height);
             initAudioEncoder(MediaFormat.MIMETYPE_AUDIO_AAC, sampleRate, channelCount);
         } catch (IOException e) {
@@ -126,103 +123,93 @@ public abstract class WLBaseMediaEncoder {
 
     private void initAudioEncoder(String mimeType, int sampleRate, int channelCount) {
         try {
-            this.sampleRate = sampleRate;
-
-            audioBufferInfo = new MediaCodec.BufferInfo();
-            audioFormat = MediaFormat.createAudioFormat(mimeType, sampleRate, channelCount);
-            audioFormat.setInteger(MediaFormat.KEY_BIT_RATE, 96000);
-            audioFormat.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
-            audioFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 4096);
-
-            audioEncoder = MediaCodec.createEncoderByType(mimeType);
-            audioEncoder.configure(audioFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            mSampleRate_ = sampleRate;
+            mAudioBufferInfo_ = new MediaCodec.BufferInfo();
+            mAudioFormat_ = MediaFormat.createAudioFormat(mimeType, sampleRate, channelCount);
+            mAudioFormat_.setInteger(MediaFormat.KEY_BIT_RATE, 96000);
+            mAudioFormat_.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
+            mAudioFormat_.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 4096);
+            mAudioEncoder_ = MediaCodec.createEncoderByType(mimeType);
+            mAudioEncoder_.configure(mAudioFormat_, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         } catch (IOException e) {
             e.printStackTrace();
-            audioBufferInfo = null;
-            audioFormat = null;
-            audioEncoder = null;
+            mAudioBufferInfo_ = null;
+            mAudioFormat_ = null;
+            mAudioEncoder_ = null;
         }
     }
 
-    //初始化硬件编码器
     private void initVideoEncoder(String mimeType, int width, int height) {
+        Log.i("LivePusherPlayer", "initVideoEncoder: width: " + width + ", height: " + height);
         try {
-            videoBufferInfo = new MediaCodec.BufferInfo();
-            videoFormat = MediaFormat.createVideoFormat(mimeType, width, height);
-            videoFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
-            videoFormat.setInteger(MediaFormat.KEY_BIT_RATE, width * height * 4);
-            videoFormat.setInteger(MediaFormat.KEY_FRAME_RATE, 30);
-            videoFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
-
-            videoEncoder = MediaCodec.createEncoderByType(mimeType);
-            videoEncoder.configure(videoFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-
-            //编码配置后使用createInputSurface()为输入数据创建目标Surface
-            surface = videoEncoder.createInputSurface();
+            mVideoBufferInfo_ = new MediaCodec.BufferInfo();
+            mVideoFormat_ = MediaFormat.createVideoFormat(mimeType, width, height);
+            mVideoFormat_.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
+            mVideoFormat_.setInteger(MediaFormat.KEY_BIT_RATE, width * height * 4);
+            mVideoFormat_.setInteger(MediaFormat.KEY_FRAME_RATE, 30);
+            mVideoFormat_.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
+            mVideoEncoder_ = MediaCodec.createEncoderByType(mimeType);
+            Log.i("LivePusherPlayer", "initVideoEncoder: mVideoFormat_: " + mVideoFormat_);
+            mVideoEncoder_.configure(mVideoFormat_, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            mSurface_ = mVideoEncoder_.createInputSurface();
         } catch (IOException e) {
             e.printStackTrace();
-            videoEncoder = null;
-            videoFormat = null;
-            videoBufferInfo = null;
+            mVideoEncoder_ = null;
+            mVideoFormat_ = null;
+            mVideoBufferInfo_ = null;
         }
     }
 
     public void putPCMData(byte[] buffer, int size) {
-        if ((audioEncoderThread != null) && !audioEncoderThread.isExit && (buffer != null) && (size > 0)) {
-            int inputBufferIndex = audioEncoder.dequeueInputBuffer(0);
+        if ((mAudioEncoderThread_ != null) && !mAudioEncoderThread_.isExit && (buffer != null) && (size > 0)) {
+            int inputBufferIndex = mAudioEncoder_.dequeueInputBuffer(0);
             if (inputBufferIndex >= 0) {
-                ByteBuffer byteBuffer = audioEncoder.getInputBuffers()[inputBufferIndex];
+                ByteBuffer byteBuffer = mAudioEncoder_.getInputBuffers()[inputBufferIndex];
                 byteBuffer.clear();
                 byteBuffer.put(buffer);
-                long pts = getAudioPts(size, sampleRate);
-                audioEncoder.queueInputBuffer(inputBufferIndex, 0, size, pts, 0);
+                long pts = getAudioPts(size, mSampleRate_);
+                mAudioEncoder_.queueInputBuffer(inputBufferIndex, 0, size, pts, 0);
             }
         }
     }
 
     static class WLEGLMediaThread extends Thread {
-        private WeakReference<WLBaseMediaEncoder> encoder;
-        private EglHelper eglHelper;
-        private Object object;
-
-        private boolean isExit = false;
-        private boolean isCreate = false;
-        private boolean isChange = false;
-        private boolean isStart = false;
-
+        private WeakReference<WLBaseMediaEncoder> mEncoder_;
+        private EglHelper mEglHelper_;
+        private Object mObject_;
+        private boolean mIsExit_ = false;
+        private boolean mIsCreate_ = false;
+        private boolean mIsChange_ = false;
+        private boolean mIsStart_ = false;
         public WLEGLMediaThread(WeakReference<WLBaseMediaEncoder> encoder) {
-            this.encoder = encoder;
+            mEncoder_ = encoder;
         }
 
         @Override
         public void run() {
             super.run();
-
-            isExit = false;
-            isStart = false;
-            object = new Object();
-            eglHelper = new EglHelper();
-            //传入的是硬编编码器创建的surface,用于存放编码数据，eglContext是摄像头预览的egl上下文，将预览数据进行编码
-            eglHelper.initEgl(encoder.get().surface, encoder.get().eglContext);
-
+            mIsExit_ = false;
+            mIsStart_ = false;
+            mObject_ = new Object();
+            mEglHelper_ = new EglHelper();
+            mEglHelper_.initEgl(mEncoder_.get().mSurface_, mEncoder_.get().mEglContext_);
             while (true) {
-                if (isExit) {
+                if (mIsExit_) {
                     release();
                     break;
                 }
-
-                if (isStart) {
-                    if (encoder.get().mRenderMode == RENDERMODE_WHEN_DIRTY) {
-                        synchronized (object) {
+                if (mIsStart_) {
+                    if (mEncoder_.get().mRenderMode_ == RENDERMODE_WHEN_DIRTY) {
+                        synchronized (mObject_) {
                             try {
-                                object.wait();
+                                mObject_.wait();
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
                         }
-                    } else if (encoder.get().mRenderMode == RENDERMODE_CONTINUOUSLY) {
+                    } else if (mEncoder_.get().mRenderMode_ == RENDERMODE_CONTINUOUSLY) {
                         try {
-                            Thread.sleep(1000 / 60);
+                            Thread.sleep(40);//25帧的帧率，每帧40毫秒
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -230,106 +217,91 @@ public abstract class WLBaseMediaEncoder {
                         throw new RuntimeException("mRenderMode is wrong value");
                     }
                 }
-
                 onCreate();
-                onChange(encoder.get().width, encoder.get().height);
+                onChange(mEncoder_.get().mWidth_, mEncoder_.get().mHeight_);
                 onDraw();
-
-                isStart = true;
+                mIsStart_ = true;
             }
         }
 
         private void onCreate() {
-            if (isCreate && encoder.get().wlglRender != null) {
-                isCreate = false;
-                encoder.get().wlglRender.onSurfaceCreated();
+            if (mIsCreate_ && mEncoder_.get().mWlglRender_ != null) {
+                mIsCreate_ = false;
+                mEncoder_.get().mWlglRender_.onSurfaceCreated();
             }
         }
 
         private void onChange(int width, int height) {
-            if (isChange && encoder.get().wlglRender != null) {
-                isChange = false;
-                encoder.get().wlglRender.onSurfaceChanged(width, height);
+            if (mIsChange_ && mEncoder_.get().mWlglRender_ != null) {
+                mIsChange_ = false;
+                mEncoder_.get().mWlglRender_.onSurfaceChanged(width, height);
             }
         }
 
         private void onDraw() {
-            if ((encoder.get().wlglRender != null) && (eglHelper != null)) {
-                encoder.get().wlglRender.onDrawFrame();
-
-//                if (!isStart) {
-//                    encoder.get().wlglRender.onDrawFrame();
-//                }
-
-                eglHelper.swapBuffers();
-            }
-        }
-
-        private void requestRender() {
-            if (object != null) {
-                synchronized (object) {
-                    object.notifyAll();
-                }
+            if ((mEncoder_.get().mWlglRender_ != null) && (mEglHelper_ != null) && mIsStart_) {
+                mEncoder_.get().mWlglRender_.onDrawFrame();
+                mEglHelper_.swapBuffers();
             }
         }
 
         public void onDestroy() {
-            isExit = true;
+            mIsExit_ = true;
             requestRender();
         }
 
+        private void requestRender() {
+            if (mObject_ != null) {
+                synchronized (mObject_) {
+                    mObject_.notifyAll();
+                }
+            }
+        }
+
         public void release() {
-            if (eglHelper != null) {
-                eglHelper.destroyEgl();
-                eglHelper = null;
-                object = null;
-                encoder = null;
+            if (mEglHelper_ != null) {
+                mEglHelper_.destroyEgl();
+                mEglHelper_ = null;
+                mObject_ = null;
+                mEncoder_ = null;
             }
         }
     }
 
     static class VideoEncoderThread extends Thread {
-        private WeakReference<WLBaseMediaEncoder> encoder;
-
+        private WeakReference<WLBaseMediaEncoder> encoder = null;
         private boolean isExit;
-        private MediaCodec videoEncoder;
-        private MediaCodec.BufferInfo videoBufferInfo;
-        private MediaMuxer mediaMuxer;
+        private MediaCodec videoEncoder = null;
+        private MediaCodec.BufferInfo videoBufferInfo = null;
+        private MediaMuxer mediaMuxer = null;
         private long pts;
-
         private int videoTrackIndex = -1;
-
         VideoEncoderThread(WeakReference<WLBaseMediaEncoder> encoder) {
             this.encoder = encoder;
-            videoEncoder = encoder.get().videoEncoder;
-            videoBufferInfo = encoder.get().videoBufferInfo;
-            mediaMuxer = encoder.get().mediaMuxer;
-
+            videoEncoder = encoder.get().mVideoEncoder_;
+            videoBufferInfo = encoder.get().mVideoBufferInfo_;
+            mediaMuxer = encoder.get().mMediaMuxer_;
             videoTrackIndex = -1;
         }
 
         @Override
         public void run() {
             super.run();
-
             pts = 0;
             videoTrackIndex = -1;
             isExit = false;
-
             videoEncoder.start();
-
             while (true) {
                 if (isExit) {
                     videoEncoder.stop();
                     videoEncoder.release();
                     videoEncoder = null;
-
-                    encoder.get().videoExit = true;
-                    if (encoder.get().audioExit) {
+                    encoder.get().mVideoExit_ = true;
+                    if (encoder.get().mAudioExit_) {
                         mediaMuxer.stop();
                         mediaMuxer.release();
                         mediaMuxer = null;
-                        Log.i(TAG, "Video 录制完成!!!");
+                        Log.i("LivePusherPlayer", "Video 录制完成!!!");
                     }
                     break;
                 }
@@ -337,13 +309,13 @@ public abstract class WLBaseMediaEncoder {
                 int outputBufferIndex = videoEncoder.dequeueOutputBuffer(videoBufferInfo, 0);
                 if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                     videoTrackIndex = mediaMuxer.addTrack(videoEncoder.getOutputFormat());
-                    if (encoder.get().audioEncoderThread.audioTrackIndex != -1) {
+                    if (encoder.get().mAudioEncoderThread_.audioTrackIndex != -1) {
                         mediaMuxer.start();
-                        encoder.get().encoderStart = true;
+                        encoder.get().mEncoderStart_ = true;
                     }
                 } else {
                     while (outputBufferIndex >= 0) {
-                        if (encoder.get().encoderStart) {
+                        if (encoder.get().mEncoderStart_) {
                             ByteBuffer outputBuffer = videoEncoder.getOutputBuffers()[outputBufferIndex];
                             outputBuffer.position(videoBufferInfo.offset);
                             outputBuffer.limit(videoBufferInfo.offset + videoBufferInfo.size);
@@ -354,11 +326,10 @@ public abstract class WLBaseMediaEncoder {
                             videoBufferInfo.presentationTimeUs = videoBufferInfo.presentationTimeUs - pts;
 
                             mediaMuxer.writeSampleData(videoTrackIndex, outputBuffer, videoBufferInfo);
-                            if (encoder.get().onMediaInfoListener != null) {
-                                encoder.get().onMediaInfoListener.onMediaTime((int) (videoBufferInfo.presentationTimeUs / 1000000));
+                            if (encoder.get().mOnMediaInfoListener_ != null) {
+                                encoder.get().mOnMediaInfoListener_.onMediaTime((int) (videoBufferInfo.presentationTimeUs / 1000000));
                             }
                         }
-
                         videoEncoder.releaseOutputBuffer(outputBufferIndex, false);
                         outputBufferIndex = videoEncoder.dequeueOutputBuffer(videoBufferInfo, 0);
                     }
@@ -374,46 +345,37 @@ public abstract class WLBaseMediaEncoder {
     static class AudioEncoderThread extends Thread {
         private WeakReference<WLBaseMediaEncoder> encoder = null;
         private boolean isExit;
-
         private MediaCodec audioEncoder = null;
         private MediaCodec.BufferInfo bufferInfo = null;
         private MediaMuxer mediaMuxer = null;
-
         private int audioTrackIndex = -1;
         long pts;
-
         AudioEncoderThread(WeakReference<WLBaseMediaEncoder> encoder) {
             this.encoder = encoder;
-
-            audioEncoder = encoder.get().audioEncoder;
-            bufferInfo = encoder.get().audioBufferInfo;
-            mediaMuxer = encoder.get().mediaMuxer;
-
+            audioEncoder = encoder.get().mAudioEncoder_;
+            bufferInfo = encoder.get().mAudioBufferInfo_;
+            mediaMuxer = encoder.get().mMediaMuxer_;
             audioTrackIndex = -1;
         }
 
         @Override
         public void run() {
             super.run();
-
             pts = 0;
             audioTrackIndex = -1;
             isExit = false;
-
             audioEncoder.start();
-
             while (true) {
                 if (isExit) {
                     audioEncoder.stop();
                     audioEncoder.release();
                     audioEncoder = null;
-
-                    encoder.get().audioExit = true;
-                    if (encoder.get().videoExit) {
+                    encoder.get().mAudioExit_ = true;
+                    if (encoder.get().mVideoExit_) {
                         mediaMuxer.stop();
                         mediaMuxer.release();
                         mediaMuxer = null;
-                        Log.i(TAG, "Audio 录制完成!!!");
+                        Log.i("LivePusherPlayer", "Audio 录制完成!!!");
                     }
                     break;
                 }
@@ -422,26 +384,23 @@ public abstract class WLBaseMediaEncoder {
                 if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                     if (mediaMuxer != null) {
                         audioTrackIndex = mediaMuxer.addTrack(audioEncoder.getOutputFormat());
-                        if (encoder.get().videoEncoderThread.videoTrackIndex != -1) {
+                        if (encoder.get().mVideoEncoderThread_.videoTrackIndex != -1) {
                             mediaMuxer.start();
-                            encoder.get().encoderStart = true;
+                            encoder.get().mEncoderStart_ = true;
                         }
                     }
                 } else {
                     while (outputBufferIndex >= 0) {
-                        if (encoder.get().encoderStart) {
+                        if (encoder.get().mEncoderStart_) {
                             ByteBuffer outputBuffer = audioEncoder.getOutputBuffers()[outputBufferIndex];
                             outputBuffer.position(bufferInfo.offset);
                             outputBuffer.limit(bufferInfo.offset + bufferInfo.size);
-
                             if (pts == 0) {
                                 pts = bufferInfo.presentationTimeUs;
                             }
                             bufferInfo.presentationTimeUs = bufferInfo.presentationTimeUs - pts;
-
                             mediaMuxer.writeSampleData(audioTrackIndex, outputBuffer, bufferInfo);
                         }
-
                         audioEncoder.releaseOutputBuffer(outputBufferIndex, false);
                         outputBufferIndex = audioEncoder.dequeueOutputBuffer(bufferInfo, 0);
                     }
@@ -455,7 +414,7 @@ public abstract class WLBaseMediaEncoder {
     }
 
     private long getAudioPts(int size, int sampleRate) {
-        audioPts += (long) (1.0 * size / (sampleRate * 2 * 2) * 1000000.0);
-        return audioPts;
+        mAudioPts_ += (long) (1.0 * size / (sampleRate * 2 * 2) * 1000000.0);
+        return mAudioPts_;
     }
 }

@@ -14,18 +14,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
+import javax.microedition.khronos.opengles.GL;
+
 public class WLEncoderPushRender implements WLEGLSurfaceView.WLGLRender {
-    private Context context;
-
-    private final float[] vertexData = {//顶点坐标
-//            -1f, 0f,
-//            0f, -1f,
-//            0f, 1f,
-//
-//            0f, 1f,
-//            0f, -1f,
-//            1f, 0f
-
+    private final float[] vertexData = {
             -1f, -1f,
             1f, -1f,
             -1f, 1f,
@@ -36,33 +28,23 @@ public class WLEncoderPushRender implements WLEGLSurfaceView.WLGLRender {
             0f, 0f,
             0f, 0f
     };
-
-    private final float[] fragmentData = {//纹理坐标
+    private final float[] fragmentData = {
             0f, 1f,
             1f, 1f,
             0f, 0f,
             1f, 0f
-
-//            //纹理图像旋转操作
-//            1f, 0f,
-//            0f, 0f,
-//            1f, 1f,
-//            0f, 1f
     };
-
-
     private FloatBuffer vertexBuffer;
     private FloatBuffer fragmentBuffer;
-    private int program;
+    private Context context;
+    private int program = -1;
     private int vPosition;
     private int fPosition;
     private int sTexture;
-    private int textureId;
-
-    private int vboId;
-
-    private Bitmap bitmap;
-    private int bitmapTextureId;
+    private int textureId = -1;
+    private int vboId = -1;
+    private Bitmap bitmap = null;
+    private int bitmapTextureId = -1;
 
     public WLEncoderPushRender(Context context, int textureId) {
         this.context = context;
@@ -78,8 +60,6 @@ public class WLEncoderPushRender implements WLEGLSurfaceView.WLGLRender {
 
         float r = 1.0f * bitmap.getWidth() / bitmap.getHeight();
         float w = r * 0.1f;//相当于正交投影，按照图片的真实比例投放到屏幕上，设置的图片在屏幕上的高为0.1，则可以计算得到在屏幕上的宽
-        Log.i("WLEncoderRender", "w is " + w);
-
         vertexData[8] = 0.8f - w;//左下角坐标
         vertexData[9] = -0.8f;
 
@@ -96,14 +76,11 @@ public class WLEncoderPushRender implements WLEGLSurfaceView.WLGLRender {
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(vertexData);
-
         vertexBuffer.position(0);
-
         fragmentBuffer = ByteBuffer.allocateDirect(fragmentData.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(fragmentData);
-
         fragmentBuffer.position(0);
     }
 
@@ -153,9 +130,8 @@ public class WLEncoderPushRender implements WLEGLSurfaceView.WLGLRender {
 
     @Override
     public void onDrawFrame() {
+        GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-        GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1.0f);//白色清屏
-
         GLES20.glUseProgram(program);
 
         //绑定使用VBO
@@ -166,11 +142,9 @@ public class WLEncoderPushRender implements WLEGLSurfaceView.WLGLRender {
         GLES20.glUniform1i(sTexture, 0);
 
         GLES20.glEnableVertexAttribArray(vPosition);
-//        GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8, vertexBuffer);
         GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 8, 0);
 
         GLES20.glEnableVertexAttribArray(fPosition);
-//        GLES20.glVertexAttribPointer(fPosition, 2, GLES20.GL_FLOAT, false, 8, textureBuffer);
         GLES20.glVertexAttribPointer(fPosition, 2, GLES20.GL_FLOAT, false, 8, vertexData.length * 4);
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
@@ -194,5 +168,17 @@ public class WLEncoderPushRender implements WLEGLSurfaceView.WLGLRender {
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         //解绑VBO
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
+    }
+
+    @Override
+    public void onSurfaceDestroy() {
+        GLES20.glDeleteProgram(program);
+        GLES20.glDeleteTextures(1, new int[]{textureId}, 0);
+        GLES20.glDeleteTextures(1, new int[]{bitmapTextureId}, 0);
+        GLES20.glDeleteBuffers(1, new int[]{vboId}, 0);
+        program = -1;
+        textureId = -1;
+        bitmapTextureId = -1;
+        vboId = -1;
     }
 }

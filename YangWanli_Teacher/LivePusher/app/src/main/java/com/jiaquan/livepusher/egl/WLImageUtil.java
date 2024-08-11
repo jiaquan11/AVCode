@@ -49,13 +49,14 @@ public class WLImageUtil {
         bitmap.copyPixelsToBuffer(bitmapBuffer);
         bitmapBuffer.flip();
         GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, bitmap.getWidth(), bitmap.getHeight(), 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, bitmapBuffer);
+        bitmap.recycle();
         return textureIds[0];
     }
 
     /**
      * 根据图片资源id加载图片资源,并加载到GPU中
      */
-    public static int loadTexture(Context context, int imageId) {
+    public static TextureInfo loadBitmapTexture(Context context, int imageId) {
         int[] textureIds = new int[1];
         GLES20.glGenTextures(1, textureIds, 0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureIds[0]);
@@ -63,12 +64,13 @@ public class WLImageUtil {
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_REPEAT);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-
         Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), imageId);
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
         bitmap.recycle();
         bitmap = null;
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-        return textureIds[0];
+        return new TextureInfo(textureIds[0], width, height);
     }
 }

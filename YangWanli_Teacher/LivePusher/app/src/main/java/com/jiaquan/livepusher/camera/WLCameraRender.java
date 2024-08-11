@@ -86,7 +86,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
     @Override
     public void onSurfaceCreated() {
         Log.i("LivePusherPlayer", "WLCameraRender onSurfaceCreated in");
-        String vertexSource = WLShaderUtil.readRawTxt(mContext_, R.raw.vertex_shader);
+        String vertexSource = WLShaderUtil.readRawTxt(mContext_, R.raw.vertex_shader_m);
         String fragmentSource = WLShaderUtil.readRawTxt(mContext_, R.raw.fragment_shader);
         mProgram_ = WLShaderUtil.createProgram(vertexSource, fragmentSource);
         if (mProgram_ > 0) {
@@ -120,7 +120,6 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
             mSurfaceTexture_ = new SurfaceTexture(mCameraTextureid_);
             mSurfaceTexture_.setOnFrameAvailableListener(this);
         }
-
         mWlCameraFboRender_.onCreate();
         Log.i("LivePusherPlayer", "WLCameraRender onSurfaceCreated end");
     }
@@ -136,6 +135,9 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
         mSurfaceHeight_ = height;
         mWlCameraFboRender_.onChange(width, height);
         mCanDrawFrame_ = true;
+        if (mOnSurfaceCreateListener_ != null) {
+            mOnSurfaceCreateListener_.onSurfaceCreate(mSurfaceTexture_, mFboTextureid_, width, height);
+        }
     }
 
     @Override
@@ -170,14 +172,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
     }
 
     @Override
-    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        if (mOnRenderListener_ != null) {
-            Log.i("LivePusherPlayer", "WLCameraRender onFrameAvailable");
-            mOnRenderListener_.onRender();
-        }
-    }
-
-    public void onDestory() {
+    public void onSurfaceDestroy() {
         Log.i("LivePusherPlayer", "WLCameraRender onDestory in");
         GLES20.glDeleteProgram(mProgram_);
         GLES20.glDeleteBuffers(1, new int[]{mFboId_}, 0);
@@ -193,6 +188,16 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
         mWlCameraFboRender_ = null;
         Log.i("LivePusherPlayer", "WLCameraRender onDestory end");
     }
+
+    @Override
+    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+        if (mOnRenderListener_ != null) {
+            Log.i("LivePusherPlayer", "WLCameraRender onFrameAvailable");
+            mOnRenderListener_.onRender();
+        }
+    }
+
+
 
     public void enableDraw(boolean enable) {
         Log.i("LivePusherPlayer", "WLCameraRender setFrameListenerEnable enable: " + enable);
@@ -211,6 +216,14 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
      */
     public void setAngle(float angle, float x, float y, float z) {
         Matrix.rotateM(mMatrixArray_, 0, angle, x, y, z);
+    }
+
+    private void _recreateFBO(int width, int height) {
+        Log.i("LivePusherPlayer", "recreateFBO in");
+        _releaseOldFBO();
+        _initFBO();
+        _mallocFBOBuffer(width, height);
+        Log.i("LivePusherPlayer", "recreateFBO end");
     }
 
     private void _initFBO() {
@@ -243,17 +256,6 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         Log.i("LivePusherPlayer", "mallocFBOBuffer end");
-        if (mOnSurfaceCreateListener_ != null) {
-            mOnSurfaceCreateListener_.onSurfaceCreate(mSurfaceTexture_, mFboTextureid_, surfaceWidth, surfaceHeight);
-        }
-    }
-
-    private void _recreateFBO(int width, int height) {
-        Log.i("LivePusherPlayer", "recreateFBO in");
-        _releaseOldFBO();
-        _initFBO();
-        _mallocFBOBuffer(width, height);
-        Log.i("LivePusherPlayer", "recreateFBO end");
     }
 
     private void _releaseOldFBO() {

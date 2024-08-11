@@ -3,13 +3,17 @@ package com.jiaquan.livepusher.encodec;
 import android.content.Context;
 
 public class WLMediaEncoder extends WLBaseMediaEncoder {
-    private WLEncoderRender wlEncoderRender;
-
-    public WLMediaEncoder(Context context, int textureId) {
+    private WLEncoderRender mWlEncoderRender_ = null;
+    public WLMediaEncoder(Context context) {
         super(context);
+        mWlEncoderRender_ = new WLEncoderRender(context);
+        setRender(mWlEncoderRender_);
+        setRenderMode(WLBaseMediaEncoder.RENDERMODE_WHEN_DIRTY);
+    }
 
-        wlEncoderRender = new WLEncoderRender(context, textureId);
-        setRender(wlEncoderRender);
-        setmRenderMode(WLBaseMediaEncoder.RENDERMODE_CONTINUOUSLY);
+    public void setTexture(int textureId, int imageWidth, int imageHeight) {
+        if (mWlEncoderRender_ != null) {
+            mWlEncoderRender_.setTexture(textureId, imageWidth, imageHeight);
+        }
     }
 }

@@ -22,7 +22,7 @@ public class WLYuvRender implements WLEGLSurfaceView.WLGLRender {
         -1f, -1f
     };
     private final float[] mTextureVertexData_ = {
-        1f, 1f,//FBO坐标
+        1f, 1f,
         0f, 1f,
         1f, 0f,
         0f, 0f
@@ -163,6 +163,20 @@ public class WLYuvRender implements WLEGLSurfaceView.WLGLRender {
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         mWlYuvFboRender_.onDraw(mTextureId_);
+    }
+
+    @Override
+    public void onSurfaceDestroy () {
+        GLES20.glDeleteProgram(mProgram_);
+        GLES20.glDeleteBuffers(1, new int[]{mVboId_}, 0);
+        GLES20.glDeleteTextures(3, mTextureYuv_, 0);
+        GLES20.glDeleteFramebuffers(1, new int[]{mFboId_}, 0);
+        mProgram_ = -1;
+        mVboId_ = -1;
+        mTextureYuv_ = null;
+        mFboId_ = 0;
+        mWlYuvFboRender_.onDestroy();
+        mWlYuvFboRender_ = null;
     }
 
     public void setYuvData(int yuvWidth, int yuvHeight, byte[] ydata, byte[] udata, byte[] vdata) {

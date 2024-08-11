@@ -15,6 +15,8 @@ public class WLCameraView extends WLEGLSurfaceView {
     private WLCamera mWlCamera_ = null;
     private int mCameraId_ = Camera.CameraInfo.CAMERA_FACING_BACK;
     private int mTextureId_ = -1;
+    private int mSurfaceWidth_ = 0;
+    private int mSurfaceHeight_ = 0;
     private Context mContext_;
 
     public WLCameraView(Context context) {
@@ -56,10 +58,6 @@ public class WLCameraView extends WLEGLSurfaceView {
         if (mWlCamera_ != null) {
             mWlCamera_.stopPreview();
             mWlCamera_.closeCamera();
-        }
-        if (mWlCameraRender_ != null) {
-            mWlCameraRender_.onDestory();
-            mWlCameraRender_ = null;
         }
     }
 
@@ -105,6 +103,14 @@ public class WLCameraView extends WLEGLSurfaceView {
 
     public int getTextureId() {
         return mTextureId_;
+    }
+
+    public int getFboWidth() {
+        return mSurfaceWidth_;
+    }
+
+    public int getFboHeight() {
+        return mSurfaceHeight_;
     }
 
     public void switchCamera() {

@@ -92,6 +92,8 @@ public abstract class WLEGLSurfaceView extends SurfaceView implements SurfaceHol
         void onSurfaceChanged(int width, int height);
 
         void onDrawFrame();
+
+        void onSurfaceDestroy();
     }
 
     static class WLEGLThread extends Thread {
@@ -163,10 +165,15 @@ public abstract class WLEGLSurfaceView extends SurfaceView implements SurfaceHol
         }
 
         private void onDraw() {
-            if ((mWleglSurfaceViewWeakReference_.get().mWlglRender_ != null) && (mEglHelper_ != null)) {
+            if ((mWleglSurfaceViewWeakReference_.get().mWlglRender_ != null) && (mEglHelper_ != null) && mIsStart_) {
                 mWleglSurfaceViewWeakReference_.get().mWlglRender_.onDrawFrame();
                 mEglHelper_.swapBuffers();
             }
+        }
+
+        public void onDestroy() {
+            mIsExit_ = true;
+            requestRender();
         }
 
         private void requestRender() {
@@ -177,11 +184,6 @@ public abstract class WLEGLSurfaceView extends SurfaceView implements SurfaceHol
             }
         }
 
-        public void onDestroy() {
-            mIsExit_ = true;
-            requestRender();
-        }
-
         public EGLContext getEglContext() {
             if (mEglHelper_ != null) {
                 return mEglHelper_.getEglContext();
@@ -190,12 +192,15 @@ public abstract class WLEGLSurfaceView extends SurfaceView implements SurfaceHol
         }
 
         public void release() {
+            if (mWleglSurfaceViewWeakReference_.get().mWlglRender_ != null) {
+                mWleglSurfaceViewWeakReference_.get().mWlglRender_.onSurfaceDestroy();
+            }
             if (mEglHelper_ != null) {
                 mEglHelper_.destroyEgl();
                 mEglHelper_ = null;
                 mObject_ = null;
-                mWleglSurfaceViewWeakReference_ = null;
             }
+            mWleglSurfaceViewWeakReference_ = null;
         }
     }
 }

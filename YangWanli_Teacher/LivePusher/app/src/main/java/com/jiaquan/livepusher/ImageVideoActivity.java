@@ -2,6 +2,7 @@ package com.jiaquan.livepusher;
 
 import android.os.Bundle;
 import android.os.Environment;
+import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.Nullable;
@@ -14,72 +15,86 @@ import com.ywl5320.listener.OnPreparedListener;
 import com.ywl5320.listener.OnShowPcmDataListener;
 
 public class ImageVideoActivity extends AppCompatActivity {
-    private WLImgVideoView wlImgVideoView;
-    private WLMediaEncoder wlMediaEncoder;
-    private WlMusic wlMusic;
+    private WLImgVideoView mWlImgVideoView_ = null;
+    private WLMediaEncoder mWlMediaEncoder_ = null;
+    private WlMusic mWlMusic_ = null;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_imagevideo);
-        wlImgVideoView = findViewById(R.id.imgvideoview);
-        wlImgVideoView.setCurrentImg(R.drawable.img_1);
-
-        wlMusic = WlMusic.getInstance();
-        wlMusic.setCallBackPcmData(true);
-
-        wlMusic.setOnPreparedListener(new OnPreparedListener() {
+        mWlImgVideoView_ = findViewById(R.id.imgvideoview);
+        mWlMusic_ = WlMusic.getInstance();
+        mWlMusic_.setCallBackPcmData(true);
+        mWlMusic_.setOnPreparedListener(new OnPreparedListener() {
             @Override
             public void onPrepared() {
-                wlMusic.playCutAudio(0, 60);
+                Log.i("LivePusherPlayer", "onPrepared");
+                mWlMusic_.playCutAudio(0, 60);
             }
         });
-
-        wlMusic.setOnShowPcmDataListener(new OnShowPcmDataListener() {
+        mWlMusic_.setOnShowPcmDataListener(new OnShowPcmDataListener() {
             @Override
             public void onPcmInfo(int samplerate, int bit, int channels) {
-                wlMediaEncoder = new WLMediaEncoder(ImageVideoActivity.this, wlImgVideoView.getFboTextureId());
-                wlMediaEncoder.initEncoder(wlImgVideoView.getEglContext(), Environment.getExternalStorageDirectory().getAbsolutePath() + "/testziliao/image_video.mp4",
-                        720, 500, samplerate, channels);
-
-                wlMediaEncoder.startRecord();
-
-                startImgs();
+                Log.i("LivePusherPlayer", "samplerate: " + samplerate + ", bit: " + bit + ", channels: " + channels);
+                mWlMediaEncoder_ = new WLMediaEncoder(ImageVideoActivity.this);
+                int fBOImageWidth = mWlImgVideoView_.getFboWidth();
+                int fBOImageHeight = mWlImgVideoView_.getFboHeight();
+                mWlMediaEncoder_.setTexture(mWlImgVideoView_.getFboTextureId(), fBOImageWidth, fBOImageHeight);
+                mWlMediaEncoder_.setSurfaceAndEglContext(null, mWlImgVideoView_.getEglContext());
+                String destMergePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/testziliao/image_video.mp4";
+                int encodeWidth = 0;
+                int encodeHeight = 0;
+                if (fBOImageWidth < fBOImageHeight) {
+                    encodeWidth = 720;
+                    encodeHeight = 1280;
+                } else {
+                    encodeWidth = 1280;
+                    encodeHeight = 720;
+                }
+                Log.i("LivePusherPlayer", "fBOImageWidth: " + fBOImageWidth + ", fBOImageHeight: " + fBOImageHeight);
+                mWlMediaEncoder_.initEncoder(destMergePath, encodeWidth, encodeHeight, samplerate, channels);
+                mWlMediaEncoder_.startRecord();
+                mWlImgVideoView_.setOnEncodeListener(new WLImgVideoView.OnEncodeListener() {
+                    @Override
+                    public void onEncode() {
+                        mWlMediaEncoder_.requestRender();
+                    }
+                });
+                _startImgs();
             }
-
             @Override
             public void onPcmData(byte[] pcmdata, int size, long clock) {
-                if (wlMediaEncoder != null) {
-                    wlMediaEncoder.putPCMData(pcmdata, size);
+                if (mWlMediaEncoder_ != null) {
+                    mWlMediaEncoder_.putPCMData(pcmdata, size);
                 }
             }
         });
     }
 
-    public void start(View view) {
-        wlMusic.setSource("/sdcard/testziliao/the_girl.m4a");
-        wlMusic.prePared();
+    public void mergeVideo(View view) {
+        mWlMusic_.setSource("/sdcard/testziliao/the_girl.m4a");
+        mWlMusic_.prePared();
     }
 
-    private void startImgs() {
+    private void _startImgs() {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 for (int i = 1; i <= 257; i++) {
                     int imgsrc = getResources().getIdentifier("img_" + i, "drawable", "com.jiaquan.livepusher");
-                    wlImgVideoView.setCurrentImg(imgsrc);
-
+                    mWlImgVideoView_.setCurrentImg(imgsrc);
                     try {
-                        Thread.sleep(80);
+                        Thread.sleep(50);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
-
-                if (wlMediaEncoder != null) {
-                    wlMusic.stop();
-                    wlMediaEncoder.stopRecord();
-                    wlMediaEncoder = null;
+                if (mWlMediaEncoder_ != null) {
+                    mWlMusic_.stop();
+                    mWlMediaEncoder_.stopRecord();
+                    mWlMediaEncoder_ = null;
+                    mWlMusic_ = null;
                 }
             }
         }).start();
