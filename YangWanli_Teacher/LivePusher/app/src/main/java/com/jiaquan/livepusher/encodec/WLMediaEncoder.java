@@ -5,7 +5,6 @@ import android.content.Context;
 public class WLMediaEncoder extends WLBaseMediaEncoder {
     private WLEncoderRender mWlEncoderRender_ = null;
     public WLMediaEncoder(Context context) {
-        super(context);
         mWlEncoderRender_ = new WLEncoderRender(context);
         setRender(mWlEncoderRender_);
         setRenderMode(WLBaseMediaEncoder.RENDERMODE_WHEN_DIRTY);

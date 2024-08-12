@@ -20,79 +20,77 @@ import com.ywl5320.listener.OnShowPcmDataListener;
  * 摄像头预览及录制编码
  */
 public class VideoActivity extends AppCompatActivity {
-    private WLCameraView wlCameraView = null;
-    private Button btnRecord = null;
-    private WLMediaEncoder wlMediaEncoder = null;
-    private WlMusic wlMusic = null;
-
+    private WLCameraView mWlCameraView_ = null;
+    private Button mRecordBtn_ = null;
+    private WLMediaEncoder mWlMediaEncoder_ = null;
+    private WlMusic mWlMusic_ = null;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.avtivity_video);
-        wlCameraView = findViewById(R.id.cameraview);
-        btnRecord = findViewById(R.id.btn_record);
-        wlMusic = WlMusic.getInstance();
-        wlMusic.setCallBackPcmData(true);
-        wlMusic.setOnPreparedListener(new OnPreparedListener() {
+        mWlCameraView_ = findViewById(R.id.cameraview);
+        mRecordBtn_ = findViewById(R.id.btn_record);
+        mWlMusic_ = WlMusic.getInstance();
+        mWlMusic_.setCallBackPcmData(true);
+        mWlMusic_.setOnPreparedListener(new OnPreparedListener() {
             @Override
             public void onPrepared() {
-                wlMusic.playCutAudio(24, 44);
+                mWlMusic_.playCutAudio(24, 44);
             }
         });
 
-        wlMusic.setOnCompleteListener(new OnCompleteListener() {
+        mWlMusic_.setOnCompleteListener(new OnCompleteListener() {
             @Override
             public void onComplete() {
-                wlMediaEncoder.stopRecord();
-                wlMediaEncoder = null;
+                mWlMediaEncoder_.stopRecord();
+                mWlMediaEncoder_ = null;
+                mWlMusic_.stop();
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        btnRecord.setText("开始录制");
+                        mRecordBtn_.setText("开始录制");
                     }
                 });
             }
         });
 
-        wlMusic.setOnShowPcmDataListener(new OnShowPcmDataListener() {
+        mWlMusic_.setOnShowPcmDataListener(new OnShowPcmDataListener() {
             @Override
             public void onPcmInfo(int samplerate, int bit, int channels) {
-                Log.i("VideoActivity", "textureId is " + wlCameraView.getTextureId());//回调回来的FBO最终渲染的窗口纹理id
-                wlMediaEncoder = new WLMediaEncoder(VideoActivity.this);//使用摄像头预览最终渲染到窗口的纹理进行编码
-                wlMediaEncoder.setTexture(wlCameraView.getTextureId(), wlCameraView.getFboWidth(), wlCameraView.getFboHeight());
+                Log.i("LivePusherPlayer", "textureId is " + mWlCameraView_.getTextureId());
+                mWlMediaEncoder_ = new WLMediaEncoder(VideoActivity.this);
+                mWlMediaEncoder_.setTexture(mWlCameraView_.getTextureId(), mWlCameraView_.getFboWidth(), mWlCameraView_.getFboHeight());
                 String destPath = "/sdcard/testziliao/yangwlVideo.mp4";
-                wlMediaEncoder.initEncoder(destPath, 720, 1280, samplerate, channels);
-                wlMediaEncoder.setSurfaceAndEglContext(null, wlCameraView.getEglContext());
-                wlMediaEncoder.setOnMediaInfoListener(new WLBaseMediaEncoder.OnMediaInfoListener() {
+                mWlMediaEncoder_.initMediaEncoder(destPath, 720, 1280, samplerate, channels);
+                mWlMediaEncoder_.setSurfaceAndEglContext(null, mWlCameraView_.getEglContext());
+                mWlMediaEncoder_.setOnMediaInfoListener(new WLBaseMediaEncoder.OnMediaInfoListener() {
                     @Override
                     public void onMediaTime(int times) {
-                        Log.i("VideoActivity", "rec time is: " + times);
+                        Log.i("LivePusherPlayer", "record time is: " + times);
                     }
                 });
-                wlMediaEncoder.startRecord();
+                mWlMediaEncoder_.startRecord();
             }
 
             @Override
             public void onPcmData(byte[] pcmdata, int size, long clock) {
-                if (wlMediaEncoder != null) {
-                    wlMediaEncoder.putPCMData(pcmdata, size);
+                if (mWlMediaEncoder_ != null) {
+                    mWlMediaEncoder_.putPCMData(pcmdata, size);
                 }
             }
         });
     }
 
     public void record(View view) {
-        if (wlMediaEncoder == null) {
-            wlMusic.setSource("/sdcard/testziliao/yongqi-liangjingru.m4a");
-            wlMusic.prePared();
-
-            btnRecord.setText("正在录制");
-        } else {//中途主动停止录制
-            wlMediaEncoder.stopRecord();
-            btnRecord.setText("开始录制");
-
-            wlMediaEncoder = null;
-            wlMusic.stop();
+        if (mWlMediaEncoder_ == null) {//开始录制
+            mWlMusic_.setSource("/sdcard/testziliao/yongqi-liangjingru.m4a");
+            mWlMusic_.prePared();
+            mRecordBtn_.setText("正在录制");
+        } else {//停止录制
+            mWlMediaEncoder_.stopRecord();
+            mWlMediaEncoder_ = null;
+            mWlMusic_.stop();
+            mRecordBtn_.setText("开始录制");
         }
     }
 }

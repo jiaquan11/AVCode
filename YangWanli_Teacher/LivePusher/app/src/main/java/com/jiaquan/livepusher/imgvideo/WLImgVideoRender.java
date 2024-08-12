@@ -78,6 +78,7 @@ public class WLImgVideoRender implements WLEGLSurfaceView.WLGLRender {
 
     @Override
     public void onSurfaceCreated() {
+        Log.i("LivePusherPlayer", "WLImgVideoRender onSurfaceCreated in");
         String vertexSource = WLShaderUtil.readRawTxt(mContext_, R.raw.vertex_shader_m);
         String fragmentSource = WLShaderUtil.readRawTxt(mContext_, R.raw.fragment_shader_screen);
         mProgram_ = WLShaderUtil.createProgram(vertexSource, fragmentSource);
@@ -94,11 +95,12 @@ public class WLImgVideoRender implements WLEGLSurfaceView.WLGLRender {
         GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, mVertexData_.length * 4, mFragmentData_.length * 4, mFragmentBuffer_);
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
         mWlImgFboRender_.onCreate();
+        Log.i("LivePusherPlayer", "WLImgVideoRender onSurfaceCreated end");
     }
 
     @Override
     public void onSurfaceChanged(int width, int height) {
-        Log.i("LivePusherPlayer", "onSurfaceChanged in, width: " + width + " height: " + height);
+        Log.i("LivePusherPlayer", "WLImgVideoRender onSurfaceChanged in, width: " + width + " height: " + height);
         GLES20.glViewport(0, 0, width, height);
         if (mSurfaceWidth_ != width || mSurfaceHeight_ != height) {
             _recreateFBO(width, height);
@@ -109,35 +111,49 @@ public class WLImgVideoRender implements WLEGLSurfaceView.WLGLRender {
         if (mOnRenderCreateListener_ != null) {
             mOnRenderCreateListener_.onCreate(mTextureid_, mSurfaceWidth_, mSurfaceHeight_);
         }
+        Log.i("LivePusherPlayer", "WLImgVideoRender onSurfaceChanged end");
     }
 
     @Override
     public void onDrawFrame() {
+        Log.i("LivePusherPlayer", "WLImgVideoRender onDrawFrame in");
         TextureInfo bmpTextureInfo = WLImageUtil.loadBitmapTexture(mContext_, mImageId_);
+        _checkGLError("loadBitmapTexture");
         GLES20.glUseProgram(mProgram_);
+        _checkGLError("glUseProgram");
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFboId_);
+        _checkGLError("glBindFramebuffer");
         /**
          * 要想在FBO清屏的效果生效，需要先绑定FBO，然后再清屏
          */
         GLES20.glClearColor(1f, 0f, 0f, 1f);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        _checkGLError("glClear");
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mVboId_);
+        _checkGLError("glBindBuffer ARRAY_BUFFER");
         GLES20.glEnableVertexAttribArray(mVPosition_);
         GLES20.glVertexAttribPointer(mVPosition_, 2, GLES20.GL_FLOAT, false, 8, 0);
+        _checkGLError("glVertexAttribPointer VPosition");
         GLES20.glEnableVertexAttribArray(mFPosition_);
         GLES20.glVertexAttribPointer(mFPosition_, 2, GLES20.GL_FLOAT, false, 8, mVertexData_.length * 4);
+        _checkGLError("glVertexAttribPointer FPosition");
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, bmpTextureInfo.mTextureId);
+        _checkGLError("glBindTexture");
         GLES20.glUniform1i(mSTexture_, 0);
+        _checkGLError("glUniform1i");
         _setMatrix(mSurfaceWidth_, mSurfaceHeight_, bmpTextureInfo.mWidth, bmpTextureInfo.mHeight);
         GLES20.glUniformMatrix4fv(mUmatrix_, 1, false, mMatrixArray_, 0);
+        _checkGLError("glUniformMatrix4fv");
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        _checkGLError("glDrawArrays");
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-
+        _checkGLError("Unbind");
         mWlImgFboRender_.onDraw(mTextureid_);
-
+        _checkGLError("onDraw mWlImgFboRender_");
+        Log.i("LivePusherPlayer", "WLImgVideoRender onDrawFrame end");
         /**
          * 通知硬解编码器绘制编码
          */
@@ -147,10 +163,12 @@ public class WLImgVideoRender implements WLEGLSurfaceView.WLGLRender {
         int[] ids = new int[]{bmpTextureInfo.mTextureId};
         GLES20.glDeleteTextures(1, ids, 0);
         bmpTextureInfo.mTextureId = 0;
+        _checkGLError("glDeleteTextures");
     }
 
     @Override
     public void onSurfaceDestroy() {
+        Log.i("LivePusherPlayer", "WLImgVideoRender onSurfaceDestroy in");
         GLES20.glDeleteProgram(mProgram_);
         GLES20.glDeleteBuffers(1, new int[]{mVboId_}, 0);
         GLES20.glDeleteTextures(1, new int[]{mTextureid_}, 0);
@@ -161,6 +179,7 @@ public class WLImgVideoRender implements WLEGLSurfaceView.WLGLRender {
         mFboId_ = 0;
         mWlImgFboRender_.onDestroy();
         mWlImgFboRender_ = null;
+        Log.i("LivePusherPlayer", "WLImgVideoRender onSurfaceDestroy end");
     }
 
     public void setCurrentImgageId(int imageId) {
@@ -240,5 +259,12 @@ public class WLImgVideoRender implements WLEGLSurfaceView.WLGLRender {
          */
 //        Matrix.rotateM(mMatrixArray_, 0, 180, 1, 0, 0);//沿着X轴旋转180度，即上下翻转
 //      Matrix.rotateM(matrix, 0, 180, 0, 0, 1);//沿着Z轴旋转180度，即逆时针旋转180度(效果不仅仅是上下翻转，还有左右翻转)
+    }
+
+    private void _checkGLError(String tag) {
+        int error;
+        while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
+            Log.e("LivePusherPlayer", tag + ": glError " + error);
+        }
     }
 }

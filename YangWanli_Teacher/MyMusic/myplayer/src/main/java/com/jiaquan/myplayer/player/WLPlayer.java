@@ -745,17 +745,14 @@ public class WLPlayer {
                     byteBuffer.put(pcmBuffer);
                     mAEncMediaCodec_.queueInputBuffer(inputBufferIndex, 0, size, 0, 0);
                 }
-
                 int index = mAEncMediaCodec_.dequeueOutputBuffer(mABufferInfo_, 0);
                 while (index >= 0) {
                     try {
                         ByteBuffer audioEncodeBuffer = mAEncMediaCodec_.getOutputBuffers()[index];
                         audioEncodeBuffer.position(mABufferInfo_.offset);
                         audioEncodeBuffer.limit(mABufferInfo_.offset + mABufferInfo_.size);
-
                         int packetSize = mABufferInfo_.size + 7;//AAC码流需要添加7字节的头
                         _addADTSHeader(mOutByteBuffer_, packetSize, _getADTSSampleRateType(mAudioSamplerate_));//mediacodec编码出来的aac码流没有aac头，增加AAC码流头
-
                         audioEncodeBuffer.get(mOutByteBuffer_, 7, mABufferInfo_.size);//将编码码流数据放入AAC码流头后面存放
                         audioEncodeBuffer.position(mABufferInfo_.offset);
 
