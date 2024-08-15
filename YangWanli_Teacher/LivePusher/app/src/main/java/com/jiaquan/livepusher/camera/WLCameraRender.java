@@ -133,6 +133,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
         }
         mSurfaceWidth_ = width;
         mSurfaceHeight_ = height;
+        mSurfaceTexture_.setDefaultBufferSize(width, height);
         mWlCameraFboRender_.onChange(width, height);
         mCanDrawFrame_ = true;
         if (mOnSurfaceCreateListener_ != null) {
@@ -196,9 +197,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
             mOnRenderListener_.onRender();
         }
     }
-
-
-
+    
     public void enableDraw(boolean enable) {
         Log.i("LivePusherPlayer", "WLCameraRender setFrameListenerEnable enable: " + enable);
         mCanDrawFrame_ = enable;
