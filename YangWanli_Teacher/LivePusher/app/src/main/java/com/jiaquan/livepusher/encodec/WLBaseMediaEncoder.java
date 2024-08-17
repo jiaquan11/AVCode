@@ -4,6 +4,7 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
+import android.opengl.EGLContext;
 import android.util.Log;
 import android.view.Surface;
 
@@ -13,8 +14,6 @@ import com.jiaquan.livepusher.egl.WLEGLSurfaceView;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
-
-import javax.microedition.khronos.egl.EGLContext;
 
 public abstract class WLBaseMediaEncoder {
     public final static int RENDERMODE_WHEN_DIRTY = 0;
@@ -44,7 +43,9 @@ public abstract class WLBaseMediaEncoder {
     public interface OnMediaInfoListener {
         void onMediaTime(int times);
     }
+
     private OnMediaInfoListener mOnMediaInfoListener_ = null;
+
     public void setOnMediaInfoListener(OnMediaInfoListener onMediaInfoListener) {
         mOnMediaInfoListener_ = onMediaInfoListener;
     }
@@ -297,6 +298,7 @@ public abstract class WLBaseMediaEncoder {
         private MediaMuxer mediaMuxer = null;
         private long pts;
         private int videoTrackIndex = -1;
+
         VideoEncoderThread(WeakReference<WLBaseMediaEncoder> encoder) {
             mBaseMediaEncoder_ = encoder;
             videoEncoder = encoder.get().mVideoEncoder_;
@@ -367,12 +369,13 @@ public abstract class WLBaseMediaEncoder {
 
     static class AudioEncoderThread extends Thread {
         private WeakReference<WLBaseMediaEncoder> mBaseMediaEncoder_ = null;
-        private boolean mIsExit_= false;
+        private boolean mIsExit_ = false;
         private MediaCodec audioEncoder = null;
         private MediaCodec.BufferInfo audioBufferInfo = null;
         private MediaMuxer mediaMuxer = null;
         private int audioTrackIndex = -1;
         long pts = 0;
+
         AudioEncoderThread(WeakReference<WLBaseMediaEncoder> encoder) {
             mBaseMediaEncoder_ = encoder;
             audioEncoder = encoder.get().mAudioEncoder_;

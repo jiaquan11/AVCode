@@ -1,14 +1,13 @@
 package com.jiaquan.openglesegl;
 
 import android.content.Context;
+import android.opengl.EGLContext;
 import android.util.AttributeSet;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.lang.ref.WeakReference;
-
-import javax.microedition.khronos.egl.EGLContext;
 
 /**
  * 自定义一个GLSurfaceView的类
@@ -103,7 +102,9 @@ public abstract class WLEGLSurfaceView extends SurfaceView implements SurfaceHol
 
     public interface WLGLRender {
         void onSurfaceCreated();
+
         void onSurfaceChanged(int width, int height);
+
         void onDrawFrame();
     }
 
@@ -112,7 +113,7 @@ public abstract class WLEGLSurfaceView extends SurfaceView implements SurfaceHol
         private EglHelper mEglHelper_ = null;
         private Object mObject_ = null;
         private boolean mIsExit_ = false;
-        public  boolean mIsCreate = false;
+        public boolean mIsCreate = false;
         public boolean mIsChange = false;
         private boolean mIsStart_ = false;
         public int mWidth = 0;

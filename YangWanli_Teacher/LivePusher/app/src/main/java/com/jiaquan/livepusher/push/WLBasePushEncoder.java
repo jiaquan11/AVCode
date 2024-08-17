@@ -4,6 +4,7 @@ import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
+import android.opengl.EGLContext;
 import android.util.Log;
 import android.view.Surface;
 
@@ -13,8 +14,6 @@ import com.jiaquan.livepusher.egl.WLEGLSurfaceView;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
-
-import javax.microedition.khronos.egl.EGLContext;
 
 public abstract class WLBasePushEncoder {
     private Surface surface;
@@ -125,12 +124,12 @@ public abstract class WLBasePushEncoder {
         initPCMRecord();
     }
 
-    private void initPCMRecord(){
+    private void initPCMRecord() {
         audioRecordUtil = new AudioRecordUtil();
         audioRecordUtil.setOnRecordListener(new AudioRecordUtil.OnRecordListener() {
             @Override
             public void recordByte(byte[] audioData, int readSize) {
-                if (audioRecordUtil.isStart()){
+                if (audioRecordUtil.isStart()) {
                     putPCMData(audioData, readSize);
                 }
             }
@@ -435,7 +434,7 @@ public abstract class WLBasePushEncoder {
                         byte[] data = new byte[outputBuffer.remaining()];
                         outputBuffer.get(data, 0, data.length);
 //                        Log.i("WLBasePushEncoder", "audio data:" + byteToHex(data));
-                        if (encoder.get().onMediaInfoListener != null){
+                        if (encoder.get().onMediaInfoListener != null) {
                             encoder.get().onMediaInfoListener.onAudioInfo(data);
                         }
 

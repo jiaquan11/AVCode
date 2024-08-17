@@ -1,99 +1,85 @@
 package com.jiaquan.livepusher.egl;
 
+import android.annotation.TargetApi;
 import android.opengl.EGL14;
+import android.opengl.EGLConfig;
+import android.opengl.EGLContext;
+import android.opengl.EGLDisplay;
+import android.opengl.EGLSurface;
+import android.os.Build;
 import android.util.Log;
 import android.view.Surface;
 
-import javax.microedition.khronos.egl.EGL10;
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.egl.EGLContext;
-import javax.microedition.khronos.egl.EGLDisplay;
-import javax.microedition.khronos.egl.EGLSurface;
-
+@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
 public class EglHelper {
-    private EGL10 mEgl = null;
-    private EGLDisplay mEglDisplay = null;
-    private EGLContext mEglContext = null;
-    private EGLSurface mEglSurface = null;
-    public void initEgl(Surface surface, EGLContext eglContext) {
-        //1.得到Egl实例
-        mEgl = (EGL10) EGLContext.getEGL();
-        //2.得到默认的显示设备(就是窗口)
-        mEglDisplay = mEgl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
-        if (mEglDisplay == EGL10.EGL_NO_DISPLAY) {
-            throw new RuntimeException("eglGetDisplay failed!");
-        }
-        //3.初始化默认显示设备
-        int[] version = new int[2];
-        if (!mEgl.eglInitialize(mEglDisplay, version)) {
-            throw new RuntimeException("eglGetDisplay failed!");
-        }
-        //4.设置显示设备的属性
-        int[] attributes = new int[]{
-                EGL10.EGL_RED_SIZE, 8,
-                EGL10.EGL_GREEN_SIZE, 8,
-                EGL10.EGL_BLUE_SIZE, 8,
-                EGL10.EGL_ALPHA_SIZE, 8,
-                EGL10.EGL_DEPTH_SIZE, 8,
-                EGL10.EGL_STENCIL_SIZE, 8,
-                EGL10.EGL_RENDERABLE_TYPE, 4,
-                EGL10.EGL_NONE
-        };
+    private static final String TAG = EglHelper.class.getSimpleName();
+    private EGLDisplay mEglDisplay_ = null;
+    private android.opengl.EGLContext mEglContext_ = null;
+    private EGLSurface mEglSurface_ = null;
 
+    public void initEgl(Surface surface, android.opengl.EGLContext eglContext) {
+        mEglDisplay_ = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
+        if (mEglDisplay_ == EGL14.EGL_NO_DISPLAY) {
+            throw new RuntimeException("eglGetDisplay failed!");
+        }
+        int[] version = new int[2];
+        if (!EGL14.eglInitialize(mEglDisplay_, version, 0, version, 1)) {
+            throw new RuntimeException("eglGetDisplay failed!");
+        }
+        int[] attributes = new int[]{
+                EGL14.EGL_RED_SIZE, 8,
+                EGL14.EGL_GREEN_SIZE, 8,
+                EGL14.EGL_BLUE_SIZE, 8,
+                EGL14.EGL_ALPHA_SIZE, 8,
+                EGL14.EGL_DEPTH_SIZE, 8,
+                EGL14.EGL_STENCIL_SIZE, 8,
+                EGL14.EGL_RENDERABLE_TYPE, 4,
+                EGL14.EGL_NONE
+        };
         int[] num_config = new int[1];
-        if (!mEgl.eglChooseConfig(mEglDisplay, attributes, null, 1, num_config)) {
+        android.opengl.EGLConfig[] configs = new android.opengl.EGLConfig[1];
+        if (!EGL14.eglChooseConfig(mEglDisplay_, attributes, 0, configs, 0, configs.length, num_config, 0)) {
             throw new IllegalArgumentException("eglChooseConfig failed!");
         }
         int numConfigs = num_config[0];
         if (numConfigs <= 0) {
             throw new IllegalArgumentException("No configs match configSpec!");
         }
-        //5.从系统中获取对应属性的配置
-        EGLConfig[] configs = new EGLConfig[numConfigs];
-        if (!mEgl.eglChooseConfig(mEglDisplay, attributes, configs, numConfigs, num_config)) {
+        configs = new EGLConfig[numConfigs];
+        if (!EGL14.eglChooseConfig(mEglDisplay_, attributes, 0, configs, 0, configs.length, num_config, 0)) {
             throw new IllegalArgumentException("eglChooseConfig2 failed!");
         }
-        //6.创建EglContext
-        int[] attrib_list = {EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE};
-        Log.i("EglHelper", "eglContext: " + eglContext);
+        int[] attribList = {EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE};
+        Log.i(TAG, "eglContext: " + eglContext);
         if (eglContext != null) {
-            mEglContext = mEgl.eglCreateContext(mEglDisplay, configs[0], eglContext, attrib_list);
+            mEglContext_ = EGL14.eglCreateContext(mEglDisplay_, configs[0], eglContext, attribList, 0);
         } else {
-            mEglContext = mEgl.eglCreateContext(mEglDisplay, configs[0], EGL10.EGL_NO_CONTEXT, attrib_list);
+            mEglContext_ = EGL14.eglCreateContext(mEglDisplay_, configs[0], EGL14.EGL_NO_CONTEXT, attribList, 0);
         }
-        //7.创建渲染的surface
-        mEglSurface = mEgl.eglCreateWindowSurface(mEglDisplay, configs[0], surface, null);
-        //8.绑定EglContext和Surface到显示设备中
-        if (!mEgl.eglMakeCurrent(mEglDisplay, mEglSurface, mEglSurface, mEglContext)) {
+        int[] surfaceAttribs = {EGL14.EGL_NONE};
+        mEglSurface_ = EGL14.eglCreateWindowSurface(mEglDisplay_, configs[0], surface, surfaceAttribs, 0);
+        if (!EGL14.eglMakeCurrent(mEglDisplay_, mEglSurface_, mEglSurface_, mEglContext_)) {
             throw new RuntimeException("eglMakeCurrent failed!");
         }
     }
 
-    public boolean swapBuffers() {
-        if (mEgl != null) {
-            //9.刷新数据，显示渲染场景
-            return mEgl.eglSwapBuffers(mEglDisplay, mEglSurface);
-        } else {
-            throw new RuntimeException("egl is null");
+    public void swapBuffers() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            EGL14.eglSwapBuffers(mEglDisplay_, mEglSurface_);
         }
     }
 
     public EGLContext getEglContext() {
-        return mEglContext;
+        return mEglContext_;
     }
 
     public void destroyEgl() {
-        if (mEgl != null) {
-            mEgl.eglMakeCurrent(mEglDisplay, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
-            mEgl.eglDestroySurface(mEglDisplay, mEglSurface);
-            mEglSurface = null;
-
-            mEgl.eglDestroyContext(mEglDisplay, mEglContext);
-            mEglContext = null;
-
-            mEgl.eglTerminate(mEglDisplay);
-            mEglDisplay = null;
-            mEgl = null;
-        }
+        EGL14.eglMakeCurrent(mEglDisplay_, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT);
+        EGL14.eglDestroySurface(mEglDisplay_, mEglSurface_);
+        EGL14.eglDestroyContext(mEglDisplay_, mEglContext_);
+        EGL14.eglTerminate(mEglDisplay_);
+        mEglSurface_ = null;
+        mEglContext_ = null;
+        mEglDisplay_ = null;
     }
 }

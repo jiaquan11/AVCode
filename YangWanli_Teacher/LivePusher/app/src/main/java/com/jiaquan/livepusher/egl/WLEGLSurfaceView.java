@@ -1,14 +1,13 @@
 package com.jiaquan.livepusher.egl;
 
 import android.content.Context;
+import android.opengl.EGLContext;
 import android.util.AttributeSet;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.lang.ref.WeakReference;
-
-import javax.microedition.khronos.egl.EGLContext;
 
 public abstract class WLEGLSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
     public final static int RENDERMODE_WHEN_DIRTY = 0;

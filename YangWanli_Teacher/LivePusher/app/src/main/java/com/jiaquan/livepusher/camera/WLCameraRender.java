@@ -197,7 +197,7 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
             mOnRenderListener_.onRender();
         }
     }
-    
+
     public void enableDraw(boolean enable) {
         Log.i("LivePusherPlayer", "WLCameraRender setFrameListenerEnable enable: " + enable);
         mCanDrawFrame_ = enable;
