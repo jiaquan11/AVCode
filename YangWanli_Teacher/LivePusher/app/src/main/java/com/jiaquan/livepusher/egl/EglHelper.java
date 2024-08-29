@@ -14,10 +14,10 @@ import android.view.Surface;
 public class EglHelper {
     private static final String TAG = EglHelper.class.getSimpleName();
     private EGLDisplay mEglDisplay_ = null;
-    private android.opengl.EGLContext mEglContext_ = null;
+    private EGLContext mEglContext_ = null;
     private EGLSurface mEglSurface_ = null;
 
-    public void initEgl(Surface surface, android.opengl.EGLContext eglContext) {
+    public void initEgl(Surface surface, EGLContext eglContext) {
         mEglDisplay_ = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
         if (mEglDisplay_ == EGL14.EGL_NO_DISPLAY) {
             throw new RuntimeException("eglGetDisplay failed!");
@@ -37,7 +37,7 @@ public class EglHelper {
                 EGL14.EGL_NONE
         };
         int[] num_config = new int[1];
-        android.opengl.EGLConfig[] configs = new android.opengl.EGLConfig[1];
+        EGLConfig[] configs = new EGLConfig[1];
         if (!EGL14.eglChooseConfig(mEglDisplay_, attributes, 0, configs, 0, configs.length, num_config, 0)) {
             throw new IllegalArgumentException("eglChooseConfig failed!");
         }
@@ -64,9 +64,7 @@ public class EglHelper {
     }
 
     public void swapBuffers() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            EGL14.eglSwapBuffers(mEglDisplay_, mEglSurface_);
-        }
+        EGL14.eglSwapBuffers(mEglDisplay_, mEglSurface_);
     }
 
     public EGLContext getEglContext() {

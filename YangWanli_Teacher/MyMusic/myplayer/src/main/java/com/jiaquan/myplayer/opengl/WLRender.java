@@ -24,31 +24,19 @@ public class WLRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameA
 
     private Context mContext_ = null;
     private final float[] mVertexData_ = {
-//            -1f, 0f,
-//            0f, -1f,
-//            0f, 1f,
-//
-//            0f, 1f,
-//            0f, -1f,
-//            1f, 0f
-
             -1f, -1f,
             1f, -1f,
             -1f, 1f,
             1f, 1f
     };
-
-    private final float[] mTextureData_ = {
+    /**Android坐标系的纹理坐标是左上角为原点
+     * OpenGL坐标系的纹理坐标是左下角为原点
+     */
+    private final float[] mTextureData_ = {//Android纹理坐标系，以左上角为原点
             0f, 1f,
             1f, 1f,
             0f, 0f,
             1f, 0f
-//
-//            //纹理图像旋转操作
-//            1f, 0f,
-//            0f, 0f,
-//            1f, 1f,
-//            0f, 1f
     };
 
     private int mRenderType_ = RENDER_YUV;//默认为YUV渲染

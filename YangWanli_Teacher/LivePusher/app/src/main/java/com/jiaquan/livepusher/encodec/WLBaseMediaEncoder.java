@@ -425,6 +425,10 @@ public abstract class WLBaseMediaEncoder {
                                 pts = audioBufferInfo.presentationTimeUs;
                             }
                             audioBufferInfo.presentationTimeUs = audioBufferInfo.presentationTimeUs - pts;
+                            /**
+                             * 音频硬件编码器编码出来的音频数据是没有ADTS头的。
+                             * 这里写入muxer的每帧音频包数据没有添加7或9字节的ADTS头，有可能muxer内部会自动添加。
+                             */
                             mediaMuxer.writeSampleData(audioTrackIndex, outputBuffer, audioBufferInfo);
                         }
                         audioEncoder.releaseOutputBuffer(outputBufferIndex, false);
