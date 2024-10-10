@@ -10,8 +10,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
-import javax.microedition.khronos.opengles.GL;
-
 public class WLYuvFboRender {
     private float[] mVertexData_ = {
             -1f, -1f,
@@ -33,6 +31,7 @@ public class WLYuvFboRender {
     private int mFPosition_;
     private int mSTexture_;
     private int mVboId_ = -1;
+
     public WLYuvFboRender(Context context) {
         mContext_ = context;
         mVertexBuffer_ = ByteBuffer.allocateDirect(mVertexData_.length * 4)
@@ -82,6 +81,8 @@ public class WLYuvFboRender {
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId);
         GLES20.glUniform1i(mSTexture_, 0);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        GLES20.glDisableVertexAttribArray(mVPosition_);
+        GLES20.glDisableVertexAttribArray(mFPosition_);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
     }

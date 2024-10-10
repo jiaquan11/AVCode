@@ -152,7 +152,6 @@ public class WLCameraRender implements WLEGLSurfaceView.WLGLRender, SurfaceTextu
         GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         GLES20.glUseProgram(mProgram_);
-
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFboId_);
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, mVboId_);
         GLES20.glEnableVertexAttribArray(mVPosition_);

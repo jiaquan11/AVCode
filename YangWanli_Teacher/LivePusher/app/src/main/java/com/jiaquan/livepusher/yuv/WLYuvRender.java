@@ -157,9 +157,11 @@ public class WLYuvRender implements WLEGLSurfaceView.WLGLRender {
             mVData = null;
         }
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 1);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 2);
+        GLES20.glDisableVertexAttribArray(mVPosition_);
+        GLES20.glDisableVertexAttribArray(mFPosition_);
+        for (int i = 0; i < 3; i++) {
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, i);
+        }
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         mWlYuvFboRender_.onDraw(mTextureId_);
@@ -171,10 +173,12 @@ public class WLYuvRender implements WLEGLSurfaceView.WLGLRender {
         GLES20.glDeleteBuffers(1, new int[]{mVboId_}, 0);
         GLES20.glDeleteTextures(3, mTextureYuv_, 0);
         GLES20.glDeleteFramebuffers(1, new int[]{mFboId_}, 0);
+        GLES20.glDeleteTextures(1, new int[]{mTextureId_}, 0);
         mProgram_ = -1;
         mVboId_ = -1;
         mTextureYuv_ = null;
-        mFboId_ = 0;
+        mFboId_ = -1;
+        mTextureId_ = -1;
         mWlYuvFboRender_.onDestroy();
         mWlYuvFboRender_ = null;
     }
